@@ -6,3 +6,4 @@ use App\Http\Controllers\TaskController;
 // Go directly to the dashboard
 Route::get('/', [TaskController::class, 'index']);
 Route::post('/tasks', [TaskController::class, 'store']); // New route for saving tasks
+Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);

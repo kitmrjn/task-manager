@@ -39,4 +39,20 @@ class TaskController extends Controller
         // 3. Refresh the dashboard
         return redirect('/');
     }
+
+    public function updateStatus(Request $request, Task $task)
+    {
+        // 1. Ensure the new status is one of our allowed options
+        $request->validate([
+            'status' => 'required|in:todo,in-progress,done',
+        ]);
+
+        // 2. Update the task
+        $task->update([
+            'status' => $request->status
+        ]);
+
+        // 3. Refresh the dashboard
+        return redirect('/');
+    }
 }

@@ -58,6 +58,7 @@
                     <th>Assigned To</th>
                     <th>Created By</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,7 +73,29 @@
                                 {{ str_replace('-', ' ', $task->status) }}
                             </span>
                         </td>
+
+                        <td>
+                            @if($task->status === 'todo')
+                                <form action="/tasks/{{ $task->id }}/status" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="in-progress">
+                                    <button type="submit" style="background:#004085; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Start</button>
+                                </form>
+                            @endif
+
+                            @if($task->status === 'in-progress')
+                                <form action="/tasks/{{ $task->id }}/status" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="done">
+                                    <button type="submit" style="background:#155724; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer;">Complete</button>
+                                </form>
+                            @endif
+                        </td>
                     </tr>
+
+                    
                 @endforeach
             </tbody>
         </table>
