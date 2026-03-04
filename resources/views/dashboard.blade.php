@@ -8,7 +8,7 @@
         @endif
     </x-slot>
 
-    <div class="py-8" x-data="{ isModalOpen: false, activeColumnId: null }">
+    <div class="py-8" x-data="{ isModalOpen: false, activeColumnId: null, isEditModalOpen: false, editTask: {} }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <div class="flex space-x-6 overflow-x-auto pb-4">
@@ -26,7 +26,9 @@
                             
                             <div id="column-{{ $column->id }}" data-column-id="{{ $column->id }}" class="sortable-column space-y-3 overflow-y-auto flex-1 pr-2 min-h-[50px]">
                                 @foreach($column->tasks as $task)
-                                    <div data-task-id="{{ $task->id }}" class="bg-white p-4 rounded-md shadow border border-gray-200 cursor-grab hover:border-blue-400 transition-colors active:cursor-grabbing">
+                                    <div data-task-id="{{ $task->id }}" 
+                                         @click="editTask = {{ $task->toJson() }}; isEditModalOpen = true"
+                                         class="bg-white p-4 rounded-md shadow border border-gray-200 cursor-grab hover:border-blue-400 transition-colors active:cursor-grabbing">
                                         
                                         <div class="mb-2">
                                             @php
@@ -122,6 +124,78 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="isEditModalOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    
+                    <div x-show="isEditModalOpen" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isEditModalOpen = false"></div>
+
+                    <div x-show="isEditModalOpen" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        
+                        <form x-bind:action="`/tasks/${editTask.id}`" method="POST">
+                            @csrf
+                            @method('PUT')
+
+                            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900">Task Details</h3>
+                                    
+                                    <button type="button" @click="if(confirm('Are you sure you want to delete this task?')) document.getElementById('delete-form-' + editTask.id).submit();" class="text-sm text-red-600 hover:text-red-900 font-medium">
+                                        Delete Task
+                                    </button>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Task Title</label>
+                                        <input type="text" name="title" x-model="editTask.title" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                                        <textarea name="description" x-model="editTask.description" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Assign To</label>
+                                            <select name="assigned_to" x-model="editTask.assigned_to" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                                <option value="">Unassigned</option>
+                                                @foreach($users as $user)
+                                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Priority</label>
+                                            <select name="priority" x-model="editTask.priority" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Save Changes
+                                </button>
+                                <button type="button" @click="isEditModalOpen = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Close
+                                </button>
+                            </div>
+                        </form>
+
+                        <form x-bind:id="'delete-form-' + editTask.id" x-bind:action="`/tasks/${editTask.id}`" method="POST" class="hidden">
+                            @csrf
+                            @method('DELETE')
+                        </form>
+
                     </div>
                 </div>
             </div>
