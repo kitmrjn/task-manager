@@ -20,6 +20,35 @@
 
     <div class="board-container">
         <h2>Team Task Board</h2>
+
+        <div style="background: #f8f9fa; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <h3>Create a New Task</h3>
+            <form action="/tasks" method="POST">
+                @csrf
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" name="title" placeholder="Task Title" required style="flex: 1; padding: 8px;">
+                    <input type="text" name="description" placeholder="Description (Optional)" style="flex: 2; padding: 8px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select name="creator_id" required style="padding: 8px;">
+                        <option value="">Who is creating this?</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->role }})</option>
+                        @endforeach
+                    </select>
+
+                    <select name="assigned_to" style="padding: 8px;">
+                        <option value="">Assign to (Optional)</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->role }})</option>
+                        @endforeach
+                    </select>
+
+                    <button type="submit" style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Task</button>
+                </div>
+            </form>
+        </div>
         
         <table>
             <thead>

@@ -3,16 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User; // Don't forget to import the User model
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
     public function index()
     {
-        // Fetch all tasks and include the linked creator and assignee data
         $tasks = Task::with(['creator', 'assignee'])->get();
+        $users = User::all(); // Fetch all users
         
-        // Send the data to a view named 'dashboard'
-        return view('dashboard', compact('tasks'));
+        // Pass both tasks and users to the view
+        return view('dashboard', compact('tasks', 'users'));
+    }
+
+    public function store(Request $request)
+    {
+        // 1. Validate the incoming data
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'creator_id' => 'required|exists:users,id',
+            'assigned_to' => 'nullable|exists:users,id',
+        ]);
+
+        // 2. Create the task in the database
+        Task::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'creator_id' => $request->creator_id,
+            'assigned_to' => $request->assigned_to,
+            'status' => 'todo', // Default status for new tasks
+        ]);
+
+        // 3. Refresh the dashboard
+        return redirect('/');
     }
 }
