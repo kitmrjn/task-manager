@@ -13,17 +13,13 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('board_column_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('status', ['todo', 'in-progress', 'done'])->default('todo');
-
-            // The 'Leader' or 'Subordinate' who created the task
-            $table->foreignId('creator_id')->constrained('users')->onDelete('cascade');
-
-            // The 'Subordinate' assigned to the task (nullable if not yet assigned)
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
-
-            $table->timestamp('due_date')->nullable();
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('priority')->default('medium'); // low, medium, high
+            $table->date('due_date')->nullable();
+            $table->integer('order')->default(0); // For sorting within the column
             $table->timestamps();
         });
     }

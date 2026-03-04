@@ -15,11 +15,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create the Admin User
+        \App\Models\User::factory()->create([
+            'name' => 'System Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create a Team Member
+        \App\Models\User::factory()->create([
+            'name' => 'Team Member One',
+            'email' => 'member@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'team_member',
+        ]);
+
+        // Call the new BoardSeeder
+        $this->call([
+            BoardSeeder::class,
         ]);
     }
 }

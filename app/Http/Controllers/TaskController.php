@@ -3,56 +3,75 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
-use App\Models\User; // Don't forget to import the User model
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function move(Request $request, Task $task)
     {
-        $tasks = Task::with(['creator', 'assignee'])->get();
-        $users = User::all(); // Fetch all users
-        
-        // Pass both tasks and users to the view
-        return view('dashboard', compact('tasks', 'users'));
+        // Validate that the new column ID was sent and exists
+        $request->validate([
+            'board_column_id' => 'required|exists:board_columns,id'
+        ]);
+
+        // Update the task's column in the database
+        $task->update([
+            'board_column_id' => $request->board_column_id
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Task moved successfully!']);
     }
 
     public function store(Request $request)
     {
-        // 1. Validate the incoming data
+        $request->validate([
+            'board_column_id' => 'required|exists:board_columns,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'assigned_to' => 'nullable|exists:users,id',
+            'priority' => 'required|in:low,medium,high',
+            'due_date' => 'nullable|date',
+        ]);
+
+        // Get the highest order number in this column to place the new task at the bottom
+        $highestOrder = Task::where('board_column_id', $request->board_column_id)->max('order');
+
+        Task::create([
+            'board_column_id' => $request->board_column_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'assigned_to' => $request->assigned_to,
+            'priority' => $request->priority,
+            'due_date' => $request->due_date,
+            'order' => $highestOrder ? $highestOrder + 1 : 1, // Place at the bottom
+        ]);
+
+        return redirect()->back(); // Reload the dashboard to show the new task
+    }
+
+    public function update(Request $request, Task $task)
+    {
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'creator_id' => 'required|exists:users,id',
             'assigned_to' => 'nullable|exists:users,id',
+            'priority' => 'required|in:low,medium,high',
         ]);
 
-        // 2. Create the task in the database
-        Task::create([
+        $task->update([
             'title' => $request->title,
             'description' => $request->description,
-            'creator_id' => $request->creator_id,
             'assigned_to' => $request->assigned_to,
-            'status' => 'todo', // Default status for new tasks
+            'priority' => $request->priority,
         ]);
 
-        // 3. Refresh the dashboard
-        return redirect('/');
+        return redirect()->back(); // Refresh to show changes
     }
 
-    public function updateStatus(Request $request, Task $task)
+    public function destroy(Task $task)
     {
-        // 1. Ensure the new status is one of our allowed options
-        $request->validate([
-            'status' => 'required|in:todo,in-progress,done',
-        ]);
+        $task->delete();
 
-        // 2. Update the task
-        $task->update([
-            'status' => $request->status
-        ]);
-
-        // 3. Refresh the dashboard
-        return redirect('/');
+        return redirect()->back(); // Refresh to remove the card
     }
 }

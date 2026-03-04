@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -54,5 +55,17 @@ class User extends Authenticatable
     public function createdTasks()
     {
         return $this->hasMany(Task::class, 'creator_id');
+    }
+
+    // Get the boards this user created (Useful for Admins)
+    public function boards()
+    {
+        return $this->hasMany(Board::class, 'user_id');
+    }
+
+    // Get all tasks assigned to this user (Useful for Team Members)
+    public function assignedTasks()
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
     }
 }
