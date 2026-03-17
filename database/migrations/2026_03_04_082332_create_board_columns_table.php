@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('board_columns', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('board_id')->constrained()->cascadeOnDelete();
-            $table->string('title'); // e.g., "To Do"
-            $table->integer('order')->default(0); // Helps with drag-and-drop sorting later
-            $table->timestamps();
-        });
+Schema::create('board_columns', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('board_id')->constrained()->cascadeOnDelete();
+        $table->string('title');
+        $table->string('color')->default('gray'); // Add here
+        $table->text('description')->nullable();  // Add here
+        $table->integer('order')->default(0);
+        $table->timestamps();
+    });
     }
 
     /**
