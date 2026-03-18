@@ -41,6 +41,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //Column
     Route::patch('/columns/{column}/move', [BoardController::class, 'moveColumn'])->name('columns.move');
     Route::put('/columns/{column}', [BoardController::class, 'updateColumn'])->name('columns.update');
+
+    //Checklist
+    Route::post('/tasks/{task}/checklist', [BoardController::class, 'storeChecklistItem'])->name('checklist.store');
+    Route::patch('/checklist-items/{item}/toggle', [BoardController::class, 'toggleChecklistItem']);
+    Route::delete('/checklist-items/{item}', [BoardController::class, 'destroyChecklistItem']);
+
+    //Members
+    Route::post('/tasks/{task}/members/toggle', [BoardController::class, 'toggleMember']);
+
+    //Mark as Complete
+    Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
+    
 });
 
 require __DIR__.'/auth.php';
