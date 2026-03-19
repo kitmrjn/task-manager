@@ -155,5 +155,30 @@ function faqToggle(el) {
     document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
     if (!wasOpen) item.classList.add('open');
 }
+
+// Make search filter FAQ items
+const searchInput = document.querySelector('.hp-search-box input');
+const searchBtn   = document.querySelector('.hp-search-box button');
+
+function searchFAQ() {
+    const q = searchInput.value.toLowerCase().trim();
+    document.querySelectorAll('.faq-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+    // Also close all open items when searching
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+}
+
+searchBtn.addEventListener('click', searchFAQ);
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') searchFAQ(); });
+
+// Also filter quick cards
+searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    if (!q) {
+        document.querySelectorAll('.faq-item').forEach(i => i.style.display = '');
+    }
+});
 </script>
 </x-app-layout>
