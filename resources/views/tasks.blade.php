@@ -1,575 +1,854 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center" x-data="{ isAddingColumn: false }">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ $board ? $board->name : 'No Boards Available' }}
-                </h2>
-                @if($board && $board->description)
-                    <p class="text-sm text-gray-500 mt-1">{{ $board->description }}</p>
-                @endif
-            </div>
-
-            <div class="flex items-center space-x-4">
-                {{-- ADD COLUMN DROPDOWN --}}
-                <div class="relative">
-                    <button @click="isAddingColumn = !isAddingColumn" 
-                            class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-lg font-bold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition shadow-sm">
-                        + Add New List
-                    </button>
-
-                    <div x-show="isAddingColumn" @click.away="isAddingColumn = false" 
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 scale-95"
-                         x-transition:enter-end="opacity-100 scale-100"
-                         class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[60] p-6 text-left"
-                         style="display: none;">
-                        
-                        <form action="{{ route('columns.store') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="board_id" value="{{ $board->id }}">
-                            <h3 class="text-lg font-black text-gray-900 mb-4">Create List</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Title</label>
-                                    <input type="text" name="title" required autofocus
-                                        class="w-full border-gray-200 rounded-xl focus:ring-blue-500 text-sm py-2 px-4 shadow-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Description</label>
-                                    <textarea name="description" rows="2" 
-                                        class="w-full border-gray-200 rounded-xl focus:ring-blue-500 py-2 px-4 text-sm shadow-sm"></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Header Color</label>
-                                    <div class="grid grid-cols-5 gap-2" x-data="{ selectedColor: 'gray' }">
-                                        @foreach(['gray' => 'bg-gray-400', 'blue' => 'bg-blue-400', 'green' => 'bg-green-400', 'yellow' => 'bg-yellow-400', 'red' => 'bg-red-400'] as $key => $bgClass)
-                                            <label class="cursor-pointer">
-                                                <input type="radio" name="color" value="{{ $key }}" class="hidden" @click="selectedColor = '{{ $key }}'" {{ $key == 'gray' ? 'checked' : '' }}>
-                                                <div :class="selectedColor === '{{ $key }}' ? 'ring-2 ring-offset-2 ring-black' : ''" 
-                                                     class="w-full h-8 rounded-lg {{ $bgClass }} transition shadow-inner"></div>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-6 flex justify-end items-center space-x-3">
-                                <button type="button" @click="isAddingColumn = false" class="text-sm font-bold text-gray-400">Cancel</button>
-                                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase hover:bg-blue-700 shadow-md">Add List</button>
-                            </div>
-                        </form>
-                    </div>
+<x-slot name="header">
+    {{-- Top nav: search left, icons + user right --}}
+    <div class="tk-topnav">
+        <div class="tk-topnav-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search tasks, projects…" />
+            <span class="tk-topnav-kbd">⌘K</span>
+        </div>
+        <div class="tk-topnav-right">
+            <button class="tk-topnav-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </button>
+            <button class="tk-topnav-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span class="tk-topnav-dot"></span>
+            </button>
+            <div class="tk-topnav-user">
+                <div class="tk-topnav-avatar">{{ strtoupper(substr(Auth::user()->name,0,2)) }}</div>
+                <div class="tk-topnav-userinfo">
+                    <span class="tk-topnav-username">{{ Auth::user()->name }}</span>
+                    <span class="tk-topnav-email">{{ Auth::user()->email }}</span>
                 </div>
             </div>
         </div>
-    </x-slot>
+    </div>
+</x-slot>
 
-    {{-- MAIN DATA SCOPE --}}
-    <div class="py-8" x-data="{ 
-        isModalOpen: false, 
-        activeColumnId: null, 
-        isEditModalOpen: false, 
-        isEditListModalOpen: false, 
-        isHistoryOpen: false,
-        editTask: { checklist_items: [], members: [] }, 
-        editList: {} 
-    }">
-        <div class="max-w-[98%] mx-auto px-4 sm:px-6 lg:px-8">
-            <div id="board-container" class="flex space-x-8 overflow-x-auto pb-10 items-start">
-                @if($board)
-                    @foreach($board->columns as $column)
-                        @php
-                            $headerColor = match($column->color) {
-                                'blue' => 'bg-blue-400',
-                                'green' => 'bg-green-400',
-                                'yellow' => 'bg-yellow-400',
-                                'red' => 'bg-red-400',
-                                default => 'bg-gray-500',
-                            };
-                        @endphp
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap');
 
-                        <div id="column-wrapper-{{ $column->id }}" class="column-wrapper bg-gray-100 rounded-2xl w-[24rem] min-w-[24rem] flex-shrink-0 shadow-sm flex flex-col max-h-[82vh] overflow-hidden border border-gray-200">
-                            
-                            {{-- COLUMN HEADER --}}
-                            <div class="p-5 {{ $headerColor }}" x-data="{ colMenu: false }">
-                                <div class="flex justify-between items-start text-white">
-                                    <div class="overflow-hidden flex-1">
-                                        <h3 class="font-black text-lg tracking-tight truncate">{{ $column->title }}</h3>
-                                        @if($column->description)
-                                            <p class="text-[11px] text-white/80 font-medium leading-tight mt-1 line-clamp-2">{{ $column->description }}</p>
-                                        @endif
-                                    </div>
-                                    <div class="flex items-center space-x-2 ml-2">
-                                        <span class="bg-black/10 px-3 py-1 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 column-count">
-                                            {{ $column->tasks->count() }}
-                                        </span>
-                                        <div class="relative">
-                                            <button @click="colMenu = !colMenu" class="text-white/70 hover:text-white transition">
-                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
-                                            </button>
-                                            <div x-show="colMenu" @click.away="colMenu = false" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl z-50 py-2 text-left" style="display: none;">
-                                                <button type="button" @click="editList = {{ $column->toJson() }}; isEditListModalOpen = true; colMenu = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center">
-                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                    Edit List Details
-                                                </button>
-                                                <button type="button" @click="moveColumn({{ $column->id }}, 'left')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center group/move">
-                                                    <svg class="w-4 h-4 mr-2 text-gray-400 group-hover/move:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                                                    Move Left
-                                                </button>
-                                                <button type="button" @click="moveColumn({{ $column->id }}, 'right')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center group/move">
-                                                    <svg class="w-4 h-4 mr-2 text-gray-400 group-hover/move:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                                    Move Right
-                                                </button>
-                                                <div class="border-t border-gray-100 my-1"></div>
-                                                <form action="{{ route('columns.destroy', $column->id) }}" method="POST" onsubmit="return confirm('Delete list?')">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 font-bold">Delete List</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+:root {
+    --bg:       #f0f2f6;
+    --white:    #ffffff;
+    --border:   #e4e7ec;
+    --border-2: #d0d5dd;
+    --text:     #0d1117;
+    --muted:    #4b5563;
+    --soft:     #6b7280;
+    --blue:     #2563eb;
+    --blue-lt:  #eff6ff;
+    --green:    #16a34a;
+    --green-lt: #f0fdf4;
+    --amber:    #d97706;
+    --amber-lt: #fffbeb;
+    --red:      #dc2626;
+    --red-lt:   #fef2f2;
+    --radius:   10px;
+    --radius-sm:8px;
+    --shadow:   0 1px 3px rgba(16,24,40,0.08), 0 1px 2px rgba(16,24,40,0.04);
+    --shadow-md:0 4px 10px rgba(16,24,40,0.10);
+    --shadow-lg:0 12px 32px rgba(16,24,40,0.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); font-family: 'Geist', sans-serif; color: var(--text); }
+
+/* ── Override default header to be clean topnav ── */
+.tf-main-header { background: var(--white) !important; border-bottom: 1px solid var(--border) !important; padding: 0 !important; }
+.tf-main-header-inner { max-width: 100% !important; padding: 0 !important; }
+
+/* ── Top nav bar ── */
+.tk-topnav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .6rem 1.5rem; gap: 1rem;
+    height: 54px;
+}
+.tk-topnav-search {
+    display: flex; align-items: center; gap: .5rem;
+    background: #f5f6fa; border: 1.5px solid var(--border);
+    border-radius: 8px; padding: .45rem .85rem;
+    width: 280px; flex-shrink: 0;
+}
+.tk-topnav-search svg { color: var(--soft); flex-shrink: 0; }
+.tk-topnav-search input {
+    border: none; background: transparent; outline: none;
+    font-family: 'Geist', sans-serif; font-size: 13px; color: var(--text);
+    flex: 1; min-width: 0;
+}
+.tk-topnav-search input::placeholder { color: var(--soft); }
+.tk-topnav-kbd {
+    font-size: 10px; font-weight: 600; color: var(--soft);
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px; flex-shrink: 0;
+}
+.tk-topnav-right { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
+.tk-topnav-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1.5px solid var(--border); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); position: relative;
+    transition: background .15s;
+}
+.tk-topnav-icon:hover { background: var(--bg); }
+.tk-topnav-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--red); border: 1.5px solid var(--white);
+}
+.tk-topnav-user {
+    display: flex; align-items: center; gap: .6rem;
+    cursor: pointer; padding: .3rem .5rem;
+    border-radius: 8px; transition: background .15s;
+}
+.tk-topnav-user:hover { background: var(--bg); }
+.tk-topnav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.tk-topnav-username { display: block; font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.tk-topnav-email    { display: block; font-size: 11px; color: var(--soft); }
+
+/* ── Page body ── */
+.tk-page-body { padding: 1.75rem 1.75rem 0; }
+
+/* ── Page header row (Tasks title + New Task btn) ── */
+.tk-page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap;
+}
+.tk-page-title { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+.tk-page-sub   { font-size: 13px; color: var(--soft); margin-top: 3px; font-weight: 400; }
+
+.tk-new-btn {
+    display: flex; align-items: center; gap: .4rem;
+    padding: .6rem 1.3rem; background: var(--blue); color: #fff;
+    border: none; border-radius: 9px; font-family: 'Geist', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(37,99,235,.35);
+    transition: background .15s; white-space: nowrap; flex-shrink: 0;
+}
+.tk-new-btn:hover { background: #1d4ed8; }
+
+/* ── Filter tabs ── */
+.tk-filter-tabs {
+    display: flex; background: #eaecf0; border-radius: 9px;
+    padding: 3px; gap: 2px; border: 1px solid var(--border);
+    margin-bottom: 1.5rem; width: fit-content;
+}
+.tk-filter-tab {
+    padding: .35rem 1.1rem; border: none; background: transparent;
+    border-radius: 7px; font-family: 'Geist', sans-serif; font-size: 13px;
+    font-weight: 500; color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.tk-filter-tab.active { background: var(--white); color: var(--text); font-weight: 600; box-shadow: var(--shadow); }
+.tk-filter-tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.55); }
+
+/* ── Board ── */
+.tk-board {
+    display: flex; gap: 1.25rem; overflow-x: auto;
+    align-items: flex-start; padding-bottom: 2rem;
+}
+.tk-board::-webkit-scrollbar { height: 5px; }
+.tk-board::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
+
+/* ── Column ── */
+.tk-col {
+    width: 290px; min-width: 290px; flex-shrink: 0;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 230px); overflow: hidden;
+}
+.tk-col-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 1rem; flex-shrink: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+.tk-col-title-row { display: flex; align-items: center; gap: .55rem; }
+.tk-col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.tk-col-name  { font-size: 14px; font-weight: 700; color: var(--text); }
+.tk-col-count {
+    background: var(--bg); color: var(--muted);
+    font-size: 11.5px; font-weight: 700;
+    padding: 1px 8px; border-radius: 99px; border: 1px solid var(--border);
+}
+.tk-col-actions { display: flex; align-items: center; gap: .2rem; }
+.tk-col-action {
+    width: 26px; height: 26px; border: none; background: transparent;
+    color: var(--soft); cursor: pointer; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s; font-size: 17px; line-height: 1;
+}
+.tk-col-action:hover { background: var(--bg); color: var(--text); }
+
+.tk-cards {
+    flex: 1; overflow-y: auto; padding: .75rem;
+    display: flex; flex-direction: column; gap: .65rem;
+    min-height: 80px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.tk-cards::-webkit-scrollbar { width: 4px; }
+.tk-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+.tk-add-task-btn {
+    padding: .65rem 1rem; border: none; background: transparent;
+    color: var(--soft); font-family: 'Geist', sans-serif; font-size: 13px;
+    font-weight: 500; cursor: pointer; text-align: center; width: 100%;
+    border-top: 1px solid var(--border); flex-shrink: 0;
+    transition: color .15s, background .15s;
+}
+.tk-add-task-btn:hover { color: var(--blue); background: var(--blue-lt); }
+
+/* ── Task Card ── */
+.tk-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1rem;
+    cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s;
+    animation: cardIn .3s ease both;
+}
+.tk-card:hover { border-color: #93c5fd; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.tk-card.is-completed { opacity: .65; }
+.tk-card.is-completed .tk-card-title { text-decoration: line-through; color: var(--soft); }
+@keyframes cardIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+.tk-card-tag {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; margin-bottom: .55rem;
+}
+.tk-card-title { font-size: 14.5px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: .35rem; letter-spacing: -.01em; }
+.tk-card-desc  { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-bottom: .65rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.tk-card-prog { margin-bottom: .6rem; }
+.tk-card-prog-row { display: flex; justify-content: space-between; margin-bottom: .3rem; }
+.tk-card-prog-label { font-size: 11px; color: var(--soft); }
+.tk-card-prog-val   { font-size: 11px; font-weight: 700; color: var(--muted); }
+.tk-prog-track { height: 5px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.tk-prog-fill  { height: 100%; border-radius: 99px; transition: width .5s ease; }
+.tk-prog-fill.blue  { background: var(--blue); }
+.tk-prog-fill.green { background: var(--green); }
+
+.tk-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: .6rem; }
+.tk-card-assignee {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.tk-card-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.tk-card-date { font-size: 11.5px; color: var(--muted); font-weight: 500; display: flex; align-items: center; gap: .3rem; }
+.tk-card-date svg { width: 12px; height: 12px; }
+
+.tk-priority { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; text-transform: uppercase; letter-spacing: .02em; }
+.tk-priority.high   { background: var(--red-lt);   color: var(--red); }
+.tk-priority.medium { background: var(--amber-lt); color: var(--amber); }
+.tk-priority.low    { background: var(--green-lt); color: var(--green); }
+
+.tk-complete-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: 10.5px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; background: var(--green-lt); color: var(--green);
+    border: 1px solid #bbf7d0; margin-bottom: .5rem;
+}
+
+/* Add column ghost */
+.tk-col-add {
+    width: 260px; min-width: 260px; flex-shrink: 0;
+    border: 2px dashed var(--border-2); border-radius: var(--radius);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: .5rem; padding: 2.5rem 1rem; color: var(--soft); cursor: pointer;
+    transition: border-color .15s, color .15s;
+}
+.tk-col-add:hover { border-color: var(--blue); color: var(--blue); }
+.tk-col-add-icon  { font-size: 22px; }
+.tk-col-add-label { font-size: 13px; font-weight: 600; }
+
+/* ── MODAL BASE ── */
+.tk-modal-overlay {
+    position: fixed; inset: 0; background: rgba(16,24,40,.5);
+    backdrop-filter: blur(4px); z-index: 500;
+    display: none; align-items: center; justify-content: center; padding: 1rem;
+}
+.tk-modal-overlay.open { display: flex; }
+
+/* ── TASK DETAIL MODAL ── */
+.tk-detail {
+    background: var(--white); border-radius: 16px;
+    width: 100%; max-width: 580px; max-height: 92vh;
+    overflow-y: auto; box-shadow: var(--shadow-lg);
+    animation: modalIn .25s ease both;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.tk-detail::-webkit-scrollbar { width: 4px; }
+.tk-detail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+@keyframes modalIn { from{opacity:0;transform:translateY(16px) scale(.98)} to{opacity:1;transform:none} }
+
+.tk-detail-head {
+    padding: 1.4rem 1.5rem 1.1rem; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--white); z-index: 10;
+}
+.tk-detail-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; margin-bottom: .65rem; }
+.tk-detail-title { font-size: 19px; font-weight: 800; color: var(--text); line-height: 1.3; flex: 1; letter-spacing: -.02em; }
+.tk-detail-close {
+    width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--white); cursor: pointer; display: flex; align-items: center;
+    justify-content: center; color: var(--muted); flex-shrink: 0; transition: background .15s;
+}
+.tk-detail-close:hover { background: var(--bg); }
+.tk-detail-tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+.tk-detail-body { padding: 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 1.35rem; }
+
+.tk-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.tk-field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--soft); margin-bottom: .4rem; }
+.tk-field-select, .tk-field-input {
+    width: 100%; padding: .6rem .85rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Geist', sans-serif; font-size: 13.5px; color: var(--text);
+    background: var(--white); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2398a2b3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right .75rem center;
+}
+.tk-field-input { background-image: none; }
+.tk-field-select:focus, .tk-field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.tk-field-textarea {
+    width: 100%; padding: .7rem .85rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'Geist', sans-serif; font-size: 13.5px; color: var(--text);
+    resize: vertical; min-height: 95px; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.tk-field-textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+.tk-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+.tk-section-title { display: flex; align-items: center; gap: .5rem; font-size: 14.5px; font-weight: 700; color: var(--text); }
+.tk-section-title svg { width: 16px; height: 16px; color: var(--muted); }
+.tk-section-badge { font-size: 12px; font-weight: 700; background: var(--bg); color: var(--muted); padding: 2px 9px; border-radius: 99px; border: 1px solid var(--border); }
+
+.tk-progress-block { background: var(--bg); border-radius: 10px; padding: 1.1rem 1.2rem; display: flex; align-items: center; gap: 1rem; }
+.tk-progress-pct   { font-size: 24px; font-weight: 800; color: var(--blue); min-width: 52px; letter-spacing: -.02em; }
+.tk-progress-right { flex: 1; }
+.tk-progress-sub   { font-size: 12.5px; color: var(--muted); margin-top: .3rem; font-weight: 500; }
+.tk-progress-track { height: 8px; background: #dbeafe; border-radius: 99px; overflow: hidden; margin-bottom: .3rem; }
+.tk-progress-fill  { height: 100%; background: var(--blue); border-radius: 99px; transition: width .6s ease; }
+
+.tk-checklist { display: flex; flex-direction: column; gap: .45rem; }
+.tk-check-item { display: flex; align-items: center; gap: .7rem; padding: .65rem .85rem; border: 1.5px solid var(--border); border-radius: 8px; transition: border-color .15s, background .15s; }
+.tk-check-item:hover { border-color: #93c5fd; background: var(--blue-lt); }
+.tk-check-item input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue); flex-shrink: 0; }
+.tk-check-text { flex: 1; font-size: 13.5px; color: var(--text); font-weight: 500; }
+.tk-check-text.done { text-decoration: line-through; color: var(--soft); }
+.tk-check-del { width: 22px; height: 22px; border: none; background: transparent; color: var(--soft); cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: color .15s, background .15s; flex-shrink: 0; }
+.tk-check-del:hover { color: var(--red); background: var(--red-lt); }
+.tk-check-add { display: flex; gap: .5rem; margin-top: .4rem; }
+.tk-check-add input { flex: 1; padding: .6rem .85rem; border: 1.5px dashed var(--border-2); border-radius: 8px; font-family: 'Geist', sans-serif; font-size: 13.5px; color: var(--text); outline: none; background: var(--bg); transition: border-color .15s, background .15s; }
+.tk-check-add input:focus { border-color: var(--blue); background: var(--white); border-style: solid; }
+.tk-check-add button { padding: .6rem 1.1rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.tk-check-add button:hover { background: #1d4ed8; }
+
+.tk-subtask-list { display: flex; flex-direction: column; gap: .45rem; }
+.tk-subtask-item { display: flex; align-items: center; gap: .7rem; padding: .6rem .85rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg); transition: border-color .15s; }
+.tk-subtask-item:hover { border-color: #93c5fd; }
+.tk-subtask-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
+.tk-subtask-text { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
+.tk-subtask-text.done { text-decoration: line-through; color: var(--soft); }
+
+.tk-comments { display: flex; flex-direction: column; gap: .85rem; }
+.tk-comment  { display: flex; gap: .85rem; }
+.tk-comment-av { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tk-comment-body { flex: 1; }
+.tk-comment-meta { display: flex; align-items: center; gap: .45rem; margin-bottom: .35rem; }
+.tk-comment-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.tk-comment-time { font-size: 11.5px; color: var(--soft); }
+.tk-comment-text { font-size: 13px; color: var(--muted); line-height: 1.55; font-weight: 500; background: var(--bg); padding: .65rem .9rem; border-radius: 8px; border: 1px solid var(--border); }
+.tk-comment-input-row { display: flex; gap: .55rem; align-items: flex-start; margin-top: .3rem; }
+.tk-comment-input-av { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.tk-comment-input { flex: 1; padding: .65rem .9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Geist', sans-serif; font-size: 13.5px; color: var(--text); outline: none; resize: none; transition: border-color .15s, box-shadow .15s; }
+.tk-comment-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.tk-comment-post { padding: .6rem 1.1rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.tk-comment-post:hover { background: #1d4ed8; }
+
+.tk-detail-footer { padding: 1.1rem 1.5rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; bottom: 0; background: var(--white); }
+.tk-btn-delete { font-size: 12.5px; font-weight: 600; color: var(--red); background: transparent; border: 1.5px solid var(--border); border-radius: 7px; padding: .5rem 1rem; cursor: pointer; display: flex; align-items: center; gap: .4rem; transition: background .15s, border-color .15s; }
+.tk-btn-delete:hover { background: var(--red-lt); border-color: var(--red); }
+.tk-btn-save { font-size: 13px; font-weight: 700; color: #fff; background: var(--blue); border: none; border-radius: 7px; padding: .5rem 1.2rem; cursor: pointer; transition: background .15s; }
+.tk-btn-save:hover { background: #1d4ed8; }
+
+.tk-create-modal { background: var(--white); border-radius: 16px; width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); animation: modalIn .25s ease both; }
+.tk-create-head { padding: 1.3rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.tk-create-title { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+.tk-create-body  { padding: 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.tk-create-footer { padding: 1.1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: .65rem; }
+.tk-btn-cancel { padding: .55rem 1.1rem; border: 1.5px solid var(--border); border-radius: 7px; background: var(--white); font-family: 'Geist', sans-serif; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; }
+.tk-btn-cancel:hover { background: var(--bg); }
+
+/* ── Soft tinted column backgrounds ── */
+.tk-col.col-gray   { background: #f8f9fb; }
+.tk-col.col-blue   { background: #f4f7ff; }
+.tk-col.col-green  { background: #f3faf5; }
+.tk-col.col-yellow { background: #fdf8ee; }
+.tk-col.col-red    { background: #fdf4f4; }
+
+.tk-col.col-gray   .tk-cards { background: #f8f9fb; }
+.tk-col.col-blue   .tk-cards { background: #f4f7ff; }
+.tk-col.col-green  .tk-cards { background: #f3faf5; }
+.tk-col.col-yellow .tk-cards { background: #fdf8ee; }
+.tk-col.col-red    .tk-cards { background: #fdf4f4; }
+
+.tk-col.col-gray   .tk-col-head,
+.tk-col.col-blue   .tk-col-head,
+.tk-col.col-green  .tk-col-head,
+.tk-col.col-yellow .tk-col-head,
+.tk-col.col-red    .tk-col-head { background: inherit; }
+
+.tk-col .tk-card { background: #ffffff; }
+
+.av-blue{background:#2563eb}.av-teal{background:#0d9488}.av-amber{background:#d97706}
+.av-red{background:#dc2626}.av-purple{background:#7c3aed}.av-green{background:#16a34a}
+.av-pink{background:#db2777}.av-indigo{background:#4f46e5}
+</style>
+
+{{-- ── PAGE BODY ── --}}
+<div class="tk-page-body">
+
+    {{-- Page title row --}}
+    <div class="tk-page-header">
+        <div>
+            <h1 class="tk-page-title">Tasks</h1>
+            <p class="tk-page-sub">Drag cards between columns · Click a card to open detail</p>
+        </div>
+        <button class="tk-new-btn" onclick="document.getElementById('createTaskModal').style.display='flex'">
+            + New Task
+        </button>
+    </div>
+
+    {{-- Filter tabs --}}
+    <div class="tk-filter-tabs" id="filterTabs">
+        <button class="tk-filter-tab active" onclick="filterCards('all', this)">All</button>
+        @foreach($board->columns ?? [] as $col)
+            <button class="tk-filter-tab" onclick="filterCards('{{ $col->id }}', this)">{{ $col->title }}</button>
+        @endforeach
+    </div>
+
+    {{-- Board --}}
+    <div class="tk-board" id="boardContainer">
+
+        @if($board)
+            @foreach($board->columns as $column)
+           @php
+                $colDotColor = match($column->color ?? 'gray') {
+                    'blue'   => '#3b82f6',
+                    'green'  => '#22c55e',
+                    'yellow' => '#f59e0b',
+                    'red'    => '#ef4444',
+                    default  => '#94a3b8',
+                };
+                $colClass = 'col-' . ($column->color ?? 'gray');
+            @endphp
+
+            <div class="tk-col {{ $colClass }}" id="col-wrapper-{{ $column->id }}" data-col-id="{{ $column->id }}">
+
+                {{-- Column header (plain white, dot color indicator like inspo) --}}
+                <div class="tk-col-head">
+                    <div class="tk-col-title-row">
+                        <div class="tk-col-dot" style="background:{{ $colDotColor }}"></div>
+                        <span class="tk-col-name">{{ $column->title }}</span>
+                        <span class="tk-col-count column-count">{{ $column->tasks->count() }}</span>
+                    </div>
+                    <div class="tk-col-actions">
+                        <button class="tk-col-action" title="Add task" onclick="openCreate({{ $column->id }})">+</button>
+                        <button class="tk-col-action" title="Delete column"
+                            onclick="if(confirm('Delete this list?')) document.getElementById('del-col-{{ $column->id }}').submit()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+                        </button>
+                        <form id="del-col-{{ $column->id }}" action="{{ route('columns.destroy', $column->id) }}" method="POST" class="hidden">@csrf @method('DELETE')</form>
+                    </div>
+                </div>
+
+                {{-- Cards --}}
+                <div class="tk-cards sortable-column" id="column-{{ $column->id }}" data-column-id="{{ $column->id }}">
+                    @foreach($column->tasks as $task)
+                    @php
+                        $total     = $task->checklistItems->count();
+                        $done      = $task->checklistItems->where('is_completed', true)->count();
+                        $pct       = $total > 0 ? round(($done / $total) * 100) : 0;
+                        $progColor = $pct == 100 ? 'green' : 'blue';
+                        $avColors  = ['av-blue','av-teal','av-amber','av-red','av-purple','av-green','av-pink','av-indigo'];
+                        $avClass   = $avColors[($task->assigned_to ?? 0) % 8];
+                    @endphp
+
+                    <div class="tk-card {{ $task->is_completed ? 'is-completed' : '' }}"
+                         data-task-id="{{ $task->id }}"
+                         data-col-id="{{ $column->id }}"
+                         onclick="openDetail({{ $task->id }})">
+
+                        @if($task->tag ?? null)
+                        <div class="tk-card-tag" style="background:#eff6ff;color:#2563eb">
+                            <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>
+                            {{ $task->tag }}
+                        </div>
+                        @endif
+
+                        <div class="tk-card-title">{{ $task->title }}</div>
+
+                        @if($task->description)
+                        <div class="tk-card-desc">{{ $task->description }}</div>
+                        @endif
+
+                        @if($total > 0)
+                        <div class="tk-card-prog">
+                            <div class="tk-card-prog-row">
+                                <span class="tk-card-prog-label">Progress</span>
+                                <span class="tk-card-prog-val">{{ $done }}/{{ $total }}</span>
                             </div>
-                            
-                            {{-- TASKS AREA --}}
-                            <div id="column-{{ $column->id }}" data-column-id="{{ $column->id }}" class="sortable-column space-y-5 overflow-y-auto flex-1 p-5 pr-4 min-h-[120px]">
-                                @foreach($column->tasks as $task)
-                                    <div data-task-id="{{ $task->id }}" 
-                                         @click="editTask = {{ $task->load(['checklistItems', 'members', 'activities.user'])->toJson() }}; isEditModalOpen = true"
-                                         class="task-card p-6 rounded-2xl shadow-sm border transition-all cursor-grab active:cursor-grabbing min-h-[140px] flex flex-col group relative 
-                                         {{ $task->is_completed ? 'bg-green-50/50 border-green-200 opacity-80' : 'bg-white border-gray-200 hover:border-blue-400' }}">
-                                        
-                                        <div class="mb-4 flex items-center justify-between">
-                                            <div class="flex flex-wrap gap-2 items-center">
-                                                {{-- Priority Badge --}}
-                                                @php
-                                                    $priorityColor = match($task->priority) {
-                                                        'high' => 'bg-red-50 text-red-700 border-red-100',
-                                                        'medium' => 'bg-yellow-50 text-yellow-700 border-yellow-100',
-                                                        default => 'bg-green-50 text-green-700 border-green-100',
-                                                    };
-                                                @endphp
-                                                <span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-md border {{ $priorityColor }}">
-                                                    {{ $task->priority }}
-                                                </span>
-                                                
-                                                {{-- Date Range Badge --}}
-                                                @if($task->due_date)
-                                                    <span class="text-[9px] font-bold text-gray-400 flex items-center bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                                        
-                                                        @if($task->start_date)
-                                                            {{ \Carbon\Carbon::parse($task->start_date)->format('M d') }} - 
-                                                        @endif
-                                                        {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
-                                                    </span>
-                                                @endif
-
-                                                {{-- TASK COMPLETED BADGE --}}
-                                                @if($task->is_completed)
-                                                    <span class="bg-green-100 text-green-700 text-[9px] font-black uppercase px-2 py-1 rounded-md border border-green-200 flex items-center shadow-sm">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                                                        Task Completed
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-
-                                        <h4 class="font-extrabold text-base text-gray-900 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{{ $task->title }}</h4>
-                                        <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed flex-1">{{ $task->description }}</p>
-                                        
-                                        {{-- Checklist Badge --}}
-                                        @if($task->checklistItems->count() > 0)
-                                            <div class="mt-3 flex items-center text-[10px] font-bold text-gray-400">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                                {{ $task->checklistItems->where('is_completed', true)->count() }}/{{ $task->checklistItems->count() }} Items
-                                            </div>
-                                        @endif
-
-                                        {{-- CARD FOOTER --}}
-                                        <div class="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between">
-                                            <div class="flex flex-col">
-                                                <span class="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Lead</span>
-                                                <span class="text-[11px] font-bold text-gray-900 truncate max-w-[100px]">
-                                                    {{ $task->assignee->name ?? 'Unassigned' }}
-                                                </span>
-                                            </div>
-
-                                            <div class="flex -space-x-2 overflow-hidden">
-                                                @foreach($task->members as $member)
-                                                    <div class="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-blue-500 flex items-center justify-center shadow-sm" title="{{ $member->name }}">
-                                                        <span class="text-[10px] font-black text-white uppercase">{{ substr($member->name, 0, 1) }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-
-                            <div class="p-4 bg-gray-100 border-t border-gray-200/50">
-                                <button @click="isModalOpen = true; activeColumnId = {{ $column->id }}" type="button" class="w-full py-3 text-xs font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition shadow-sm">+ Add Task</button>
+                            <div class="tk-prog-track">
+                                <div class="tk-prog-fill {{ $progColor }}" style="width:{{ $pct }}%"></div>
                             </div>
                         </div>
+                        @endif
+
+                        @if($task->is_completed)
+                        <div class="tk-complete-badge">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                            Completed
+                        </div>
+                        @endif
+
+                        <div class="tk-card-footer">
+                            <div class="tk-card-meta">
+                                @if($task->due_date)
+                                <span class="tk-card-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
+                                </span>
+                                @endif
+                                <span class="tk-priority {{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
+                            </div>
+                            @if($task->assignee)
+                            <div class="tk-card-assignee {{ $avClass }}" title="{{ $task->assignee->name }}">
+                                {{ strtoupper(substr($task->assignee->name, 0, 1)) }}
+                            </div>
+                            @endif
+                        </div>
+                    </div>
                     @endforeach
-                @endif
+                </div>
+
+                <button class="tk-add-task-btn" onclick="openCreate({{ $column->id }})">+ Add Task</button>
             </div>
+            @endforeach
+        @endif
+
+        <div class="tk-col-add" onclick="document.getElementById('addColumnModal').style.display='flex'">
+            <div class="tk-col-add-icon">+</div>
+            <div class="tk-col-add-label">Add Column</div>
         </div>
 
-        {{-- --- MODALS --- --}}
-        
-        {{-- CREATE TASK MODAL --}}
-        <div x-show="isModalOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div x-show="isModalOpen" class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity" @click="isModalOpen = false"></div>
-                <div x-show="isModalOpen" class="bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-lg sm:w-full z-[110]">
-                    <form action="/tasks" method="POST" class="p-8">
-                        @csrf
-                        <input type="hidden" name="board_column_id" :value="activeColumnId">
-                        <h3 class="text-2xl font-black text-gray-900 mb-8">New Task</h3>
-                        <div class="space-y-6">
-                            <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Title</label><input type="text" name="title" required class="w-full border-gray-200 rounded-xl py-3 px-4 shadow-sm"></div>
-                            <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Description</label><textarea name="description" rows="4" class="w-full border-gray-200 rounded-xl py-3 px-4 shadow-sm"></textarea></div>
-                            <div class="grid grid-cols-2 gap-6">
-                                <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Assign To</label>
-                                    <select name="assigned_to" class="w-full border-gray-200 rounded-xl py-3 px-3 shadow-sm">
-                                        <option value="">Unassigned</option>
-                                        @foreach($users as $user) <option value="{{ $user->id }}">{{ $user->name }}</option> @endforeach
-                                    </select>
-                                </div>
-                                <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Priority</label>
-                                    <select name="priority" class="w-full border-gray-200 rounded-xl py-3 px-3 shadow-sm">
-                                        <option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-10 flex justify-end items-center space-x-4"><button type="button" @click="isModalOpen = false" class="text-sm font-bold text-gray-400">Cancel</button><button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-black uppercase hover:bg-blue-700 shadow-lg transition">Create Task</button></div>
-                    </form>
+    </div>{{-- /.tk-board --}}
+</div>{{-- /.tk-page-body --}}
+
+{{-- TASK DETAIL MODAL --}}
+<div class="tk-modal-overlay" id="detailModal">
+<div class="tk-detail">
+    <div class="tk-detail-head">
+        <div class="tk-detail-head-top">
+            <div class="tk-detail-title" id="dt-title">Loading…</div>
+            <button class="tk-detail-close" onclick="closeDetail()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="tk-detail-tags" id="dt-tags"></div>
+    </div>
+    <div class="tk-detail-body">
+        <form id="detailForm" method="POST">
+            @csrf @method('PUT')
+            <div class="tk-fields" style="margin-bottom:.2rem">
+                <div><div class="tk-field-label">Status</div>
+                    <select name="board_column_id" class="tk-field-select" id="dt-status">
+                        @foreach($board->columns ?? [] as $col)<option value="{{ $col->id }}">{{ $col->title }}</option>@endforeach
+                    </select></div>
+                <div><div class="tk-field-label">Priority</div>
+                    <select name="priority" class="tk-field-select" id="dt-priority">
+                        <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+                    </select></div>
+                <div><div class="tk-field-label">Assignee</div>
+                    <select name="assigned_to" class="tk-field-select" id="dt-assignee">
+                        <option value="">Unassigned</option>
+                        @foreach($users as $user)<option value="{{ $user->id }}">{{ $user->name }}</option>@endforeach
+                    </select></div>
+                <div><div class="tk-field-label">Due Date</div>
+                    <input type="date" name="due_date" class="tk-field-input" id="dt-duedate"></div>
+            </div>
+            <div style="margin-top:.75rem">
+                <div class="tk-field-label" style="margin-bottom:.45rem;display:flex;align-items:center;gap:.35rem">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Description
+                </div>
+                <textarea name="description" class="tk-field-textarea" id="dt-desc" placeholder="Add a description…"></textarea>
+            </div>
+        </form>
+
+        <div id="dt-prog-section" style="display:none">
+            <div class="tk-section-head">
+                <div class="tk-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Progress</div>
+                <span style="font-size:12px;color:var(--soft);font-weight:500">auto-tracked from checklist</span>
+            </div>
+            <div class="tk-progress-block">
+                <div class="tk-progress-pct" id="dt-pct">0%</div>
+                <div class="tk-progress-right">
+                    <div class="tk-progress-track"><div class="tk-progress-fill" id="dt-prog-fill" style="width:0%"></div></div>
+                    <div class="tk-progress-sub" id="dt-prog-sub">0 of 0 checklist items done</div>
                 </div>
             </div>
         </div>
 
-{{-- EDIT TASK MODAL (TRELLO-STYLE SIDEBAR LAYOUT) --}}
-<div x-show="isEditModalOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div x-show="isEditModalOpen" class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity" @click="isEditModalOpen = false"></div>
-        
-        {{-- Main Modal Container with Max Height --}}
-        <div x-show="isEditModalOpen" 
-             class="bg-white rounded-3xl text-left shadow-2xl transform transition-all sm:max-w-6xl sm:w-full z-[110] overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <form x-bind:action="`/tasks/${editTask.id}`" method="POST" class="flex flex-col flex-1 min-h-0">
-                @csrf @method('PUT')
-                <input type="hidden" name="is_completed" :value="editTask.is_completed ? 1 : 0">
-                
-                {{-- SCROLLABLE BODY SECTION --}}
-                <div class="flex flex-1 min-h-0 overflow-hidden">
-                    
-                    {{-- LEFT SIDE: MAIN CONTENT (Scrollable) --}}
-                    <div class="flex-1 p-10 overflow-y-auto space-y-8 custom-scrollbar">
-                        {{-- Header & Completion Toggle --}}
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-2xl font-black text-gray-900" x-text="editTask.title || 'Task Details'"></h3>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest">In List: <span class="text-blue-500" x-text="editTask.column ? editTask.column.title : ''"></span></p>
-                            </div>
-                            <button type="button" 
-                                    @click="
-                                        editTask.is_completed = !editTask.is_completed;
-                                        fetch(`/tasks/${editTask.id}/toggle-complete`, {
-                                            method: 'PATCH',
-                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                        });
-                                    "
-                                    :class="editTask.is_completed ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'"
-                                    class="flex items-center px-4 py-2 rounded-xl transition-all duration-300 shadow-sm">
-                                <span class="text-[10px] font-black uppercase tracking-widest" x-text="editTask.is_completed ? '✓ Completed' : 'Mark as Complete'"></span>
-                            </button>
-                        </div>
+        <div>
+            <div class="tk-section-head">
+                <div class="tk-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Checklist</div>
+                <span class="tk-section-badge" id="dt-check-badge">0/0</span>
+            </div>
+            <div class="tk-checklist" id="dt-checklist"></div>
+            <div class="tk-check-add" style="margin-top:.5rem">
+                <input type="text" id="checkInput" placeholder="Add checklist item…">
+                <button onclick="addCheckItem()">Add</button>
+            </div>
+        </div>
 
-                        {{-- Title & Description --}}
-                        <div>
-                            <label class="text-xs font-black text-gray-400 uppercase mb-3 block flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" /></svg>
-                                Description
-                            </label>
-                            <input type="text" name="title" x-model="editTask.title" placeholder="Task Title" class="w-full border-gray-200 rounded-xl py-3 px-4 mb-4 font-bold focus:ring-blue-500 shadow-sm">
-                            <textarea name="description" x-model="editTask.description" rows="4" placeholder="Add a more detailed description..." class="w-full border-gray-200 rounded-xl py-3 px-4 shadow-sm focus:ring-blue-500 text-sm"></textarea>
-                        </div>
+        <div>
+            <div class="tk-section-head">
+                <div class="tk-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Subtasks</div>
+                <span class="tk-section-badge" id="dt-subtask-badge">0</span>
+            </div>
+            <div class="tk-subtask-list" id="dt-subtasks"></div>
+            <div class="tk-check-add" style="margin-top:.5rem">
+                <input type="text" id="subtaskInput" placeholder="Add a subtask…">
+                <button onclick="addSubtask()">Add</button>
+            </div>
+        </div>
 
-                        {{-- Checklist --}}
-                        <div class="pt-4">
-                            <h4 class="text-sm font-black text-gray-900 flex items-center mb-4">
-                                <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                                Checklist
-                            </h4>
-                            
-                            <template x-if="editTask.checklist_items && editTask.checklist_items.length > 0">
-                                <div class="flex items-center space-x-3 mb-6">
-                                    <span class="text-[10px] font-black text-gray-400 w-8" x-text="Math.round((editTask.checklist_items.filter(i => i.is_completed).length / editTask.checklist_items.length) * 100) + '%'"></span>
-                                    <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div class="h-full bg-green-500 transition-all duration-500" :style="'width: ' + (Math.round((editTask.checklist_items.filter(i => i.is_completed).length / editTask.checklist_items.length) * 100)) + '%'"></div>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div class="space-y-3">
-                                <template x-for="item in editTask.checklist_items" :key="item.id">
-                                    <div class="flex items-center justify-between group bg-gray-50 p-3 rounded-xl border border-transparent hover:border-gray-200 transition-all">
-                                        <div class="flex items-center flex-1">
-                                            <input type="checkbox" :checked="item.is_completed" @change="item.is_completed = $el.checked; fetch(`/checklist-items/${item.id}/toggle`, { method: 'PATCH', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' } });" class="rounded text-blue-600 focus:ring-blue-500 mr-3 border-gray-300 shadow-sm">
-                                            <span :class="item.is_completed ? 'line-through text-gray-400' : 'text-gray-700'" class="text-sm font-medium" x-text="item.title"></span>
-                                        </div>
-                                        <button type="button" @click="if(confirm('Delete?')) { fetch(`/checklist-items/${item.id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }).then(() => { editTask.checklist_items = editTask.checklist_items.filter(i => i.id !== item.id); }); }" class="text-gray-300 hover:text-red-500 transition-colors p-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                        </button>
-                                    </div>
-                                </template>
-                                <input type="text" placeholder="Add an item..." class="w-full text-sm border-dashed border-2 border-gray-200 rounded-xl px-4 py-3 mt-2 focus:border-blue-500 focus:ring-0 transition-all"
-                                       @keydown.enter.prevent="if ($el.value.trim() === '') return; fetch(`/tasks/${editTask.id}/checklist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }, body: JSON.stringify({ title: $el.value }) }).then(res => res.json()).then(newItem => { if (!editTask.checklist_items) editTask.checklist_items = []; editTask.checklist_items.push(newItem); $el.value = ''; })">
-                            </div>
-                        </div>
-                    </div>
-                    {{-- RIGHT SIDEBAR: SETTINGS & ACTIVITY (Scrollable) --}}
-                        <div class="w-80 bg-gray-50 border-l border-gray-100 p-8 overflow-y-auto flex flex-col space-y-6">
-                            {{-- Lead Assignee --}}
-                            <div>
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Lead Assignee</label>
-                                <select name="assigned_to" x-model="editTask.assigned_to" class="w-full border-gray-200 rounded-xl py-2 px-3 text-sm focus:ring-blue-500 shadow-sm">
-                                    <option value="">Unassigned</option>
-                                    @foreach($users as $user) <option value="{{ $user->id }}">{{ $user->name }}</option> @endforeach
-                                </select>
-                            </div>
-
-                            {{-- Start Date Section --}}
-                            <div x-data="{ showStartDate: false }" 
-                                x-init="$watch('isEditModalOpen', value => { if(value && editTask.start_date) showStartDate = true; else if(value) showStartDate = false; })">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Start Date</label>
-                                    <button type="button" @click="showStartDate = !showStartDate; if(!showStartDate) editTask.start_date = null" class="text-[10px] font-bold text-blue-600 hover:text-blue-800">
-                                        <span x-text="showStartDate ? '- Remove' : '+ Add Start Date'"></span>
-                                    </button>
-                                </div>
-                                <div x-show="showStartDate" x-transition class="mt-1">
-                                    <input type="date" name="start_date" x-model="editTask.start_date" class="w-full border-gray-200 rounded-xl py-2 px-3 text-sm focus:ring-blue-500 shadow-sm">
-                                </div>
-                            </div>
-
-                            {{-- Due Date --}}
-                            <div>
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Due Date</label>
-                                <input type="date" name="due_date" x-model="editTask.due_date" class="w-full border-gray-200 rounded-xl py-2 px-3 text-sm focus:ring-blue-500 shadow-sm">
-                            </div>
-
-                            {{-- Priority --}}
-                            <div>
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Priority</label>
-                                <select name="priority" x-model="editTask.priority" class="w-full border-gray-200 rounded-xl py-2 px-3 text-sm focus:ring-blue-500 shadow-sm">
-                                    <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-                                </select>
-                            </div>
-
-                            {{-- Collaborators --}}
-                            <div>
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Collaborators</label>
-                                <div class="space-y-1 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                                    @foreach($users as $user)
-                                        <label class="flex items-center space-x-2 cursor-pointer group py-1">
-                                            <input type="checkbox" value="{{ $user->id }}"
-                                                :checked="editTask.members && editTask.members.some(m => m.id === {{ $user->id }})"
-                                                @change="toggleMember({{ $user->id }}, editTask.id); if ($el.checked) { editTask.members.push({id: {{ $user->id }}, name: '{{ $user->name }}'}); } else { editTask.members = editTask.members.filter(m => m.id !== {{ $user->id }}); }"
-                                                class="rounded-sm text-blue-600 focus:ring-0 border-gray-300 w-3 h-3">
-                                            <span class="text-[11px] font-bold text-gray-500 group-hover:text-gray-900 transition-colors">{{ $user->name }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            {{-- ACTIVITY FEED SUMMARY --}}
-                            <div class="mt-4 pt-6 border-t border-gray-200">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity</h4>
-                                    <button type="button" @click="isHistoryOpen = true" class="text-[10px] font-bold text-blue-600 hover:text-blue-800">View History</button>
-                                </div>
-                                <div class="space-y-3">
-                                    <template x-for="activity in editTask.activities ? editTask.activities.slice(0, 2) : []" :key="activity.id">
-                                        <div class="flex items-start space-x-2">
-                                            <div :class="activity.user.avatar_color || 'bg-gray-400'" class="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-black text-white uppercase shadow-sm">
-                                                <span x-text="activity.user.name.substring(0,1)"></span>
-                                            </div>
-                                            <p class="text-[10px] leading-tight text-gray-600 truncate">
-                                                <span class="font-bold text-gray-900" x-text="activity.user.name"></span>
-                                                <span x-text="activity.description"></span>
-                                            </p>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </div> {{-- END RIGHT SIDEBAR --}}
-                    </div> {{-- END FLEX BODY --}}
-
-                    {{-- FIXED FOOTER: NEATLY PINNED AT THE BOTTOM --}}
-                    <div class="p-6 border-t border-gray-100 bg-white flex justify-between items-center bg-gray-50/30">
-                        <button type="button" @click="if(confirm('Delete this task?')) document.getElementById('delete-form-' + editTask.id).submit();" 
-                                class="text-[10px] font-black text-red-500 uppercase hover:text-red-700 transition-colors">
-                            Delete Task
-                        </button>
-                        
-                        <div class="flex items-center space-x-4">
-                            <button type="button" @click="isEditModalOpen = false" class="text-sm font-bold text-gray-400 hover:text-gray-600">Cancel</button>
-                            <button type="submit" class="bg-blue-600 text-white px-10 py-3 rounded-2xl text-xs font-black uppercase hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </form>
-                <form x-bind:id="'delete-form-' + editTask.id" x-bind:action="`/tasks/${editTask.id}`" method="POST" class="hidden">@csrf @method('DELETE')</form>
+        <div>
+            <div class="tk-section-head">
+                <div class="tk-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Comments</div>
+                <span class="tk-section-badge" id="dt-comment-count">0</span>
+            </div>
+            <div class="tk-comments" id="dt-comments"></div>
+            <div class="tk-comment-input-row" style="margin-top:.5rem">
+                <div class="tk-comment-input-av">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
+                <textarea class="tk-comment-input" id="commentInput" rows="2" placeholder="Write a comment… (Enter to post)"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postComment();}"></textarea>
+                <button class="tk-comment-post" onclick="postComment()">Post</button>
             </div>
         </div>
     </div>
 
-        {{-- 3. FULL HISTORY POP-UP (Standalone Modal) --}}
-        <div x-show="isHistoryOpen" 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             style="display: none;" 
-             class="fixed inset-0 z-[150] overflow-y-auto">
-            
-            <div class="flex items-center justify-center min-h-screen p-4">
-                {{-- Glass Backdrop --}}
-                <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="isHistoryOpen = false"></div>
-
-                <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md z-[160] overflow-hidden relative transform transition-all"
-                     x-show="isHistoryOpen"
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100">
-                    
-                    {{-- Header --}}
-                    <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <div>
-                            <h3 class="text-xl font-black text-gray-900 tracking-tight">Activity Log</h3>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1" x-text="editTask.title"></p>
-                        </div>
-                        <button type="button" @click="isHistoryOpen = false" class="bg-white p-2 rounded-full shadow-sm border border-gray-100 text-gray-400 hover:text-gray-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                    </div>
-
-                    {{-- Scrollable List --}}
-                    <div class="p-8 max-h-[50vh] overflow-y-auto space-y-6 scrollbar-hide">
-                        <template x-for="activity in editTask.activities" :key="activity.id">
-                            <div class="flex items-start space-x-4 group">
-                                <div :class="activity.user.avatar_color || 'bg-blue-500'" class="w-9 h-9 rounded-2xl flex-shrink-0 flex items-center justify-center text-xs font-black text-white uppercase shadow-md transition-transform group-hover:scale-110">
-                                    <span x-text="activity.user.name.substring(0,1)"></span>
-                                </div>
-                                <div class="flex-1 border-b border-gray-50 pb-4">
-                                    <p class="text-sm text-gray-700 leading-snug">
-                                        <span class="font-black text-gray-900" x-text="activity.user.name"></span>
-                                        <span class="text-gray-500 ml-1" x-text="activity.description"></span>
-                                    </p>
-                                    <div class="flex items-center mt-2 space-x-2">
-                                        <svg class="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <p class="text-[10px] text-gray-400 font-bold tracking-wide" x-text="new Date(activity.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                    
-                    <div class="p-6 bg-gray-50 flex justify-center">
-                        <button type="button" @click="isHistoryOpen = false" class="bg-white px-8 py-3 rounded-2xl shadow-sm border border-gray-200 text-xs font-black uppercase text-gray-500 hover:text-blue-600 transition-all">Close History</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {{-- EDIT LIST MODAL --}}
-        <div x-show="isEditListModalOpen" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div x-show="isEditListModalOpen" class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity" @click="isEditListModalOpen = false"></div>
-                <div x-show="isEditListModalOpen" class="bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:max-w-2xl sm:w-full z-[110]">
-                    <form x-bind:action="`/columns/${editList.id}`" method="POST" class="p-8">
-                        @csrf @method('PUT')
-                        <h3 class="text-2xl font-black text-gray-900 mb-8">Edit List</h3>
-                        <div class="space-y-6">
-                            <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Title</label><input type="text" name="title" x-model="editList.title" required class="w-full border-gray-200 rounded-xl py-3 px-4 shadow-sm"></div>
-                            <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Description</label><textarea name="description" x-model="editList.description" rows="3" class="w-full border-gray-200 rounded-xl py-3 px-4 shadow-sm"></textarea></div>
-                            <div><label class="text-xs font-black text-gray-400 uppercase mb-2 block">Header Color</label>
-                                <div class="grid grid-cols-5 gap-2">
-                                    @foreach(['gray', 'blue', 'green', 'yellow', 'red'] as $c)
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="color" value="{{ $c }}" class="hidden" x-model="editList.color">
-                                            <div :class="editList.color === '{{ $c }}' ? 'ring-2 ring-offset-2 ring-black' : ''" class="w-full h-8 rounded-lg bg-{{ $c }}-400 transition shadow-inner"></div>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-10 flex justify-end items-center space-x-4"><button type="button" @click="isEditListModalOpen = false" class="text-sm font-bold text-gray-400">Cancel</button><button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-black uppercase hover:bg-blue-700 shadow-lg">Save Changes</button></div>
-                    </form>
-                </div>
-            </div>
-            
+    <div class="tk-detail-footer">
+        <button class="tk-btn-delete" id="dt-delete-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Delete
+        </button>
+        <div style="display:flex;gap:.55rem">
+            <button class="tk-btn-cancel" onclick="closeDetail()">Cancel</button>
+            <button class="tk-btn-save" onclick="saveDetail()">Save Changes</button>
         </div>
     </div>
+    <form id="dt-delete-form" method="POST" class="hidden">@csrf @method('DELETE')</form>
+</div>
+</div>
 
-    {{-- SCRIPTS --}}
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const columns = document.querySelectorAll('.sortable-column');
-            columns.forEach(column => {
-                new Sortable(column, {
-                    group: 'shared', animation: 250, ghostClass: 'bg-blue-50',
-                    onEnd: function (evt) { saveMove(evt.item.getAttribute('data-task-id'), evt.to.getAttribute('data-column-id')); },
-                });
-            });
+{{-- CREATE TASK MODAL --}}
+<div class="tk-modal-overlay" id="createTaskModal">
+<div class="tk-create-modal">
+    <div class="tk-create-head">
+        <div class="tk-create-title">New Task</div>
+        <button class="tk-detail-close" onclick="document.getElementById('createTaskModal').style.display='none'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <form action="/tasks" method="POST">
+        @csrf
+        <input type="hidden" name="board_column_id" id="create-col-id">
+        <div class="tk-create-body">
+            <div><div class="tk-field-label">Title</div><input type="text" name="title" required class="tk-field-input" placeholder="Task title…" style="width:100%"></div>
+            <div><div class="tk-field-label">Description</div><textarea name="description" class="tk-field-textarea" placeholder="Optional description…"></textarea></div>
+            <div class="tk-fields">
+                <div><div class="tk-field-label">Assign To</div>
+                    <select name="assigned_to" class="tk-field-select">
+                        <option value="">Unassigned</option>
+                        @foreach($users as $user)<option value="{{ $user->id }}">{{ $user->name }}</option>@endforeach
+                    </select></div>
+                <div><div class="tk-field-label">Priority</div>
+                    <select name="priority" class="tk-field-select">
+                        <option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option>
+                    </select></div>
+                <div><div class="tk-field-label">Due Date</div><input type="date" name="due_date" class="tk-field-input"></div>
+            </div>
+        </div>
+        <div class="tk-create-footer">
+            <button type="button" class="tk-btn-cancel" onclick="document.getElementById('createTaskModal').style.display='none'">Cancel</button>
+            <button type="submit" class="tk-btn-save">Create Task</button>
+        </div>
+    </form>
+</div>
+</div>
 
-            window.moveColumn = function(columnId, direction) {
-                const wrapper = document.getElementById(`column-wrapper-${columnId}`);
-                if (!wrapper) return;
-                if (direction === 'left' && wrapper.previousElementSibling) wrapper.parentNode.insertBefore(wrapper, wrapper.previousElementSibling);
-                else if (direction === 'right' && wrapper.nextElementSibling) wrapper.parentNode.insertBefore(wrapper.nextElementSibling, wrapper);
+{{-- ADD COLUMN MODAL --}}
+<div class="tk-modal-overlay" id="addColumnModal">
+<div class="tk-create-modal">
+    <div class="tk-create-head">
+        <div class="tk-create-title">Add Column</div>
+        <button class="tk-detail-close" onclick="document.getElementById('addColumnModal').style.display='none'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <form action="{{ route('columns.store') }}" method="POST">
+        @csrf
+        <input type="hidden" name="board_id" value="{{ $board->id ?? '' }}">
+        <div class="tk-create-body">
+            <div><div class="tk-field-label">Title</div><input type="text" name="title" required class="tk-field-input" placeholder="Column name…" style="width:100%"></div>
+            <div><div class="tk-field-label">Color</div>
+                <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem">
+                    @foreach(['gray'=>'#94a3b8','blue'=>'#3b82f6','green'=>'#22c55e','yellow'=>'#eab308','red'=>'#ef4444'] as $k=>$c)
+                    <label style="cursor:pointer"><input type="radio" name="color" value="{{ $k }}" class="hidden" {{ $k=='gray'?'checked':'' }}>
+                        <div style="width:34px;height:34px;border-radius:8px;background:{{ $c }}" onclick="this.closest('label').querySelector('input').checked=true"></div>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        <div class="tk-create-footer">
+            <button type="button" class="tk-btn-cancel" onclick="document.getElementById('addColumnModal').style.display='none'">Cancel</button>
+            <button type="submit" class="tk-btn-save">Add Column</button>
+        </div>
+    </form>
+</div>
+</div>
 
-                fetch(`/columns/${columnId}/move`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                    body: JSON.stringify({ direction: direction })
-                });
-            };
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+let currentTaskId = null, currentSubtasks = [];
 
-            function saveMove(taskId, newColumnId) {
-                fetch(`/tasks/${taskId}/move`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                    body: JSON.stringify({ board_column_id: newColumnId })
-                }).then(res => res.json()).then(data => { if(data.success) updateColumnCounts(); });
-            }
+document.querySelectorAll('.sortable-column').forEach(col => {
+    new Sortable(col, {
+        group:'shared', animation:200,
+        onEnd(evt) {
+            fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
+                method:'PATCH', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},
+                body:JSON.stringify({board_column_id: evt.to.dataset.columnId})
+            }).then(()=>updateCounts());
+        }
+    });
+});
 
-            function updateColumnCounts() {
-                document.querySelectorAll('.sortable-column').forEach(list => {
-                    const count = list.querySelectorAll('.task-card').length;
-                    const badge = list.closest('.column-wrapper').querySelector('.column-count');
-                    if(badge) badge.textContent = count;
-                });
-            }
-            
-            window.toggleMember = function(userId, taskId) {
-                fetch(`/tasks/${taskId}/members/toggle`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ user_id: userId })
-                });
-            };
-        });
-    </script>
-    
+function updateCounts() {
+    document.querySelectorAll('.sortable-column').forEach(col => {
+        const wrap = col.closest('[id^=col-wrapper-]');
+        if(wrap) wrap.querySelector('.column-count').textContent = col.querySelectorAll('.tk-card').length;
+    });
+}
+
+function filterCards(colId, btn) {
+    document.querySelectorAll('.tk-filter-tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[id^=col-wrapper-]').forEach(col => {
+        col.style.display = (colId==='all' || col.dataset.colId==colId) ? '' : 'none';
+    });
+}
+
+function openCreate(colId) {
+    document.getElementById('create-col-id').value = colId;
+    document.getElementById('createTaskModal').style.display = 'flex';
+}
+
+async function openDetail(taskId) {
+    currentTaskId = taskId; currentSubtasks = [];
+    document.getElementById('detailModal').classList.add('open');
+    const res  = await fetch(`/tasks/${taskId}/detail`, {headers:{'Accept':'application/json','X-CSRF-TOKEN':CSRF}});
+    const task = await res.json();
+    document.getElementById('dt-title').textContent = task.title;
+    document.getElementById('dt-tags').innerHTML = `
+        ${task.priority ? `<span class="tk-priority ${task.priority}">${cap(task.priority)}</span>` : ''}
+        ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
+    document.getElementById('detailForm').action  = `/tasks/${taskId}`;
+    document.getElementById('dt-desc').value      = task.description || '';
+    document.getElementById('dt-duedate').value   = task.due_date ? task.due_date.substr(0,10) : '';
+    document.getElementById('dt-priority').value  = task.priority || 'medium';
+    if(task.assigned_to)     document.getElementById('dt-assignee').value = task.assigned_to;
+    if(task.board_column_id) document.getElementById('dt-status').value   = task.board_column_id;
+    document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
+    document.getElementById('dt-delete-btn').onclick = () => { if(confirm('Delete this task?')) document.getElementById('dt-delete-form').submit(); };
+    renderChecklist(task.checklist_items || []);
+    currentSubtasks = task.subtasks || [];
+    renderSubtasks();
+    renderComments(task.activities || []);
+}
+
+function closeDetail() { document.getElementById('detailModal').classList.remove('open'); currentTaskId = null; }
+function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+
+function renderChecklist(items) {
+    const done=items.filter(i=>i.is_completed).length, total=items.length, pct=total>0?Math.round((done/total)*100):0;
+    document.getElementById('dt-check-badge').textContent=`${done}/${total}`;
+    if(total>0){
+        document.getElementById('dt-prog-section').style.display='';
+        document.getElementById('dt-pct').textContent=pct+'%';
+        document.getElementById('dt-prog-fill').style.width=pct+'%';
+        document.getElementById('dt-prog-sub').textContent=`${done} of ${total} checklist items done`;
+    } else { document.getElementById('dt-prog-section').style.display='none'; }
+    document.getElementById('dt-checklist').innerHTML=items.map(item=>`
+        <div class="tk-check-item" id="ci-${item.id}">
+            <input type="checkbox" ${item.is_completed?'checked':''} onchange="toggleCheck(${item.id})">
+            <span class="tk-check-text ${item.is_completed?'done':''}">${item.title}</span>
+            <button class="tk-check-del" onclick="deleteCheck(${item.id})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>`).join('');
+}
+
+function toggleCheck(id){ fetch(`/checklist-items/${id}/toggle`,{method:'PATCH',headers:{'X-CSRF-TOKEN':CSRF}}).then(()=>openDetail(currentTaskId)); }
+function deleteCheck(id){ if(!confirm('Remove?')) return; fetch(`/checklist-items/${id}`,{method:'DELETE',headers:{'X-CSRF-TOKEN':CSRF}}).then(()=>openDetail(currentTaskId)); }
+function addCheckItem(){
+    const input=document.getElementById('checkInput'), title=input.value.trim(); if(!title) return;
+    fetch(`/tasks/${currentTaskId}/checklist`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({title})})
+        .then(()=>{input.value='';openDetail(currentTaskId);});
+}
+
+function renderSubtasks(){
+    document.getElementById('dt-subtask-badge').textContent=currentSubtasks.length;
+    document.getElementById('dt-subtasks').innerHTML=currentSubtasks.map((s,i)=>`
+        <div class="tk-subtask-item">
+            <input type="checkbox" ${s.done?'checked':''} onchange="toggleSubtask(${i},this)">
+            <span class="tk-subtask-text ${s.done?'done':''}">${s.title}</span>
+            <button class="tk-check-del" onclick="removeSubtask(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>`).join('')||'<div style="font-size:13px;color:var(--soft);padding:.4rem 0;font-weight:500">No subtasks yet.</div>';
+}
+function addSubtask(){ const input=document.getElementById('subtaskInput'),title=input.value.trim(); if(!title) return; currentSubtasks.push({title,done:false}); input.value=''; renderSubtasks(); }
+function toggleSubtask(i,el){ currentSubtasks[i].done=el.checked; renderSubtasks(); }
+function removeSubtask(i){ currentSubtasks.splice(i,1); renderSubtasks(); }
+
+function renderComments(activities){
+    document.getElementById('dt-comment-count').textContent=activities.length;
+    document.getElementById('dt-comments').innerHTML=activities.map(a=>`
+        <div class="tk-comment">
+            <div class="tk-comment-av" style="background:${a.user?.avatar_color||'#2563eb'}">${(a.user?.name||'?').charAt(0).toUpperCase()}</div>
+            <div class="tk-comment-body">
+                <div class="tk-comment-meta"><span class="tk-comment-name">${a.user?.name||'Unknown'}</span><span class="tk-comment-time">${timeAgo(a.created_at)}</span></div>
+                <div class="tk-comment-text">${a.description||''}</div>
+            </div>
+        </div>`).join('')||'<div style="font-size:13px;color:var(--soft);font-weight:500">No comments yet.</div>';
+}
+function postComment(){ const input=document.getElementById('commentInput'); if(!input.value.trim()) return; input.value=''; openDetail(currentTaskId); }
+function timeAgo(ts){ if(!ts) return ''; const d=Math.floor((Date.now()-new Date(ts))/1000); if(d<60) return d+'s ago'; if(d<3600) return Math.floor(d/60)+'m ago'; if(d<86400) return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago'; }
+function saveDetail(){ document.getElementById('detailForm').submit(); }
+
+document.getElementById('detailModal').addEventListener('click',function(e){if(e.target===this)closeDetail();});
+document.getElementById('createTaskModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+document.getElementById('addColumnModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();document.getElementById('createTaskModal').style.display='none';document.getElementById('addColumnModal').style.display='none';}});
+</script>
+
 </x-app-layout>
