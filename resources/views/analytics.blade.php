@@ -101,6 +101,13 @@ canvas{width:100%!important;}
             <div class="an-stat-value" data-count="{{ $stats['active_members'] ?? 6 }}">0</div>
             <div class="an-stat-delta up">↑ 2 this period</div>
         </div>
+        <div class="an-stat" style="border-top:3px solid #c0354a;">
+            <div class="an-stat-label">Overdue Tasks</div>
+            <div class="an-stat-value" style="color:#c0354a;" data-count="{{ $stats['overdue'] ?? 0 }}">0</div>
+            <div class="an-stat-delta {{ ($stats['overdue'] ?? 0) > 0 ? 'down' : 'up' }}">
+                {{ ($stats['overdue'] ?? 0) > 0 ? 'Need attention' : 'All on track ✓' }}
+            </div>
+        </div>
     </div>
 
     <div class="an-charts">
@@ -138,15 +145,21 @@ canvas{width:100%!important;}
                 ];
                 $max = max(array_column($breakdown, 1));
             @endphp
-            @foreach($breakdown as [$label, $count, $color, $pct])
-            <div class="breakdown-item">
-                <div class="bd-label">{{ $label }}</div>
-                <div class="bd-track">
-                    <div class="bd-fill" data-w="{{ $max > 0 ? round(($count/$max)*100) : $pct }}" style="background:{{ $color }};width:0%"></div>
+                @php
+                    $max = $columnBreakdown->max('count') ?: 1;
+                @endphp
+                @foreach($columnBreakdown as $col)
+                <div class="breakdown-item">
+                    <div class="bd-label">{{ $col['title'] }}</div>
+                    <div class="bd-track">
+                        <div class="bd-fill"
+                            data-w="{{ $max > 0 ? round(($col['count'] / $max) * 100) : 0 }}"
+                            style="background:{{ $col['color'] }};width:0%">
+                        </div>
+                    </div>
+                    <div class="bd-count">{{ $col['count'] }}</div>
                 </div>
-                <div class="bd-count">{{ $count }}</div>
-            </div>
-            @endforeach
+                @endforeach
         </div>
     </div>
 
@@ -169,8 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Line chart
-    const labels = Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.getDate()+'/'+(d.getMonth()+1);});
-    const data   = Array.from({length:30},()=>Math.floor(Math.random()*5)+1);
+    const labels = {!! json_encode($last30->pluck('date')) !!};
+    const data   = {!! json_encode($last30->pluck('count')) !!};
     new Chart(document.getElementById('lineChart'), {
         type:'line',
         data:{ labels, datasets:[{ label:'Completed', data, borderColor:'#2d52c4', backgroundColor:'rgba(45,82,196,0.08)', tension:.4, fill:true, pointRadius:2, pointHoverRadius:5 }] },

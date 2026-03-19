@@ -64,6 +64,43 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings',  [SettingsController::class,  'index'])->name('settings.index');
     Route::get('/help',      [HelpController::class,      'index'])->name('help.index');
 
+    //Comments
+    Route::post('/tasks/{task}/comments', [TaskController::class, 'storeComment'])->name('tasks.comment');
+
+    // Calendar Events
+    Route::post('/calendar-events', [\App\Http\Controllers\CalendarController::class, 'storeEvent'])->name('calendar.store');
+    Route::delete('/calendar-events/{event}', [\App\Http\Controllers\CalendarController::class, 'destroyEvent'])->name('calendar.destroy');
+
+    // Team
+    Route::get('/team/{user}/tasks', [TeamController::class, 'memberTasks'])->name('team.tasks');
+    Route::patch('/team/{user}/role', [TeamController::class, 'updateRole'])->name('team.role');
+    
+    // Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password',  [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::delete('/settings/account',[SettingsController::class, 'deleteAccount'])->name('settings.delete');
+
+    //Notificationss
+    Route::get('/notifications', function() {
+    $notifications = \App\Models\TaskActivity::with(['user', 'task'])
+        ->whereHas('task', function($q) {
+            $q->where('assigned_to', auth()->id())
+              ->orWhereHas('members', fn($q) => $q->where('users.id', auth()->id()));
+        })
+        //->where('user_id', '!=', auth()->id())
+        ->latest()
+        ->take(10)
+        ->get();
+
+    return response()->json($notifications->map(fn($a) => [
+        'description' => $a->description,
+        'user'        => $a->user?->name,
+        'task'        => $a->task?->title,
+        'time'        => \Carbon\Carbon::parse($a->created_at)->diffForHumans(),
+        'action'      => $a->action,
+    ])->values());
+})->middleware('auth')->name('notifications');
 });
 
 require __DIR__.'/auth.php';

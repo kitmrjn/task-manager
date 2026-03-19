@@ -357,11 +357,19 @@ body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', s
                 <div class="card-title">Recent Activity</div>
             </div>
             @forelse($recentActivity ?? [] as $activity)
-                @php
-                    $type    = $activity->type ?? 'created';
-                    $iconMap = ['created' => '✦', 'moved' => '⇄', 'done' => '✓', 'assigned' => '◈'];
-                    $icon    = $iconMap[$type] ?? '·';
-                @endphp
+@php
+    $type    = $activity->type ?? 'created';
+    $iconMap = [
+        'created'     => '✦', 
+        'moved'       => '⇄', 
+        'done'        => '✓', 
+        'assigned'    => '◈',
+        'commented'   => '💬', // Added
+        'updated'     => '✎', // Added
+        'checklist'   => '📋'  // Added
+    ];
+    $icon = $iconMap[$type] ?? '·';
+@endphp
                 <div class="activity-item">
                     <div class="act-icon {{ $type }}">{{ $icon }}</div>
                     <div class="act-body">
