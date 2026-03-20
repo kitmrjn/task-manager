@@ -1,268 +1,202 @@
 <x-app-layout>
 <x-slot name="header">
-    <div class="db-header-inner">
-        <div class="db-header-left">
-            <div class="db-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
-            <div>
-                <p class="db-greeting">{{ now()->format('l, F j') }}</p>
-                <h2 class="db-title">Welcome back, {{ Auth::user()->name }}</h2>
-            </div>
+    <div class="tk-topnav">
+
+        {{-- Search --}}
+        <div class="tk-topnav-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search tasks, projects…" />
         </div>
-        <div class="db-header-right">
-            <a href="{{ route('tasks.index') }}" class="db-board-btn">View Board →</a>
+
+        {{-- Right side --}}
+        <div class="tk-topnav-right">
+
+            {{-- Mail --}}
+            <button class="tk-topnav-icon" title="Messages">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </button>
+
+            {{-- Notifications --}}
+            <div class="tk-dropdown-wrap">
+                <button class="tk-topnav-icon" id="notif-btn" title="Notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </button>
+                <div class="tk-dropdown" id="notif-dropdown">
+                    <div class="tk-dropdown-header">
+                        <span class="tk-dropdown-title">Notifications</span>
+                    </div>
+                    <div class="tk-dropdown-body">
+                        <div class="tk-notif-item">
+                            <div class="tk-notif-icon ni-blue">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <div class="tk-notif-content">
+                                <div class="tk-notif-text"><strong>Task completed</strong> — "Design review" was marked done</div>
+                                <div class="tk-notif-time">2 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="tk-notif-item">
+                            <div class="tk-notif-icon ni-amber">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                            </div>
+                            <div class="tk-notif-content">
+                                <div class="tk-notif-text"><strong>Assigned to you</strong> — "API integration sprint"</div>
+                                <div class="tk-notif-time">1 hour ago</div>
+                            </div>
+                        </div>
+                        <div class="tk-notif-item">
+                            <div class="tk-notif-icon ni-red">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                            <div class="tk-notif-content">
+                                <div class="tk-notif-text"><strong>Overdue</strong> — "Client presentation" is past due</div>
+                                <div class="tk-notif-time">Yesterday</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Divider --}}
+            <div class="tk-topnav-divider"></div>
+
+            {{-- Profile Dropdown --}}
+            <div class="tk-dropdown-wrap">
+                <button class="tk-topnav-user" id="profile-btn">
+                    <div class="tk-topnav-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                    <div class="tk-topnav-userinfo">
+                        <span class="tk-topnav-username">{{ Auth::user()->name }}</span>
+                        <span class="tk-topnav-email">{{ Auth::user()->email }}</span>
+                    </div>
+                    <svg class="tk-chevron" id="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="tk-dropdown tk-profile-dropdown" id="profile-dropdown">
+                    <div class="tk-dropdown-header tk-profile-header">
+                        <div class="tk-profile-avatar-lg">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                        <div>
+                            <div class="tk-dropdown-title">{{ Auth::user()->name }}</div>
+                            <div class="tk-profile-meta">{{ Auth::user()->email }}</div>
+                        </div>
+                    </div>
+                    <div class="tk-dropdown-body" style="padding:.4rem 0;">
+                        <a href="{{ route('profile.edit') }}" class="tk-profile-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                            My Profile
+                        </a>
+                        <a href="#" class="tk-profile-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            Settings
+                        </a>
+                        <div class="tk-profile-divider"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="tk-profile-item tk-profile-item--danger">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </x-slot>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Epilogue:wght@300;400;500;600&display=swap');
+{{-- ── Inject dashboard-specific CSS & JS via Vite ── --}}
+@push('styles')
+    @vite('resources/css/dashboard.css')
+@endpush
 
-:root {
-    --c-bg:       #f4f5f7;
-    --c-white:    #ffffff;
-    --c-surface:  #fafbfc;
-    --c-border:   #e2e5eb;
-    --c-border-2: #d0d4dd;
-    --c-text:     #1a1e2e;
-    --c-muted:    #6b7491;
-    --c-soft:     #9ba3be;
-    --c-navy:     #1b2b5e;
-    --c-blue:     #2d52c4;
-    --c-blue-lt:  #ebeffa;
-    --c-teal:     #0e9f8e;
-    --c-teal-lt:  #e6f7f5;
-    --c-amber:    #c47c0e;
-    --c-amber-lt: #fef5e6;
-    --c-red:      #c0354a;
-    --c-red-lt:   #fdeef1;
-    --c-green:    #1a8a5a;
-    --c-green-lt: #e8f6f0;
-    --c-rule:     #e8eaf0;
-    --radius:     10px;
-    --radius-sm:  7px;
-    --shadow-sm:  0 1px 4px rgba(27,43,94,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:  0 4px 16px rgba(27,43,94,0.10), 0 1px 4px rgba(0,0,0,0.04);
-}
+@push('scripts')
+    @vite('resources/js/dashboard.js')
+@endpush
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', sans-serif; }
-
-/* Header */
-.db-header-inner { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.db-header-left  { display: flex; align-items: center; gap: .9rem; }
-.db-avatar {
-    width: 44px; height: 44px; border-radius: 10px;
-    background: var(--c-navy); color: #fff;
-    font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.db-greeting { font-size: 11px; color: var(--c-soft); letter-spacing: .05em; text-transform: uppercase; font-weight: 500; }
-.db-title    { font-size: 17px; font-weight: 600; color: var(--c-text); }
-.db-board-btn {
-    display: inline-block; padding: .48rem 1.1rem;
-    border: 1.5px solid var(--c-border-2); border-radius: 7px;
-    font-size: 12px; font-weight: 600; color: var(--c-navy);
-    text-decoration: none;
-    transition: background .18s, border-color .18s;
-    background: var(--c-white);
-}
-.db-board-btn:hover { background: var(--c-navy); color: #fff; border-color: var(--c-navy); }
-
-/* Page shell */
-.db-page { padding: 2rem 0 3rem; }
-.db-wrap { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-
-/* Section eyebrow */
-.section-eyebrow {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: .14em; color: var(--c-soft); margin-bottom: .75rem;
-    display: flex; align-items: center; gap: .5rem;
-}
-.section-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--c-rule); }
-
-/* Stat Cards */
-.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
-@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 520px) { .stat-grid { grid-template-columns: 1fr; } }
-
-.stat-card {
-    background: var(--c-white); border: 1px solid var(--c-border);
-    border-radius: var(--radius); padding: 1.35rem 1.5rem 1.2rem;
-    position: relative; overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    animation: fadeUp .45s ease both;
-    transition: box-shadow .2s, transform .2s;
-}
-.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.stat-card:nth-child(2) { animation-delay: .07s; }
-.stat-card:nth-child(3) { animation-delay: .14s; }
-.stat-card:nth-child(4) { animation-delay: .21s; }
-.stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 3px; border-radius: var(--radius) var(--radius) 0 0;
-}
-.stat-card.s-blue::before  { background: var(--c-blue); }
-.stat-card.s-teal::before  { background: var(--c-teal); }
-.stat-card.s-amber::before { background: var(--c-amber); }
-.stat-card.s-red::before   { background: var(--c-red); }
-
-.stat-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: .9rem; }
-.s-blue  .stat-icon { background: var(--c-blue-lt); }
-.s-teal  .stat-icon { background: var(--c-teal-lt); }
-.s-amber .stat-icon { background: var(--c-amber-lt); }
-.s-red   .stat-icon { background: var(--c-red-lt); }
-.stat-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--c-muted); }
-.stat-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: var(--c-text); line-height: 1.1; margin: .2rem 0 .25rem; }
-.stat-sub   { font-size: 11px; color: var(--c-soft); }
-
-/* Progress card */
-.prog-card {
-    background: var(--c-white); border: 1px solid var(--c-border);
-    border-radius: var(--radius); box-shadow: var(--shadow-sm);
-    padding: 1.25rem 1.4rem;
-    animation: fadeUp .45s .1s ease both;
-}
-.prog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.prog-title  { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--c-navy); }
-.prog-pct    { font-size: 22px; font-family: 'Playfair Display', serif; font-weight: 700; color: var(--c-blue); }
-.prog-track  { height: 8px; background: var(--c-bg); border-radius: 99px; overflow: hidden; border: 1px solid var(--c-rule); }
-.prog-fill   { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--c-blue), var(--c-teal)); transition: width 1.1s cubic-bezier(.16,1,.3,1); }
-.prog-legend { display: flex; gap: 1.5rem; margin-top: .75rem; flex-wrap: wrap; }
-.prog-legend-item { display: flex; align-items: center; gap: .4rem; font-size: 11.5px; color: var(--c-muted); font-weight: 500; }
-.prog-legend-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-/* Two-column layout */
-.body-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.25rem; align-items: start; }
-@media (max-width: 900px) { .body-grid { grid-template-columns: 1fr; } }
-
-/* Card shell */
-.card { background: var(--c-white); border: 1px solid var(--c-border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; animation: fadeUp .45s .22s ease both; }
-.card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--c-rule); }
-.card-title  { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--c-navy); }
-.card-link   { font-size: 11px; font-weight: 600; color: var(--c-blue); text-decoration: none; letter-spacing: .03em; }
-.card-link:hover { text-decoration: underline; }
-
-/* Task table */
-.task-table { width: 100%; border-collapse: collapse; }
-.task-table thead th {
-    font-size: 10px; text-transform: uppercase; letter-spacing: .1em;
-    font-weight: 600; color: var(--c-soft);
-    padding: .6rem 1.4rem; text-align: left;
-    background: var(--c-surface); border-bottom: 1px solid var(--c-rule);
-}
-.task-row { border-bottom: 1px solid var(--c-rule); transition: background .15s; animation: fadeIn .35s ease both; }
-.task-row:last-child { border-bottom: none; }
-.task-row:hover { background: #f6f8ff; }
-.task-row:nth-child(1) { animation-delay: .28s; }
-.task-row:nth-child(2) { animation-delay: .34s; }
-.task-row:nth-child(3) { animation-delay: .40s; }
-.task-row:nth-child(4) { animation-delay: .46s; }
-.task-row:nth-child(5) { animation-delay: .52s; }
-.task-row td { padding: .85rem 1.4rem; vertical-align: middle; }
-.task-name  { font-size: 13px; font-weight: 500; color: var(--c-text); }
-.task-board { font-size: 11px; color: var(--c-soft); margin-top: 2px; }
-
-.pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
-.pill-todo   { background: #f0f1f4; color: #6b7491; }
-.pill-doing  { background: var(--c-blue-lt); color: var(--c-blue); }
-.pill-review { background: var(--c-amber-lt); color: var(--c-amber); }
-.pill-done   { background: var(--c-green-lt); color: var(--c-green); }
-
-.prio { display: inline-flex; align-items: center; gap: .35rem; font-size: 11.5px; font-weight: 500; }
-.prio-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.prio.high   .prio-dot { background: var(--c-red); }
-.prio.medium .prio-dot { background: var(--c-amber); }
-.prio.low    .prio-dot { background: var(--c-teal); }
-.prio.high   { color: var(--c-red); }
-.prio.medium { color: var(--c-amber); }
-.prio.low    { color: var(--c-teal); }
-
-.due { font-size: 11.5px; font-weight: 500; display: flex; align-items: center; gap: .3rem; }
-.due.overdue { color: var(--c-red); }
-.due.soon    { color: var(--c-amber); }
-.due.ok      { color: var(--c-soft); }
-
-.empty-row td { padding: 2.5rem 1.4rem; text-align: center; color: var(--c-soft); font-size: 13px; }
-
-/* Activity */
-.activity-card { animation-delay: .28s; }
-.activity-item {
-    display: flex; gap: .85rem; align-items: flex-start;
-    padding: .85rem 1.4rem; border-bottom: 1px solid var(--c-rule);
-    transition: background .15s;
-    animation: fadeIn .35s ease both;
-}
-.activity-item:last-child { border-bottom: none; }
-.activity-item:hover { background: var(--c-surface); }
-.activity-item:nth-child(1) { animation-delay: .35s; }
-.activity-item:nth-child(2) { animation-delay: .41s; }
-.activity-item:nth-child(3) { animation-delay: .47s; }
-.activity-item:nth-child(4) { animation-delay: .53s; }
-.activity-item:nth-child(5) { animation-delay: .59s; }
-.act-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-.act-icon.created  { background: var(--c-blue-lt); }
-.act-icon.moved    { background: #f0edfc; }
-.act-icon.done     { background: var(--c-green-lt); }
-.act-icon.assigned { background: var(--c-amber-lt); }
-.act-body  { flex: 1; min-width: 0; }
-.act-text  { font-size: 12.5px; color: var(--c-muted); line-height: 1.45; }
-.act-text strong { color: var(--c-text); font-weight: 600; }
-.act-time  { font-size: 10.5px; color: var(--c-soft); margin-top: 3px; display: block; font-weight: 500; }
-
-/* Animations */
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
-</style>
-
+{{-- ================================================================
+     PAGE BODY
+     All variables come pre-computed from DashboardController@index:
+       $greeting, $firstName, $stats, $pct, $myTasks, $recentActivity
+================================================================ --}}
 <div class="db-page">
 <div class="db-wrap">
 
-    {{-- STAT CARDS --}}
-    @php
-        $total     = $stats['total'] ?? 0;
-        $myTasks_c = $stats['my_tasks'] ?? 0;
-        $completed = $stats['completed'] ?? 0;
-        $highPrio  = $stats['high_priority'] ?? 0;
-        $pct       = $total > 0 ? round(($completed / $total) * 100) : 0;
-    @endphp
-
-    <div>
-        <div class="section-eyebrow">At a Glance</div>
-        <div class="stat-grid">
-            <div class="stat-card s-blue">
-                <div class="stat-icon">📋</div>
-                <div class="stat-label">Total Tasks</div>
-                <div class="stat-value" data-count="{{ $total }}">0</div>
-                <div class="stat-sub">across all boards</div>
+    {{-- ── GREETING BANNER ────────────────────────────────────── --}}
+    <div class="db-greeting-banner">
+        <div class="db-greeting-left">
+            <div class="db-greeting-eyebrow">{{ now()->format('l, F j') }}</div>
+            <div class="db-greeting-name">{{ $greeting }}, <em>{{ $firstName }}.</em></div>
+            <div class="db-greeting-sub">Here's what's happening across your projects today.</div>
+        </div>
+        <div class="db-greeting-right">
+            <div class="db-greeting-pill">
+                <span>{{ $stats['my_tasks'] }}</span> tasks assigned
             </div>
-            <div class="stat-card s-teal">
-                <div class="stat-icon">👤</div>
-                <div class="stat-label">Assigned to Me</div>
-                <div class="stat-value" data-count="{{ $myTasks_c }}">0</div>
-                <div class="stat-sub">active tasks</div>
-            </div>
-            <div class="stat-card s-amber">
-                <div class="stat-icon">✅</div>
-                <div class="stat-label">Completed</div>
-                <div class="stat-value" data-count="{{ $completed }}">0</div>
-                <div class="stat-sub">tasks closed</div>
-            </div>
-            <div class="stat-card s-red">
-                <div class="stat-icon">⚑</div>
-                <div class="stat-label">High Priority</div>
-                <div class="stat-value" data-count="{{ $highPrio }}">0</div>
-                <div class="stat-sub">require attention</div>
+            <div class="db-greeting-pill">
+                <span>{{ $stats['high_priority'] }}</span> high priority
             </div>
         </div>
     </div>
 
-    {{-- PROGRESS BAR --}}
+    {{-- ── STAT CARDS ──────────────────────────────────────────── --}}
+    <div>
+        <div class="section-eyebrow">At a Glance</div>
+        <div class="stat-grid">
+
+            <div class="stat-card s-blue">
+                <div class="stat-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <line x1="8" y1="9" x2="16" y2="9"/>
+                        <line x1="8" y1="13" x2="16" y2="13"/>
+                        <line x1="8" y1="17" x2="13" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value" data-count="{{ $stats['total'] }}">0</div>
+                <div class="stat-sub">across all boards</div>
+            </div>
+
+            <div class="stat-card s-teal">
+                <div class="stat-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    </svg>
+                </div>
+                <div class="stat-label">Assigned to Me</div>
+                <div class="stat-value" data-count="{{ $stats['my_tasks'] }}">0</div>
+                <div class="stat-sub">active tasks</div>
+            </div>
+
+            <div class="stat-card s-amber">
+                <div class="stat-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                </div>
+                <div class="stat-label">Completed</div>
+                <div class="stat-value" data-count="{{ $stats['completed'] }}">0</div>
+                <div class="stat-sub">tasks closed</div>
+            </div>
+
+            <div class="stat-card s-red">
+                <div class="stat-icon-wrap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-label">High Priority</div>
+                <div class="stat-value" data-count="{{ $stats['high_priority'] }}">0</div>
+                <div class="stat-sub">require attention</div>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- ── PROGRESS BAR ────────────────────────────────────────── --}}
     <div class="prog-card">
         <div class="prog-header">
             <div class="prog-title">Project Completion</div>
@@ -274,20 +208,20 @@ body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', s
         <div class="prog-legend">
             <div class="prog-legend-item">
                 <div class="prog-legend-dot" style="background:var(--c-blue)"></div>
-                {{ $completed }} Completed
+                {{ $stats['completed'] }} Completed
             </div>
             <div class="prog-legend-item">
                 <div class="prog-legend-dot" style="background:var(--c-rule);border:1px solid var(--c-border-2)"></div>
-                {{ $total - $completed }} Remaining
+                {{ $stats['total'] - $stats['completed'] }} Remaining
             </div>
             <div class="prog-legend-item">
                 <div class="prog-legend-dot" style="background:var(--c-red)"></div>
-                {{ $highPrio }} High Priority
+                {{ $stats['high_priority'] }} High Priority
             </div>
         </div>
     </div>
 
-    {{-- TASKS + ACTIVITY --}}
+    {{-- ── TASKS + ACTIVITY ────────────────────────────────────── --}}
     <div class="body-grid">
 
         {{-- My Tasks --}}
@@ -307,45 +241,37 @@ body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', s
                 </thead>
                 <tbody>
                     @forelse($myTasks as $task)
-                        @php
-                            $priority = strtolower($task->priority ?? 'medium');
-                            $colTitle = $task->column->title ?? 'To Do';
-                            $colSlug  = strtolower(str_replace([' ','-'], '', $colTitle));
-                            $pillClass = match(true) {
-                                str_contains($colSlug,'done')    => 'pill-done',
-                                str_contains($colSlug,'review')  => 'pill-review',
-                                str_contains($colSlug,'doing') || str_contains($colSlug,'progress') => 'pill-doing',
-                                default => 'pill-todo'
-                            };
-                            $dueDate  = $task->due_date ?? null;
-                            $dueClass = 'ok'; $dueLabel = '—';
-                            if ($dueDate) {
-                                $diff = now()->diffInDays(\Carbon\Carbon::parse($dueDate), false);
-                                if ($diff < 0)      { $dueClass = 'overdue'; $dueLabel = 'Overdue'; }
-                                elseif ($diff <= 2) { $dueClass = 'soon';    $dueLabel = 'Due ' . \Carbon\Carbon::parse($dueDate)->format('M j'); }
-                                else                { $dueClass = 'ok';      $dueLabel = \Carbon\Carbon::parse($dueDate)->format('M j, Y'); }
-                            }
-                        @endphp
                         <tr class="task-row">
                             <td>
                                 <div class="task-name">{{ $task->title }}</div>
                                 <div class="task-board">{{ $task->board->title ?? 'General Board' }}</div>
                             </td>
-                            <td><span class="pill {{ $pillClass }}">{{ $colTitle }}</span></td>
                             <td>
-                                <span class="prio {{ $priority }}">
-                                    <span class="prio-dot"></span>{{ ucfirst($priority) }}
+                                <span class="pill {{ $task->pill_class }}">{{ $task->col_title }}</span>
+                            </td>
+                            <td>
+                                <span class="prio {{ $task->priority_class }}">
+                                    <span class="prio-dot"></span>
+                                    {{ ucfirst($task->priority_class) }}
                                 </span>
                             </td>
                             <td>
-                                <span class="due {{ $dueClass }}">
-                                    @if($dueClass === 'overdue') ⚠ @elseif($dueClass === 'soon') ◷ @else ○ @endif
-                                    {{ $dueLabel }}
+                                <span class="due {{ $task->due_class }}">
+                                    @if($task->due_class === 'overdue')
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    @elseif($task->due_class === 'soon')
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                                    @else
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    @endif
+                                    {{ $task->due_label }}
                                 </span>
                             </td>
                         </tr>
                     @empty
-                        <tr class="empty-row"><td colspan="4">No tasks assigned to you at this time.</td></tr>
+                        <tr class="empty-row">
+                            <td colspan="4">No tasks assigned to you at this time.</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -356,34 +282,64 @@ body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', s
             <div class="card-header">
                 <div class="card-title">Recent Activity</div>
             </div>
+<<<<<<< Updated upstream
             @forelse($recentActivity ?? [] as $activity)
                 @php
                     $type    = $activity->type ?? 'created';
                     $iconMap = ['created' => '✦', 'moved' => '⇄', 'done' => '✓', 'assigned' => '◈'];
                     $icon    = $iconMap[$type] ?? '·';
+=======
+
+            @forelse($recentActivity as $activity)
+                @php
+                    $type    = $activity->type ?? 'created';
+                    $iconSvg = match ($type) {
+                        'created'   => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+                        'moved'     => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>',
+                        'done'      => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+                        'assigned'  => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+                        'commented' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+                        'updated'   => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+                        default     => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>',
+                    };
+>>>>>>> Stashed changes
                 @endphp
                 <div class="activity-item">
-                    <div class="act-icon {{ $type }}">{{ $icon }}</div>
+                    <div class="act-icon {{ $type }}">{!! $iconSvg !!}</div>
                     <div class="act-body">
                         <div class="act-text">
                             <strong>{{ $activity->user->name ?? 'Someone' }}</strong>
                             {{ $activity->description ?? 'performed an action' }}
                         </div>
-                        <span class="act-time">{{ \Carbon\Carbon::parse($activity->created_at)->diffForHumans() }}</span>
+                        <span class="act-time">
+                            {{ \Carbon\Carbon::parse($activity->created_at)->diffForHumans() }}
+                        </span>
                     </div>
                 </div>
             @empty
                 @forelse($myTasks->take(5) as $task)
                     <div class="activity-item">
-                        <div class="act-icon assigned">◈</div>
+                        <div class="act-icon assigned">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                        </div>
                         <div class="act-body">
-                            <div class="act-text">You were assigned <strong>{{ Str::limit($task->title, 34) }}</strong></div>
-                            <span class="act-time">{{ $task->created_at ? \Carbon\Carbon::parse($task->created_at)->diffForHumans() : 'recently' }}</span>
+                            <div class="act-text">
+                                You were assigned <strong>{{ Str::limit($task->title, 34) }}</strong>
+                            </div>
+                            <span class="act-time">
+                                {{ $task->created_at
+                                    ? \Carbon\Carbon::parse($task->created_at)->diffForHumans()
+                                    : 'recently' }}
+                            </span>
                         </div>
                     </div>
                 @empty
                     <div class="activity-item">
-                        <div class="act-body"><div class="act-text" style="text-align:center;padding:.75rem 0;color:var(--c-soft)">No recent activity.</div></div>
+                        <div class="act-body">
+                            <div class="act-text" style="text-align:center;padding:1rem 0;color:var(--c-soft)">
+                                No recent activity.
+                            </div>
+                        </div>
                     </div>
                 @endforelse
             @endforelse
@@ -392,26 +348,5 @@ body { background: var(--c-bg); color: var(--c-text); font-family: 'Epilogue', s
     </div>{{-- /.body-grid --}}
 </div>{{-- /.db-wrap --}}
 </div>{{-- /.db-page --}}
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Animated counters
-    document.querySelectorAll('[data-count]').forEach(el => {
-        const target = parseInt(el.dataset.count, 10);
-        if (!target) return;
-        let n = 0;
-        const step  = Math.max(1, Math.ceil(target / 36));
-        const timer = setInterval(() => {
-            n = Math.min(n + step, target);
-            el.textContent = n;
-            if (n >= target) clearInterval(timer);
-        }, 28);
-    });
-
-    // Progress bar sweep
-    const fill = document.querySelector('.prog-fill');
-    if (fill) setTimeout(() => { fill.style.width = fill.dataset.width + '%'; }, 250);
-});
-</script>
 
 </x-app-layout>
