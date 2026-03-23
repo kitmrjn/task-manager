@@ -9,9 +9,12 @@ use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
 {
-    public function index()
+public function index()
     {
-        return view('settings');
+        if (auth()->user()->role !== 'admin') {
+        abort(403, 'Unauthorized');
+        }
+         return view('settings');
     }
 
     /**

@@ -5,95 +5,45 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Task;
+use Carbon\Carbon;
 
 class TeamController extends Controller
 {
     public function index()
     {
-        $activeUserIds = \DB::table('sessions')
-            ->where('last_activity', '>=', now()->subMinutes(30)->timestamp)
-            ->whereNotNull('user_id')
-            ->pluck('user_id')
-            ->toArray();
-
-        $members = User::withCount([
-            'tasks as tasks_count' => fn($q) => $q->where('is_completed', false)
-        ])->get();
-
+        $members     = User::withCount('tasks')->get();
         $teamCount   = $members->count();
-        $openTasks   = Task::where('is_completed', false)->count();
-        $activeCount = count($activeUserIds);
+        $openTasks   = Task::whereDoesntHave('column', fn($q) => $q->where('title', 'Done'))->count();
+        $activeCount = $members->filter(
+            fn($m) => $m->last_active && Carbon::parse($m->last_active)->diffInMinutes() < 30
+        )->count();
 
-        return view('team', compact('members', 'teamCount', 'openTasks', 'activeCount', 'activeUserIds'));
+        return view('team', compact('members', 'teamCount', 'openTasks', 'activeCount'));
     }
 
-    /**
-     * Update a member's role — admin only
-     */
-    public function updateRole(Request $request, User $user)
+    public function update(Request $request, User $user)
     {
-        // Only admins can change roles
         if (auth()->user()->role !== 'admin') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Cannot change your own role
-        if (auth()->id() === $user->id) {
-            return response()->json(['error' => 'You cannot change your own role'], 422);
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'role'     => 'required|in:admin,manager,team_member', // ← only these 3 are valid
+            'password' => 'nullable|string|min:8',
+        ]);
+
+        $user->name  = $validated['name'];
+        $user->email = $validated['email'];
+        $user->role  = $validated['role'];
+
+        if (!empty($validated['password'])) {
+            $user->password = bcrypt($validated['password']);
         }
 
-        $request->validate([
-            'role' => 'required|in:admin,manager,member'
-        ]);
+        $user->save();
 
-        $user->update(['role' => $request->role]);
-
-        return response()->json([
-            'success' => true,
-            'message' => "{$user->name}'s role updated to {$request->role}"
-        ]);
-    }
-
-    /**
-     * Get tasks assigned to or collaborated on by a member
-     */
-    public function memberTasks(User $user)
-    {
-        $assignedTasks = Task::where('assigned_to', $user->id)
-            ->where('is_completed', false)
-            ->with('column')
-            ->get()
-            ->map(fn($t) => [
-                'id'       => $t->id,
-                'title'    => $t->title,
-                'priority' => $t->priority,
-                'due_date' => $t->due_date ? \Carbon\Carbon::parse($t->due_date)->format('M d') : null,
-                'column'   => $t->column?->title,
-                'type'     => 'assigned',
-            ]);
-
-        $collaboratingTasks = Task::whereHas('members', fn($q) => $q->where('users.id', $user->id))
-            ->where('is_completed', false)
-            ->with('column')
-            ->get()
-            ->map(fn($t) => [
-                'id'       => $t->id,
-                'title'    => $t->title,
-                'priority' => $t->priority,
-                'due_date' => $t->due_date ? \Carbon\Carbon::parse($t->due_date)->format('M d') : null,
-                'column'   => $t->column?->title,
-                'type'     => 'collaborating',
-            ]);
-
-        $completedCount = Task::where('assigned_to', $user->id)
-            ->where('is_completed', true)
-            ->count();
-
-        return response()->json([
-            'user'               => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role ?? 'member'],
-            'assigned'           => $assignedTasks,
-            'collaborating'      => $collaboratingTasks,
-            'completed_count'    => $completedCount,
-        ]);
+        return response()->json(['success' => true]);
     }
 }

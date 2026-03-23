@@ -17,11 +17,14 @@ class BoardController extends Controller
 public function index()
 {
     $board = Board::with([
-        'columns'                      => fn($q) => $q->orderBy('order'),
-        'columns.tasks'                => fn($q) => $q->orderBy('order'),
-        'columns.tasks.assignee',
-        'columns.tasks.checklistItems',
+        'columns' => function($query) {
+            $query->orderBy('order', 'asc');
+        }, 
+        'columns.tasks.assignee', 
+        'columns.tasks.checklistItems', // <--- ADD THIS LINE
         'columns.tasks.members',
+        'columns.tasks.attachments'
+
     ])->first();
 
     $users = User::all();

@@ -20,6 +20,9 @@
         .tf-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 300; width: 38px; height: 38px; background: #0f1729; border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; color: #d6e4ff; align-items: center; justify-content: center; cursor: pointer; }
         @media (max-width: 768px) { .tf-page-wrap { margin-left: 0; } .tf-toggle { display: flex; } }
     </style>
+
+    {{-- ↓ Page-specific styles (e.g. dashboard.css injected via @push in each view) --}}
+    @stack('styles')
 </head>
 <body>
 
@@ -47,6 +50,9 @@
         <main>{{ $slot }}</main>
 
     </div>
+
+    {{-- ↓ Page-specific scripts (e.g. dashboard.js injected via @push in each view) --}}
+    @stack('scripts')
 
 </body>
 </html>

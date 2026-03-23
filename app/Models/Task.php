@@ -43,5 +43,10 @@ public function members()
     public function activities()
     {
         return $this->hasMany(TaskActivity::class)->latest();
-    }    
+    }
+        // ← NEW
+    public function attachments()
+    {
+        return $this->hasMany(TaskAttachment::class)->latest();    
+    }
 }
