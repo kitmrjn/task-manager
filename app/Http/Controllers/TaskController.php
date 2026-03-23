@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Models\BoardColumn;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
@@ -178,6 +179,55 @@ class TaskController extends Controller
         return response()->json(['success' => true]);
     }
 
+    if ($task->wasChanged('due_date')) {
+        $dateText = $task->due_date
+            ? \Carbon\Carbon::parse($task->due_date)->format('M d, Y')
+            : 'None';
+        $task->activities()->create([
+            'user_id'     => auth()->id(),
+            'type'        => 'updated', 
+            'action'      => 'date_change',
+            'description' => "changed the due date to $dateText"
+        ]);
+    }
+
+    if ($oldLeadId != $task->assigned_to) {
+        $newLeadName = $task->assignee ? $task->assignee->name : 'Unassigned';
+        $task->activities()->create([
+            'user_id'     => auth()->id(),
+            'type'        => 'assigned', // Use 'assigned' type for the icon
+            'action'      => 'lead_change',
+            'description' => "changed assignee to $newLeadName"
+        ]);
+    }
+
+    if ($task->wasChanged(['title', 'description'])) {
+        $task->activities()->create([
+            'user_id'     => auth()->id(),
+            'type'        => 'updated',
+            'action'      => 'updated',
+            'description' => 'updated task content'
+        ]);
+    }
+
+    // NEW: Log if the status (Column) was changed
+    if ($task->wasChanged('board_column_id')) {
+        $columnName = $task->column ? $task->column->title : 'another stage';
+        $task->activities()->create([
+            'user_id'     => auth()->id(),
+            'type'        => 'moved', // Use 'moved' type for the icon
+            'action'      => 'column_change',
+            'description' => "moved task to $columnName"
+        ]);
+    }
+
+    // Return JSON if requested via AJAX, otherwise redirect
+    if ($request->expectsJson() || $request->header('Accept') === 'application/json') {
+        return response()->json(['success' => true, 'message' => 'Task updated!']);
+    }
+
+    return redirect()->back()->with('success', 'Task updated!');
+}
     /**
      * Update task position/column via Drag and Drop.
      */
@@ -222,13 +272,32 @@ class TaskController extends Controller
     /**
      * Return task data as JSON for the detail modal.
      */
+<<<<<<< HEAD
     public function detail(Task $task)
     {
+=======
+public function storeComment(Request $request, Task $task)
+{
+    $request->validate(['comment' => 'required|string|max:1000']);
+
+    $task->activities()->create([
+        'user_id'     => auth()->id(),
+        'action'      => 'comment',  // ← must match JS filter
+        'description' => $request->comment,
+    ]);
+
+    return response()->json(['success' => true]);
+}
+
+public function detail(Task $task)
+{
+>>>>>>> main
     $task->load([
         'checklistItems',
         'members',
         'activities.user',
         'assignee',
+<<<<<<< HEAD
         'column',
         'attachments.uploader', // ← ADD THIS
     ]);
@@ -251,4 +320,45 @@ class TaskController extends Controller
  
     return response()->json($data);
     }
+=======
+        'column'
+    ]);
+
+    return response()->json([
+        'id'              => $task->id,
+        'title'           => $task->title,
+        'description'     => $task->description,
+        'priority'        => $task->priority,
+        'due_date'        => $task->due_date,
+        'start_date'      => $task->start_date,
+        'assigned_to'     => $task->assigned_to,
+        'board_column_id' => $task->board_column_id,
+        'is_completed'    => $task->is_completed,
+        'column'          => $task->column
+                                ? ['id' => $task->column->id, 'title' => $task->column->title]
+                                : null,
+        'assignee'        => $task->assignee
+                                ? ['id' => $task->assignee->id, 'name' => $task->assignee->name]
+                                : null,
+        'collaborators'   => $task->members->map(fn($u) => [
+                                'id'   => $u->id,
+                                'name' => $u->name,
+                             ]),
+        'checklist_items' => $task->checklistItems->map(fn($i) => [
+                                'id'           => $i->id,
+                                'title'        => $i->title,
+                                'is_completed' => $i->is_completed,
+                             ]),
+        'activities'      => $task->activities->map(fn($a) => [
+                                'id'          => $a->id,
+                                'description' => $a->description,
+                                'action'      => $a->action,
+                                'created_at'  => $a->created_at,
+                                'user'        => $a->user
+                                                    ? ['id' => $a->user->id, 'name' => $a->user->name]
+                                                    : null,
+                             ]),
+    ]);
+}
+>>>>>>> main
 }

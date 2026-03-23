@@ -14,9 +14,8 @@ class BoardController extends Controller
     /**
      * Display the Kanban Board (Tasks Page)
      */
-    public function index()
+public function index()
 {
-    // We add 'columns.tasks.checklistItems' so each task knows about its subtasks
     $board = Board::with([
         'columns' => function($query) {
             $query->orderBy('order', 'asc');
@@ -29,7 +28,6 @@ class BoardController extends Controller
     ])->first();
 
     $users = User::all();
-
     return view('tasks', compact('board', 'users'));
 }
 
@@ -39,25 +37,33 @@ class BoardController extends Controller
 public function dashboard()
 {
     $user = auth()->user();
-    
-    // 1. Get tasks where user is the LEAD or a COLLABORATOR
-    $myTasksQuery = Task::where('assigned_to', $user->id)
-        ->orWhereHas('members', function($query) use ($user) {
-            $query->where('user_id', $user->id);
-        });
+
+    $assignedIds      = Task::where('assigned_to', $user->id)->pluck('id');
+    $collaboratingIds = \DB::table('task_user')
+                            ->where('user_id', $user->id)
+                            ->pluck('task_id');
+
+    $myTaskIds = $assignedIds->merge($collaboratingIds)->unique()->values();
 
     $stats = [
-        'total' => Task::count(),
-        'my_tasks' => $myTasksQuery->count(), // Updated count
+        'total'         => Task::count(),
+        'my_tasks'      => $myTaskIds->count(),
+        'completed'     => Task::where('is_completed', true)->count(),
         'high_priority' => Task::where('priority', 'high')->count(),
     ];
 
-    $myTasks = $myTasksQuery->with('column')
-                ->latest()
-                ->take(5)
-                ->get();
+    $myTasks = Task::whereIn('id', $myTaskIds)
+        ->with('column')
+        ->latest()
+        ->take(5)
+        ->get();
 
-    return view('dashboard', compact('stats', 'myTasks'));
+    $recentActivity = \App\Models\TaskActivity::with('user')
+        ->latest()
+        ->take(8)
+        ->get();
+
+    return view('dashboard', compact('stats', 'myTasks', 'recentActivity'));
 }
 
     /**
@@ -66,10 +72,10 @@ public function dashboard()
     public function storeColumn(Request $request)
     {
     $request->validate([
-        'title' => 'required|string|max:255',
-        'color' => 'required|string',
+        'title'       => 'required|string|max:255',
+        'color'       => 'required|string|in:gray,blue,green,yellow,red,orange,purple,pink,teal,indigo',
         'description' => 'nullable|string',
-        'board_id' => 'required|exists:boards,id'
+        'board_id'    => 'required|exists:boards,id'
     ]);
 
     $highestOrder = BoardColumn::where('board_id', $request->board_id)->max('order');
@@ -88,40 +94,46 @@ public function dashboard()
     /**
      * Reorder Columns (Move Left/Right)
      */
-    public function moveColumn(Request $request, BoardColumn $column)
-    {
-        $request->validate(['direction' => 'required|in:left,right']);
-        
-        $currentOrder = $column->order;
-        $boardId = $column->board_id;
+public function moveColumn(Request $request, BoardColumn $column)
+{
+    $request->validate(['direction' => 'required|in:left,right']);
 
-        if ($request->direction === 'left') {
-            $swapColumn = BoardColumn::where('board_id', $boardId)
-                ->where('order', '<', $currentOrder)
-                ->orderBy('order', 'desc')
-                ->first();
-        } else {
-            $swapColumn = BoardColumn::where('board_id', $boardId)
-                ->where('order', '>', $currentOrder)
-                ->orderBy('order', 'asc')
-                ->first();
-        }
+    $currentOrder = $column->order;
+    $boardId      = $column->board_id;
 
-        if ($swapColumn) {
-            $column->update(['order' => $swapColumn->order]);
-            $swapColumn->update(['order' => $currentOrder]);
-        }
-
-        return redirect()->back();
+    if ($request->direction === 'left') {
+        $swapColumn = BoardColumn::where('board_id', $boardId)
+            ->where('order', '<', $currentOrder)
+            ->orderBy('order', 'desc')
+            ->first();
+    } else {
+        $swapColumn = BoardColumn::where('board_id', $boardId)
+            ->where('order', '>', $currentOrder)
+            ->orderBy('order', 'asc')
+            ->first();
     }
+
+    if ($swapColumn) {
+        // Swap the order values
+        $column->update(['order' => $swapColumn->order]);
+        $swapColumn->update(['order' => $currentOrder]);
+    }
+
+    // Return JSON since we're calling via fetch now
+    if ($request->expectsJson() || $request->header('Accept') === 'application/json') {
+        return response()->json(['success' => true]);
+    }
+
+    return redirect()->back();
+}
     
 public function updateColumn(Request $request, BoardColumn $column)
 {
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string', // Ensure this is here!
-        'color' => 'required|string',
-    ]);
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'color'       => 'required|string|in:gray,blue,green,yellow,red,orange,purple,pink,teal,indigo',
+        ]);
 
     $column->update($validated);
     return redirect()->back();
@@ -171,14 +183,15 @@ public function toggleMember(Request $request, Task $task)
     $task->members()->toggle($request->user_id);
     $user = \App\Models\User::find($request->user_id);
     
-    // Check if the user was added or removed
     $isAttached = $task->members()->where('user_id', $request->user_id)->exists();
-    $actionText = $isAttached ? "added {$user->name} as collaborator" : "removed {$user->name} from collaborators";
-
+    
+    // Log for the activity feed
     $task->activities()->create([
         'user_id' => auth()->id(),
-        'action' => 'member_toggle',
-        'description' => $actionText
+        'type' => 'assigned', // This matches your $iconMap in Blade
+        'description' => $isAttached 
+            ? "added {$user->name} to \"{$task->title}\"" 
+            : "removed {$user->name} from \"{$task->title}\""
     ]);
 
     return response()->json(['success' => true]);

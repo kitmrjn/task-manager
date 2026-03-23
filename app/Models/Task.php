@@ -35,11 +35,10 @@ protected $fillable = [
         return $this->hasMany(ChecklistItem::class);
     }
     //Adding member to task
-    public function members()
-    {
-    // This tells Laravel a task can have many users through the pivot table
-        return $this->belongsToMany(User::class, 'task_user');
-    }
+public function members()
+{
+    return $this->belongsToMany(User::class, 'task_user');
+}
     //Activity Logs
     public function activities()
     {
