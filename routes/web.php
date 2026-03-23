@@ -9,7 +9,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\HelpController;
-use App\Http\Controllers\DashboardController; // ← already imported, now actually used
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -23,8 +23,7 @@ Route::get('/tasks', [BoardController::class, 'index'])
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Dashboard ──────────────────────────────────────────────────────
-    // Changed: was BoardController@dashboard, now uses DashboardController@index
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ── Task Actions ───────────────────────────────────────────────────
     Route::post('/tasks', [TaskController::class, 'store']);
@@ -55,21 +54,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Mark as Complete ───────────────────────────────────────────────
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
 
-    // ── New Pages ──────────────────────────────────────────────────────
+    // ── Pages ──────────────────────────────────────────────────────────
     Route::get('/calendar',  [CalendarController::class,  'index'])->name('calendar.index');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/team',      [TeamController::class,      'index'])->name('team.index');
     Route::get('/settings',  [SettingsController::class,  'index'])->name('settings.index');
     Route::get('/help',      [HelpController::class,      'index'])->name('help.index');
 
-<<<<<<< Updated upstream
-=======
+    // ── Calendar ──────────────────────────────────────────────────────────
+    Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
+    Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
+
     // ── Comments ───────────────────────────────────────────────────────
     Route::post('/tasks/{task}/comments', [TaskController::class, 'storeComment'])->name('tasks.comment');
-
-    // ── Calendar Events ────────────────────────────────────────────────
-    Route::post('/calendar-events', [CalendarController::class, 'storeEvent'])->name('calendar.store');
-    Route::delete('/calendar-events/{event}', [CalendarController::class, 'destroyEvent'])->name('calendar.destroy');
 
     // ── Team ───────────────────────────────────────────────────────────
     Route::get('/team/{user}/tasks', [TeamController::class, 'memberTasks'])->name('team.tasks');
@@ -99,7 +96,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'action'      => $a->action,
         ])->values());
     })->name('notifications');
->>>>>>> Stashed changes
 });
 
 require __DIR__.'/auth.php';

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Models\Task;
-use App\Models\Activity;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -13,26 +12,28 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        // ── Get task IDs relevant to this user ────────────────────────────
+        // Includes: assigned tasks + collaborating tasks
+        $assignedIds      = Task::where('assigned_to', $user->id)->pluck('id');
+        $collaboratingIds = \DB::table('task_user')
+                                ->where('user_id', $user->id)
+                                ->pluck('task_id');
+        $myTaskIds = $assignedIds->merge($collaboratingIds)->unique()->values();
+
         // ── Stats ─────────────────────────────────────────────────────────
-        // NOTE: Tasks have no 'status' column. Completion is determined by
-        // which board column the task sits in (column title contains "done").
         $stats = [
             'total'         => Task::count(),
-            'my_tasks'      => Task::where('assigned_to', $user->id)->count(),
-            'completed'     => Task::whereHas('column', fn ($q) =>
-                                    $q->whereRaw('LOWER(title) LIKE ?', ['%done%'])
-                                )->count(),
+            'my_tasks'      => $myTaskIds->count(),
+            'completed'     => Task::where('is_completed', true)->count(), // ← uses is_completed flag
             'high_priority' => Task::where('priority', 'high')->count(),
         ];
 
-        // ── My Tasks (task table — pre-computed for the view) ─────────────
-        $myTasks = Task::with(['column', 'board'])
-            ->where('assigned_to', $user->id)
-            ->whereHas('column', fn ($q) =>
-                $q->whereRaw('LOWER(title) NOT LIKE ?', ['%done%'])
-            )
+        // ── My Tasks — assigned + collaborating, not completed ────────────
+        $myTasks = Task::with(['column'])
+            ->whereIn('id', $myTaskIds)
+            ->where('is_completed', false)
             ->orderBy('due_date')
-            ->limit(5)
+            ->limit(15)
             ->get()
             ->map(function ($task) {
                 // Priority CSS class
@@ -66,11 +67,15 @@ class DashboardController extends Controller
                     }
                 }
 
+                // Start date label — shown under task name as "Mar 18 → Mar 23"
+                $task->start_label = $task->start_date
+                    ? Carbon::parse($task->start_date)->format('M j')
+                    : null;
+
                 return $task;
             });
 
         // ── Recent Activity ───────────────────────────────────────────────
-        // Uses TaskActivity model (as seen in your web.php notifications route)
         $recentActivity = \App\Models\TaskActivity::with(['user', 'task'])
             ->latest()
             ->limit(8)
@@ -85,7 +90,7 @@ class DashboardController extends Controller
         };
         $firstName = explode(' ', $user->name)[0];
 
-        // ── Completion % ─────────────────────────────────────────────────
+        // ── Completion % — based on is_completed flag ─────────────────────
         $pct = $stats['total'] > 0
             ? round(($stats['completed'] / $stats['total']) * 100)
             : 0;

@@ -20,10 +20,65 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
     let currentTaskHistory     = [];
     let currentTaskId          = null;
     let commentPollingInterval = null;
+
+    // Wrap Sortable logic so we can call it anytime the board refreshes
+    function initSortable() {
+        document.querySelectorAll('.sortable-column').forEach(col => {
+            // Clean up old instances to prevent memory leaks/bugs
+            const existing = Sortable.get(col);
+            if (existing) existing.destroy();
+
+            new Sortable(col, {
+                group: 'shared',
+                animation: 200,
+                onEnd(evt) {
+                    fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                        body: JSON.stringify({ board_column_id: evt.to.dataset.columnId })
+                    }).then(() => updateCounts());
+                }
+            });
+        });
+    }
+
+    // Define the Sync Loop
+    function startBoardSync() {
+        setInterval(async () => {
+            // Stop sync if user is dragging or looking at a task detail
+            if (document.querySelector('.sortable-ghost') || 
+                document.getElementById('detailModal').classList.contains('open')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await res.text();
+                
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                const newBoard = newDoc.getElementById('boardContainer');
+                const currentBoard = document.getElementById('boardContainer');
+
+                // Update only if content changed
+                if (newBoard && currentBoard && newBoard.innerHTML.trim() !== currentBoard.innerHTML.trim()) {
+                    currentBoard.innerHTML = newBoard.innerHTML;
+                    initSortable(); // RE-BIND drag-and-drop to the new HTML
+                    updateCounts();
+                }
+            } catch (e) { console.error("Sync failed:", e); }
+        }, 5000); 
+    }
+
+    initSortable();   // Initialize drag-and-drop
+    startBoardSync(); // Start the auto-sync loop
 
     /* ================================================================
        SORTABLE — drag cards between columns
@@ -187,11 +242,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
 
             // Collaborators
-            const activeIds = (task.members || task.collaborators || []).map(u => Number(u.id));
-            document.querySelectorAll('.tk-collab-pill').forEach(pill => {
-                pill.classList.toggle('active', activeIds.includes(parseInt(pill.dataset.userId)));
-            });
-            updateCollabInput();
+const selectedContainer = document.getElementById('dt-selected-collabs');
+if (selectedContainer) {
+    selectedContainer.innerHTML = ''; 
+}
+
+// 2. Load the members from the fetched task data
+if (task.members && task.members.length > 0) {
+    task.members.forEach(member => {
+        // Use the selectCollab function to create the pills in the modal
+        selectCollab(member.id, member.name);
+    });
+} else {
+    // If no members, make sure the hidden input is empty
+    updateCollabInput();
+}
 
             // Delete form
             document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
@@ -617,4 +682,187 @@ document.addEventListener('DOMContentLoaded', () => {
             list.innerHTML = '<div style="padding:1rem;text-align:center;font-size:13px;color:var(--red);">Failed to load.</div>';
         }
     }
+    
+    /* ================================================================
+    BOARD AUTO-SYNC (Multi-Account Sync)
+================================================================ */
+let boardSyncInterval = null;
+
+function startBoardSync() {
+    // Poll every 5 seconds (adjust as needed)
+    boardSyncInterval = setInterval(async () => {
+        // Don't refresh if the user is currently dragging or has a modal open
+        if (document.querySelector('.sortable-ghost') || 
+            document.getElementById('detailModal').classList.contains('open')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(window.location.href, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await res.text();
+            
+            // Create a temporary element to parse the new HTML
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            const newBoard = newDoc.getElementById('boardContainer');
+            const currentBoard = document.getElementById('boardContainer');
+
+            // Only update if the content is actually different
+            if (newBoard && currentBoard && newBoard.innerHTML !== currentBoard.innerHTML) {
+                currentBoard.innerHTML = newBoard.innerHTML;
+                
+                // CRITICAL: Re-initialize Sortable on the new columns
+                initSortable(); 
+                updateCounts();
+                console.log('Board synced with server.');
+            }
+        } catch (e) {
+            console.error('Sync error:', e);
+        }
+    }, 5000); 
+}
+
+// Wrap your Sortable logic into a reusable function
+function initSortable() {
+    document.querySelectorAll('.sortable-column').forEach(col => {
+        // Destroy existing instance if it exists to prevent duplicates
+        if (Sortable.get(col)) Sortable.get(col).destroy();
+
+        new Sortable(col, {
+            group: 'shared',
+            animation: 200,
+            onEnd(evt) {
+                fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({ board_column_id: evt.to.dataset.columnId })
+                }).then(() => updateCounts());
+            }
+        });
+    });
+}
+
+/* ================================================================
+    NEW COLLABORATOR SEARCH & SELECT
+================================================================ */
+
+window.filterCollabDropdown = function() {
+    const query = document.getElementById('collabSearch').value.toLowerCase();
+    const dropdown = document.getElementById('collabDropdown');
+    const options = dropdown.querySelectorAll('.tk-collab-option');
+    
+    if (query.length > 0) {
+        dropdown.style.display = 'block';
+        options.forEach(opt => {
+            const name = opt.dataset.userName;
+            opt.style.display = name.includes(query) ? 'block' : 'none';
+        });
+    } else {
+        dropdown.style.display = 'none';
+    }
+};
+
+window.selectCollab = function(userId, userName) {
+    const selectedContainer = document.getElementById('dt-selected-collabs');
+    if (!selectedContainer) return;
+    
+    // Prevent adding duplicates
+    if (selectedContainer.querySelector(`[data-user-id="${userId}"]`)) return;
+
+    const initials = userName.charAt(0).toUpperCase();
+    
+    const pill = document.createElement('div');
+    pill.className = 'tk-collab-pill active';
+    pill.dataset.userId = userId;
+    
+    // Allow removal by clicking
+    pill.onclick = function(e) { 
+        e.stopPropagation(); 
+        this.remove(); 
+        updateCollabInput(); 
+    };
+
+    pill.innerHTML = `
+        <div class="tk-avatar-mini" style="background:#2563eb;">${initials}</div>
+        <span>${userName}</span>
+        <span class="tk-remove-x">×</span>
+    `;
+
+    selectedContainer.appendChild(pill);
+    updateCollabInput();
+
+    // Only clear search if the user actually typed something (manual selection)
+    const searchInput = document.getElementById('collabSearch');
+    if (searchInput && searchInput.value !== '') {
+        searchInput.value = '';
+        document.getElementById('collabDropdown').style.display = 'none';
+    }
+};
+
+// Update the input for the Laravel backend
+function updateCollabInput() {
+    const selected = Array.from(document.querySelectorAll('#dt-selected-collabs .tk-collab-pill'))
+                         .map(p => p.dataset.userId);
+    document.getElementById('dt-collabs-input').value = JSON.stringify(selected);
+}
+
+// Update the existing openDetail to render selected pills correctly
+// Inside your openDetail function, replace the collaborator loop with:
+const selectedContainer = document.getElementById('dt-selected-collabs');
+selectedContainer.innerHTML = ''; // clear current
+
+(task.members || []).forEach(user => {
+    selectCollab(user.id, user.name);
+});
+
+
+
+
 })();
+/* ================================================================
+    COLLABORATOR SEARCH & SELECT (Show on Click)
+================================================================ */
+
+// 1. Show all members immediately when clicked
+window.showAllCollabs = function() {
+    console.log("Collab search clicked!"); // Check F12 console for this!
+    const dropdown = document.getElementById('collabDropdown');
+    
+    if (dropdown) {
+        dropdown.style.display = 'block';
+        dropdown.style.opacity = '1';
+        dropdown.style.visibility = 'visible';
+        
+        // Ensure all options are visible
+        const options = dropdown.querySelectorAll('.tk-collab-option');
+        options.forEach(opt => opt.style.display = 'block');
+    } else {
+        console.error("Could not find collabDropdown element!");
+    }
+};
+
+// Global click listener to close it
+document.addEventListener('mousedown', function(e) {
+    const wrap = document.querySelector('.tk-collab-search-wrap');
+    const dropdown = document.getElementById('collabDropdown');
+    
+    if (dropdown && wrap && !wrap.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+// 2. Filter the list as you type
+window.filterCollabDropdown = function() {
+    const query = document.getElementById('collabSearch').value.toLowerCase();
+    const dropdown = document.getElementById('collabDropdown');
+    const options = dropdown.querySelectorAll('.tk-collab-option');
+    
+    dropdown.style.display = 'block'; 
+    
+    options.forEach(opt => {
+        const name = opt.dataset.userName;
+        opt.style.display = name.includes(query) ? 'block' : 'none';
+    });
+};

@@ -102,4 +102,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bind both dropdowns
     bindDropdown('notif-btn',   'notif-dropdown',   null);
     bindDropdown('profile-btn', 'profile-dropdown', 'profile-chevron');
+
+    // ── Real notifications ────────────────────────────────────────
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+async function loadNotifications() {
+    const list  = document.querySelector('#notif-dropdown .tk-dropdown-body');
+    const count = document.querySelector('#notif-dropdown .tk-badge-pill');
+    if (!list) return;
+    list.innerHTML = '<div style="padding:1.2rem;text-align:center;font-size:13px;color:var(--c-soft);">Loading…</div>';
+    try {
+        const res  = await fetch('/notifications', {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+        });
+        const data = await res.json();
+        if (count) count.textContent = data.length ? data.length + ' new' : '';
+
+        if (!data.length) {
+            list.innerHTML = '<div style="padding:1.5rem;text-align:center;font-size:13.5px;color:var(--c-soft);">You\'re all caught up! 🎉</div>';
+            return;
+        }
+
+        const iconMap = { comment:'💬', created:'✅', priority_change:'🔥', lead_change:'👤', column_change:'📋', completed:'🎉', checklist_added:'☑️' };
+        list.innerHTML = data.map(n => `
+            <div class="tk-notif-item">
+                <div class="tk-notif-icon ni-blue">${iconMap[n.action] || '🔔'}</div>
+                <div class="tk-notif-content">
+                    <div class="tk-notif-text"><strong>${n.user || 'Someone'}</strong> ${n.description}${n.task ? ` on <em>${n.task}</em>` : ''}</div>
+                    <div class="tk-notif-time">${n.time}</div>
+                </div>
+            </div>`).join('');
+    } catch(e) {
+        list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--c-red);">Failed to load.</div>';
+    }
+}
+
+// Load notifications when bell is clicked
+const notifBtn = document.getElementById('notif-btn');
+if (notifBtn) {
+    notifBtn.addEventListener('click', loadNotifications);
+}
+
+// ── Search My Tasks table ─────────────────────────────────────
+const searchInput = document.querySelector('.tk-topnav-search input');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        document.querySelectorAll('.task-row').forEach(row => {
+            const name = row.querySelector('.task-name')?.textContent.toLowerCase() || '';
+            row.style.display = (!q || name.includes(q)) ? '' : 'none';
+        });
+    });
+}
+
 });

@@ -1,32 +1,19 @@
 /**
  * calendar.js  →  resources/js/calendar.js
- *
- * NOTE: tasksByDate and eventsByDate are injected by the blade as
- * window.CAL_TASKS and window.CAL_EVENTS before this script runs.
- * See calendar.blade.php @push('scripts') block.
- *
- * Handles:
- *   - renderCal()      — build the month grid
- *   - calPrev/calNext  — month navigation
- *   - viewItem()       — open view modal for event or task
- *   - openAddEvent()   — open add event modal pre-filled with date
- *   - saveEvent()      — POST to /calendar-events
- *   - deleteEvent()    — DELETE /calendar-events/{id}
- *   - selectEventType / selectEventColor — modal UI state
  */
 
 document.addEventListener('DOMContentLoaded', () => {
 
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
-    // Data injected from blade via window globals
     const tasksByDate  = window.CAL_TASKS  || {};
     const eventsByDate = window.CAL_EVENTS || {};
 
-    let cur                = new Date();
-    let selectedEventColor = 'blue';
-    let selectedEventType  = 'meeting';
-    let currentViewEventId = null;
+    let cur                  = new Date();
+    let selectedEventColor   = 'blue';
+    let selectedEventType    = 'meeting';
+    let currentViewEventId   = null;
+    let currentViewEventDate = null;
 
     /* ============================================================
        HELPERS
@@ -79,12 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const allItems = [
                 ...tasks.map(t => ({
-                    label: t.title,
-                    color: getPriorityColor(t.priority),
-                    done:  t.is_completed,
-                    type:  'task',
-                    id:    t.id,
+                    label:  t.title,
+                    color:  getPriorityColor(t.priority),
+                    done:   t.is_completed,
+                    type:   'task',
+                    id:     t.id,
                     column: t.column,
+                    date:   key,
                 })),
                 ...events.map(e => ({
                     label: e.title,
@@ -95,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     time:  e.time,
                     desc:  e.description,
                     etype: e.type,
+                    date:  key,
                 }))
             ];
 
@@ -146,8 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let bodyHtml = '';
 
         if (item.type === 'task') {
-            deleteBtn.style.display = 'none';
-            currentViewEventId = null;
+            deleteBtn.style.display  = 'none';
+            currentViewEventId       = null;
+            currentViewEventDate     = null;
             bodyHtml = `
                 <div class="cal-ev-row">
                     <div class="cal-ev-row-label">Type</div>
@@ -158,7 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     This task comes from your Task board. Open Tasks to edit it.
                 </div>`;
         } else {
-            currentViewEventId = item.id;
+            currentViewEventId   = item.id;
+            currentViewEventDate = item.date;
             deleteBtn.style.display = 'flex';
             const typeLabel = item.etype === 'meeting' ? 'Meeting' : item.etype === 'reminder' ? 'Reminder' : 'Note';
             bodyHtml = `
@@ -176,7 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.closeViewModal = function() {
         document.getElementById('viewEventModal').classList.remove('open');
-        currentViewEventId = null;
+        currentViewEventId   = null;
+        currentViewEventDate = null;
     };
 
     /* ============================================================
@@ -184,9 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ============================================================ */
     window.deleteEvent = function() {
         if (!currentViewEventId || !confirm('Delete this event?')) return;
-        fetch(`/calendar-events/${currentViewEventId}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': CSRF }
+
+        fetch('/calendar/events', {
+            method:  'DELETE',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body:    JSON.stringify({ date: currentViewEventDate, id: currentViewEventId }),
         })
         .then(r => r.json())
         .then(data => { if (data.success) { closeViewModal(); window.location.reload(); } });
@@ -236,21 +230,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveBtn = document.querySelector('#addEventModal .cal-btn-primary');
         saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
 
-        fetch('/calendar-events', {
-            method: 'POST',
+        fetch('/calendar/events', {
+            method:  'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body: JSON.stringify({
+            body:    JSON.stringify({
                 title,
                 date,
-                time:        time || null,
-                description: desc || null,
+                time:        time  || null,
+                description: desc  || null,
                 type:        selectedEventType,
-                color:       selectedEventColor
+                color:       selectedEventColor,
             })
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) { closeEventModal(); window.location.reload(); }
+            else { throw new Error('Save failed'); }
         })
         .catch(() => {
             saveBtn.textContent = 'Save Event';
@@ -292,8 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
             const isOpen = drop.classList.contains('open');
-
-            // close all
             document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
             document.querySelectorAll('.tk-nav-profile').forEach(u => u.classList.remove('active'));
             document.querySelectorAll('.tk-nav-chevron').forEach(c => c.style.transform = '');
@@ -312,14 +305,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Close on outside click
     document.addEventListener('click', () => {
         document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
         document.querySelectorAll('.tk-nav-profile').forEach(u => u.classList.remove('active'));
         document.querySelectorAll('.tk-nav-chevron').forEach(c => c.style.transform = '');
     });
 
-    // Bind both
     bindDropdown('notif-btn',   'notif-dropdown');
     bindDropdown('profile-btn', 'profile-dropdown', 'profile-chevron');
 
@@ -350,3 +341,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 })();
+/* ================================================================
+    CALENDAR AUTO-SYNC (Multi-User Sync)
+================================================================ */
+function startCalendarSync() {
+    setInterval(async () => {
+        // Don't refresh if a modal is open (prevents losing unsaved data)
+        if (document.getElementById('addEventModal').classList.contains('open') || 
+            document.getElementById('viewEventModal').classList.contains('open')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(window.location.href, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const html = await res.text();
+            
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            
+            // Extract the new data from the script tags in the background
+            const scripts = newDoc.querySelectorAll('script');
+            scripts.forEach(script => {
+                if (script.innerText.includes('window.CAL_EVENTS')) {
+                    // Extract the JSON from the string using Regex
+                    const eventMatch = script.innerText.match(/window\.CAL_EVENTS\s*=\s*({.*?});/);
+                    const taskMatch = script.innerText.match(/window\.CAL_TASKS\s*=\s*({.*?});/);
+                    
+                    if (eventMatch) window.CAL_EVENTS = JSON.parse(eventMatch[1]);
+                    if (taskMatch) window.CAL_TASKS = JSON.parse(taskMatch[1]);
+                }
+            });
+
+            // Re-render the calendar with the new data
+            renderCal();
+            console.log('Calendar synced.');
+
+        } catch (e) {
+            console.error('Calendar sync error:', e);
+        }
+    }, 10000); // Sync every 10 seconds
+}
+
+// Call it at the bottom of your script
+startCalendarSync();

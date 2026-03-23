@@ -29,7 +29,7 @@
     --font:      'Geist', sans-serif;
 }
 
-/* ── Scoped reset (won't bleed into other pages) ─────────────── */
+/* ── Scoped reset ─────────────────────────────────────────────── */
 .tk-page-body, .tk-page-body *, .tk-page-body *::before, .tk-page-body *::after,
 .tk-topnav,    .tk-topnav *,    .tk-topnav *::before,    .tk-topnav *::after,
 .tk-modal-overlay, .tk-modal-overlay *, .tk-modal-overlay *::before, .tk-modal-overlay *::after {
@@ -56,14 +56,13 @@
     transition: border-color .18s, box-shadow .18s, background .18s;
 }
 .tk-topnav-search:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: var(--white); }
-.tk-topnav-search svg               { color: var(--soft); flex-shrink: 0; }
-.tk-topnav-search input             { border: none; background: transparent; outline: none; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text); flex: 1; min-width: 0; }
-.tk-topnav-search input::placeholder{ color: var(--soft); font-weight: 400; }
+.tk-topnav-search svg                { color: var(--soft); flex-shrink: 0; }
+.tk-topnav-search input              { border: none; background: transparent; outline: none; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text); flex: 1; min-width: 0; }
+.tk-topnav-search input::placeholder { color: var(--soft); font-weight: 400; }
 .tk-topnav-kbd { font-size: 11px; font-weight: 600; color: var(--soft); background: var(--white); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; flex-shrink: 0; }
 
 .tk-topnav-right { display: flex; align-items: center; gap: .65rem; margin-left: auto; }
 
-/* Icon buttons */
 .tk-nav-icon-btn {
     width: 40px; height: 40px; border-radius: 10px;
     border: 1.5px solid var(--border); background: var(--white);
@@ -73,7 +72,6 @@
 }
 .tk-nav-icon-btn:hover { background: var(--bg); border-color: var(--border-2); color: var(--text); transform: translateY(-1px); }
 
-/* Notification badge */
 .tk-notif-dot {
     position: absolute; top: 4px; right: 4px;
     min-width: 18px; height: 18px; border-radius: 99px;
@@ -83,10 +81,8 @@
     padding: 0 3px; font-family: var(--font);
 }
 
-/* Divider */
 .tk-nav-divider { width: 1px; height: 30px; background: var(--border); flex-shrink: 0; margin: 0 .15rem; }
 
-/* Profile */
 .tk-nav-profile {
     display: flex; align-items: center; gap: .65rem;
     cursor: pointer; padding: .4rem .75rem;
@@ -108,16 +104,22 @@
 .tk-nav-email    { font-size: 12px; color: var(--soft); font-weight: 500; }
 .tk-nav-chevron  { color: var(--soft); flex-shrink: 0; transition: transform .22s; }
 .tk-nav-profile:hover .tk-nav-chevron { transform: rotate(180deg); }
+.tk-nav-profile.active { background: var(--bg); border-color: var(--border); }
 
 /* ================================================================
-   PAGE SHELL
+   PAGE SHELL — fixed height so no page scroll
 ================================================================ */
-.tk-page-body   { padding: 1.75rem 1.75rem 0; font-size: 15px; color: var(--text); }
+.tk-page-body {
+    padding: 1.75rem 1.75rem 0;
+    font-size: 15px; color: var(--text);
+    height: calc(100vh - 66px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
 .tk-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
 .tk-page-title  { font-size: 30px; font-weight: 800; color: var(--text); letter-spacing: -.025em; }
 .tk-page-sub    { font-size: 14px; color: var(--soft); margin-top: 4px; font-weight: 500; }
 
-/* Add Column button */
 .tk-add-col-btn {
     display: inline-flex; align-items: center; gap: .45rem;
     padding: .6rem 1.25rem; background: var(--white); color: var(--blue);
@@ -127,25 +129,27 @@
     transition: background .18s, color .18s, box-shadow .18s, transform .15s;
     box-shadow: 0 1px 4px rgba(37,99,235,.12);
 }
-.tk-add-col-btn:hover   { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,.3); transform: translateY(-1px); }
-.tk-add-col-btn:active  { transform: translateY(0); }
-.tk-add-col-btn svg     { flex-shrink: 0; transition: transform .2s; }
+.tk-add-col-btn:hover     { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,.3); transform: translateY(-1px); }
+.tk-add-col-btn:active    { transform: translateY(0); }
+.tk-add-col-btn svg       { flex-shrink: 0; transition: transform .2s; }
 .tk-add-col-btn:hover svg { transform: rotate(90deg); }
 
-/* Filter tabs */
-.tk-filter-tabs { display: flex; background: #eaecf0; border-radius: 9px; padding: 3px; gap: 2px; border: 1px solid var(--border); margin-bottom: 1.5rem; width: fit-content; }
+.tk-filter-tabs { display: flex; background: #eaecf0; border-radius: 9px; padding: 3px; gap: 2px; border: 1px solid var(--border); margin-bottom: 1.5rem; width: fit-content; flex-shrink: 0; }
 .tk-filter-tab  { padding: .4rem 1.15rem; border: none; background: transparent; border-radius: 7px; font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
-.tk-filter-tab.active          { background: var(--white); color: var(--text); box-shadow: var(--shadow); }
+.tk-filter-tab.active             { background: var(--white); color: var(--text); box-shadow: var(--shadow); }
 .tk-filter-tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.55); }
 
 /* ================================================================
-   BOARD & COLUMNS
+   BOARD — fills remaining page height, scrolls horizontally
 ================================================================ */
 .tk-board { display: flex; gap: 1.25rem; overflow-x: auto; align-items: flex-start; padding-bottom: 2rem; }
-.tk-board::-webkit-scrollbar       { height: 5px; }
+.tk-board::-webkit-scrollbar       { height: 6px; }
 .tk-board::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
 
-.tk-col { width: 295px; min-width: 295px; flex-shrink: 0; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: calc(100vh - 230px); overflow: hidden; transition: box-shadow .2s; }
+/* ================================================================
+   COLUMNS — fixed height matching board, cards scroll inside
+================================================================ */
+.tk-col { width: 295px; min-width: 295px; flex-shrink: 0; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: calc(100vh - 230px); overflow: visible; transition: box-shadow .2s; }
 .tk-col-head      { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; flex-shrink: 0; border-radius: var(--radius) var(--radius) 0 0; }
 .tk-col-title-row { display: flex; align-items: center; gap: .55rem; }
 .tk-col-dot       { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -190,14 +194,14 @@
 .tk-col.col-indigo .tk-cards { background: #e0e7ff; }
 .tk-col .tk-card   { background: #fff; }
 
-.tk-cards { flex: 1; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: .7rem; min-height: 80px; scrollbar-width: thin; }
+/* Cards area — scrolls vertically inside the column */
+.tk-cards { flex: 1; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: .65rem; min-height: 80px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .tk-cards::-webkit-scrollbar       { width: 4px; }
-.tk-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+.tk-cards::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
 
 .tk-add-task-btn { padding: .7rem 1rem; border: none; background: transparent; color: var(--soft); font-family: var(--font); font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: center; width: 100%; border-top: 1px solid rgba(0,0,0,.06); flex-shrink: 0; transition: color .15s, background .15s; }
 .tk-add-task-btn:hover { color: var(--blue); background: rgba(255,255,255,.6); }
 
-/* Column context menu */
 .tk-col-menu        { position: absolute; top: 35px; right: 0; width: 165px; background: var(--white); border: 1.5px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 100; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
 .tk-col-menu.hidden { display: none; }
 .tk-col-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 11px; border: none; background: transparent; font-family: var(--font); font-size: 13.5px; font-weight: 600; color: var(--muted); border-radius: 6px; cursor: pointer; transition: background .15s; }
@@ -218,7 +222,6 @@
     animation: cardEntrance .38s cubic-bezier(.16,1,.3,1) both;
     transition: border-color .18s, box-shadow .22s, transform .22s;
 }
-/* Staggered entrance delays */
 .tk-card:nth-child(1)  { animation-delay: .04s; }
 .tk-card:nth-child(2)  { animation-delay: .09s; }
 .tk-card:nth-child(3)  { animation-delay: .14s; }
@@ -240,7 +243,6 @@
 .tk-card.is-completed            { opacity: .62; }
 .tk-card.is-completed .tk-card-title { text-decoration: line-through; color: var(--soft); }
 
-/* Click ripple */
 .tk-card-ripple {
     position: absolute; border-radius: 50%;
     background: rgba(37, 99, 235, 0.15);
@@ -248,11 +250,8 @@
     animation: rippleOut .6s cubic-bezier(.4,0,.2,1) forwards;
     pointer-events: none;
 }
-@keyframes rippleOut {
-    to { transform: scale(4); opacity: 0; }
-}
+@keyframes rippleOut { to { transform: scale(4); opacity: 0; } }
 
-/* Pop animation on click */
 .tk-card.card-pop { animation: cardPop .2s cubic-bezier(.16,1,.3,1) both; }
 @keyframes cardPop {
     0%   { transform: scale(1); }
@@ -260,7 +259,6 @@
     100% { transform: scale(1.012); }
 }
 
-/* Card content */
 .tk-card-tag        { display: inline-flex; align-items: center; gap: .3rem; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 99px; margin-bottom: .55rem; }
 .tk-card-title      { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: .35rem; letter-spacing: -.01em; }
 .tk-card-desc       { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: .65rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
@@ -279,13 +277,11 @@
 .tk-card-date svg   { width: 12px; height: 12px; }
 .tk-complete-badge  { display: inline-flex; align-items: center; gap: .3rem; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; margin-bottom: .5rem; }
 
-/* Priority badges */
 .tk-priority        { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 5px; text-transform: uppercase; letter-spacing: .03em; }
 .tk-priority.high   { background: var(--red-lt);   color: var(--red); }
 .tk-priority.medium { background: var(--amber-lt); color: var(--amber); }
 .tk-priority.low    { background: var(--green-lt); color: var(--green); }
 
-/* Avatar colours */
 .av-blue   { background: #2563eb; }
 .av-teal   { background: #0d9488; }
 .av-amber  { background: #d97706; }
@@ -296,7 +292,7 @@
 .av-indigo { background: #4f46e5; }
 
 /* ================================================================
-   MODALS (shared base)
+   MODALS
 ================================================================ */
 .tk-modal-overlay       { position: fixed; inset: 0; background: rgba(16,24,40,.5); backdrop-filter: blur(4px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 1rem; }
 .tk-modal-overlay.open  { display: flex; }
@@ -306,7 +302,6 @@
     to   { opacity: 1; transform: none; }
 }
 
-/* Detail modal */
 .tk-detail          { background: var(--white); border-radius: 16px; width: 100%; max-width: 1020px; height: 88vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); animation: modalIn .25s ease both; overflow: hidden; }
 .tk-detail-head     { padding: 1.5rem 1.6rem 1.1rem; border-bottom: 1px solid var(--border); background: var(--white); z-index: 10; flex-shrink: 0; }
 .tk-detail-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; margin-bottom: .65rem; }
@@ -316,7 +311,6 @@
 .tk-detail-tags     { display: flex; gap: .4rem; flex-wrap: wrap; }
 .tk-detail-footer   { padding: 1.1rem 1.6rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: var(--white); }
 
-/* Create/edit modals */
 .tk-create-modal  { background: var(--white); border-radius: 16px; width: 100%; max-width: 520px; box-shadow: var(--shadow-lg); animation: modalIn .25s ease both; }
 .tk-create-head   { padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
 .tk-create-title  { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
@@ -327,7 +321,6 @@
    FORM ELEMENTS
 ================================================================ */
 .tk-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
 .tk-field-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--soft); margin-bottom: .45rem; }
 
 .tk-field-select,
@@ -351,11 +344,11 @@
 /* ================================================================
    BUTTONS
 ================================================================ */
-.tk-btn-save   { font-size: 14px; font-weight: 700; color: #fff; background: var(--blue); border: none; border-radius: 8px; padding: .6rem 1.3rem; cursor: pointer; transition: background .15s, transform .15s; letter-spacing: -.01em; font-family: var(--font); }
+.tk-btn-save         { font-size: 14px; font-weight: 700; color: #fff; background: var(--blue); border: none; border-radius: 8px; padding: .6rem 1.3rem; cursor: pointer; transition: background .15s, transform .15s; letter-spacing: -.01em; font-family: var(--font); }
 .tk-btn-save:hover   { background: #1d4ed8; transform: translateY(-1px); }
-.tk-btn-cancel { padding: .6rem 1.1rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: background .15s; }
+.tk-btn-cancel       { padding: .6rem 1.1rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--white); font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; transition: background .15s; }
 .tk-btn-cancel:hover { background: var(--bg); }
-.tk-btn-delete { font-size: 13px; font-weight: 700; color: var(--red); background: transparent; border: 1.5px solid var(--border); border-radius: 8px; padding: .55rem 1rem; cursor: pointer; display: flex; align-items: center; gap: .4rem; transition: background .15s, border-color .15s; font-family: var(--font); }
+.tk-btn-delete       { font-size: 13px; font-weight: 700; color: var(--red); background: transparent; border: 1.5px solid var(--border); border-radius: 8px; padding: .55rem 1rem; cursor: pointer; display: flex; align-items: center; gap: .4rem; transition: background .15s, border-color .15s; font-family: var(--font); }
 .tk-btn-delete:hover { background: var(--red-lt); border-color: var(--red); }
 
 /* ================================================================
@@ -406,27 +399,26 @@
 .tk-comment-input-av { width: 34px; height: 34px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
 .tk-comment-input    { flex: 1; padding: .7rem .95rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text); outline: none; resize: none; transition: border-color .15s, box-shadow .15s; }
 .tk-comment-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-.tk-comment-post     { padding: .65rem 1.1rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: var(--font); font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .15s; }
+.tk-comment-post       { padding: .65rem 1.1rem; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-family: var(--font); font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .15s; }
 .tk-comment-post:hover { background: #1d4ed8; }
 
 /* ================================================================
    COLLABORATORS & COLOR SWATCHES
 ================================================================ */
 .tk-collaborator-grid { display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto; padding: 2px; }
-.tk-collab-pill       { display: flex; align-items: center; gap: 6px; padding: 5px 11px 5px 7px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; transition: all .2s; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.tk-collab-pill        { display: flex; align-items: center; gap: 6px; padding: 5px 11px 5px 7px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; transition: all .2s; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .tk-collab-pill:hover  { border-color: var(--blue); }
 .tk-collab-pill.active { background: #eff6ff; border-color: var(--blue); color: var(--blue); }
 
-/* Color swatches — no radio buttons */
 .tk-color-swatches    { display: flex; gap: .55rem; flex-wrap: wrap; }
 .tk-color-swatch      { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .tk-color-swatch:hover    { transform: scale(1.12); }
 .tk-color-swatch.selected { border-color: #1e40af; box-shadow: 0 0 0 2px #bfdbfe; }
-.tk-color-swatch svg      { display: none; }
+.tk-color-swatch svg          { display: none; }
 .tk-color-swatch.selected svg { display: block; }
 
 /* ================================================================
-   TOPNAV DROPDOWNS  (profile + notifications)
+   TOPNAV DROPDOWNS
 ================================================================ */
 .tk-dropdown-wrap { position: relative; }
 
@@ -475,5 +467,108 @@
 .tk-profile-item--danger:hover { background: var(--red-lt); color: var(--red); }
 .tk-profile-divider            { height: 1px; background: var(--border); margin: .3rem 0; }
 
-/* Profile button active state */
-.tk-nav-profile.active { background: var(--bg); border-color: var(--border); }
+/* Container for selected pills */
+.tk-collaborator-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* The Pill Styling */
+.tk-collab-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #f1f5f9; /* Light gray background */
+    border: 1px solid #e2e8f0;
+    border-radius: 20px; /* Rounded pill shape */
+    padding: 4px 8px 4px 4px; /* Less padding on left for the avatar */
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+/* The Mini Avatar inside the pill */
+.tk-avatar-mini {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%; /* Perfect circle */
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+/* The "x" remove icon */
+.tk-remove-x {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+/* Hover state: Red "danger" look when about to remove */
+.tk-collab-pill:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.tk-collab-pill:hover .tk-remove-x {
+    color: #dc2626;
+}
+
+/* Dropdown styling */
+.tk-collab-dropdown {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0 !important;
+}
+
+.tk-collab-option:hover {
+    background-color: #f8fafc;
+    color: #2563eb;
+}
+.tk-collab-search-wrap {
+    position: relative; /* This keeps the dropdown attached to the search bar */
+}
+
+.tk-collab-dropdown {
+    position: absolute;
+    top: 100%; /* Directly under the search bar */
+    left: 0;
+    width: 100%;
+    z-index: 999; /* Float above everything else */
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.tk-collab-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid #f8fafc;
+    transition: background 0.2s;
+}
+
+.tk-collab-option:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+}

@@ -68,7 +68,7 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
 /* ── Page: centered, max-width ── */
 .an-page {
     padding: 1.25rem 1.5rem 2rem;
-    max-width: 1100px;       /* ← THIS is what stops full-width stretching */
+    max-width: 1100px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -99,7 +99,6 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
 /* ── Stat cards ── */
 .an-stats-row1 { display:grid; grid-template-columns:repeat(4,1fr); gap:.85rem; }
 
-/* overdue: only as wide as one stat card, left-aligned */
 .an-stats-row2 { display:grid; grid-template-columns:repeat(4,1fr); gap:.85rem; }
 .an-stat-ghost { visibility:hidden; pointer-events:none; }
 
@@ -135,10 +134,8 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
 .card-sub   { font-size:11px; color:var(--soft); font-weight:500; margin-top:1px; }
 .chart-wrap { padding:.9rem 1.1rem 1.1rem; }
 
-/* line chart — fixed height, no excess space */
 #lineChart { display:block; width:100%!important; height:170px!important; }
 
-/* doughnut — fixed, centered */
 .doughnut-wrap { display:flex; flex-direction:column; align-items:center; padding:1.4rem 1rem 1.2rem; gap:.85rem; }
 #doughnutChart { width:210px!important; height:210px!important; }
 
@@ -205,18 +202,14 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
         <div class="an-stat s4" style="animation-delay:.18s">
             <div class="an-stat-label">Active Members</div>
             <div class="an-stat-value" data-count="{{ $stats['active_members'] ?? 6 }}">0</div>
-<<<<<<< Updated upstream
-            <div class="an-stat-delta up">↑ 2 this period</div>
-=======
             <div class="an-stat-delta up">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 2 this period
             </div>
->>>>>>> Stashed changes
         </div>
     </div>
 
-    {{-- Row 2: overdue only, same column width as row 1 --}}
+    {{-- Row 2: overdue only --}}
     <div class="an-stats-row2">
         <div class="an-stat s5" style="animation-delay:.24s">
             <div class="an-stat-label">Overdue Tasks</div>
@@ -268,24 +261,6 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
             <div class="card-title">Tasks by Status</div>
         </div>
         <div class="breakdown">
-<<<<<<< Updated upstream
-            @php
-                $breakdown = [
-                    ['To Do',      $stats['todo']     ?? 8,  '#2d52c4', 40],
-                    ['In Progress',$stats['doing']    ?? 5,  '#0e9f8e', 25],
-                    ['In Review',  $stats['review']   ?? 3,  '#c47c0e', 15],
-                    ['Done',       $stats['completed']?? 12, '#1a8a5a', 60],
-                ];
-                $max = max(array_column($breakdown, 1));
-            @endphp
-            @foreach($breakdown as [$label, $count, $color, $pct])
-            <div class="breakdown-item">
-                <div class="bd-label">{{ $label }}</div>
-                <div class="bd-track">
-                    <div class="bd-fill" data-w="{{ $max > 0 ? round(($count/$max)*100) : $pct }}" style="background:{{ $color }};width:0%"></div>
-                </div>
-                <div class="bd-count">{{ $count }}</div>
-=======
             @php $max = $columnBreakdown->max('count') ?: 1; @endphp
             @foreach($columnBreakdown as $col)
             <div class="breakdown-item">
@@ -294,13 +269,19 @@ body { background:var(--bg); font-family:var(--font); color:var(--text); -webkit
                     <div class="bd-fill" data-w="{{ $max > 0 ? round(($col['count']/$max)*100) : 0 }}" style="background:{{ $col['color'] }};width:0%"></div>
                 </div>
                 <div class="bd-count">{{ $col['count'] }}</div>
->>>>>>> Stashed changes
             </div>
             @endforeach
         </div>
     </div>
 
 </div>
+
+{{-- Pre-compute priority values to avoid Blade parse errors inside JS --}}
+@php
+    $chartHigh   = $stats['high_priority']   ?? 5;
+    $chartMedium = $stats['medium_priority'] ?? 10;
+    $chartLow    = $stats['low_priority']    ?? 7;
+@endphp
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
@@ -316,17 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(()=>{ el.style.width = el.dataset.w+'%'; }, 350+i*50);
     });
 
-<<<<<<< Updated upstream
-    // Line chart
-    const labels = Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.getDate()+'/'+(d.getMonth()+1);});
-    const data   = Array.from({length:30},()=>Math.floor(Math.random()*5)+1);
-    new Chart(document.getElementById('lineChart'), {
-=======
     Chart.defaults.font.family = "'Inter',sans-serif";
     Chart.defaults.color = '#9ca3af';
 
     new Chart(document.getElementById('lineChart'),{
->>>>>>> Stashed changes
         type:'line',
         data:{
             labels:{!! json_encode($last30->pluck('date')) !!},
@@ -363,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data:{
             labels:['High','Medium','Low'],
             datasets:[{
-                data:[{{ $stats['high_priority']??5 }},{{ $stats['medium_priority']??10 }},{{ $stats['low_priority']??7 }}],
+                data:[{{ $chartHigh }},{{ $chartMedium }},{{ $chartLow }}],
                 backgroundColor:['#dc2626','#d97706','#0e9f8e'],
                 borderWidth:0,hoverOffset:6,
             }]

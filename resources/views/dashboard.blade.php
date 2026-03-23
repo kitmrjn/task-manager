@@ -1,13 +1,6 @@
 <x-app-layout>
 <x-slot name="header">
     <div class="tk-topnav">
-
-        {{-- Search --}}
-        <div class="tk-topnav-search">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search tasks, projects…" />
-        </div>
-
         {{-- Right side --}}
         <div class="tk-topnav-right">
 
@@ -79,13 +72,9 @@
                         </div>
                     </div>
                     <div class="tk-dropdown-body" style="padding:.4rem 0;">
-                        <a href="{{ route('profile.edit') }}" class="tk-profile-item">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                            My Profile
-                        </a>
-                        <a href="#" class="tk-profile-item">
+                        <a href="{{ route('settings.index') }}" class="tk-profile-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                            Settings
+                            My Profile & Settings
                         </a>
                         <div class="tk-profile-divider"></div>
                         <form method="POST" action="{{ route('logout') }}">
@@ -244,7 +233,7 @@
                         <tr class="task-row">
                             <td>
                                 <div class="task-name">{{ $task->title }}</div>
-                                <div class="task-board">{{ $task->board->title ?? 'General Board' }}</div>
+                                <div class="task-board">{{ $task->col_title }}</div>
                             </td>
                             <td>
                                 <span class="pill {{ $task->pill_class }}">{{ $task->col_title }}</span>
@@ -255,6 +244,7 @@
                                     {{ ucfirst($task->priority_class) }}
                                 </span>
                             </td>
+                            
                             <td>
                                 <span class="due {{ $task->due_class }}">
                                     @if($task->due_class === 'overdue')
@@ -282,30 +272,14 @@
             <div class="card-header">
                 <div class="card-title">Recent Activity</div>
             </div>
-<<<<<<< Updated upstream
-            @forelse($recentActivity ?? [] as $activity)
-                @php
-                    $type    = $activity->type ?? 'created';
-                    $iconMap = ['created' => '✦', 'moved' => '⇄', 'done' => '✓', 'assigned' => '◈'];
-                    $icon    = $iconMap[$type] ?? '·';
-=======
-
-            @forelse($recentActivity as $activity)
-                @php
-                    $type    = $activity->type ?? 'created';
-                    $iconSvg = match ($type) {
-                        'created'   => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-                        'moved'     => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>',
-                        'done'      => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
-                        'assigned'  => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
-                        'commented' => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-                        'updated'   => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
-                        default     => '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>',
-                    };
->>>>>>> Stashed changes
-                @endphp
+@forelse($recentActivity ?? [] as $activity)
+    @php
+        $type    = $activity->type ?? 'created';
+        $iconMap = ['created' => '✦', 'moved' => '⇄', 'done' => '✓', 'assigned' => '◈'];
+        $icon    = $iconMap[$type] ?? '·';
+    @endphp
                 <div class="activity-item">
-                    <div class="act-icon {{ $type }}">{!! $iconSvg !!}</div>
+                    <div class="act-icon {{ $type }}">{{ $icon }}</div>
                     <div class="act-body">
                         <div class="act-text">
                             <strong>{{ $activity->user->name ?? 'Someone' }}</strong>

@@ -126,16 +126,7 @@
         </div>
     </nav>
 
-    {{-- User footer --}}
-    <div class="tf-user">
-        <div class="tf-user-avatar">
-            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-        </div>
-        <div class="tf-user-info">
-            <p class="tf-user-name">{{ Auth::user()->name }}</p>
-            <p class="tf-user-role">{{ Auth::user()->role ?? 'Team Member' }}</p>
-        </div>
-    </div>
+
 
 </aside>
 
