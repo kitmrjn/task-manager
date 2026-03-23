@@ -89,8 +89,9 @@
         <div class="tf-nav-section">
             <p class="tf-nav-label">General</p>
 
+            @if(auth()->user()->role === 'admin')
             <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
-               class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
@@ -99,6 +100,7 @@
                 </span>
                 <span class="tf-nav-text">Settings</span>
             </a>
+            @endif
 
             <a href="{{ route('help.index') }}" 
                 class="tf-nav-item {{ request()->routeIs('help.index') ? 'active' : '' }}">
@@ -125,9 +127,11 @@
             </form>
         </div>
     </nav>
-
-
-
+<p style="color:red;font-size:12px;padding:1rem;">
+    Role: {{ auth()->user()->role }} | 
+    Is admin: {{ auth()->user()->role === 'admin' ? 'YES' : 'NO' }}
+</p>
+    
 </aside>
 
 {{-- Mobile overlay --}}

@@ -48,10 +48,12 @@
                         </div>
                     </div>
 <div style="padding:.3rem 0;">
-    <a href="{{ route('settings.index') }}" class="tk-profile-item">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        My Profile & Settings
-    </a>
+@if(auth()->user()->role === 'admin')
+<a href="{{ route('settings.index') }}" class="tk-profile-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    My Profile & Settings
+</a>
+@endif
     <div class="tk-profile-divider"></div>
     <form method="POST" action="{{ route('logout') }}">
         @csrf
@@ -151,7 +153,7 @@
                     </div>
                 </div>
 
-                <div class="tk-cards sortable-column" id="column-{{ $column->id }}" data-column-id="{{ $column->id }}">
+<div class="tk-cards sortable-column" id="column-{{ $column->id }}" data-column-id="{{ $column->id }}">
                     @foreach($column->tasks as $task)
                     @php
                         $total     = $task->checklistItems->count();
@@ -160,11 +162,18 @@
                         $progColor = $pct == 100 ? 'green' : 'blue';
                         $avColors  = ['av-blue','av-teal','av-amber','av-red','av-purple','av-green','av-pink','av-indigo'];
                         $avClass   = $avColors[($task->assigned_to ?? 0) % 8];
+                        $coverImage = $task->attachments->first(fn($a) => str_starts_with($a->mime_type, 'image/'));
                     @endphp
+
                     <div class="tk-card {{ $task->is_completed ? 'is-completed' : '' }}"
                          data-task-id="{{ $task->id }}"
                          data-col-id="{{ $column->id }}"
                          onclick="handleCardClick(event, {{ $task->id }})">
+
+                        {{-- Cover image (if any attachment is an image) --}}
+                        @if($coverImage)
+                        <div class="tk-card-cover" style="background-image:url('{{ $coverImage->url() }}')"></div>
+                        @endif
 
                         @if($task->tag ?? null)
                         <div class="tk-card-tag" style="background:#eff6ff;color:#2563eb">
@@ -205,17 +214,25 @@
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                                         </svg>
-                                        
-                                        {{-- Logic for Start Date - Due Date --}}
                                         @if($task->start_date)
-                                            {{ \Carbon\Carbon::parse($task->start_date)->format('M d') }} - 
+                                            {{ \Carbon\Carbon::parse($task->start_date)->format('M d') }} -
                                         @endif
-                                        
                                         {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
                                     </span>
                                 @endif
+
+                                {{-- 📎 ATTACHMENT INDICATOR --}}
+    @if($task->attachments->count() > 0)
+        <span class="tk-card-attach-count" title="{{ $task->attachments->count() }} attachments">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+            {{ $task->attachments->count() }}
+        </span>
+    @endif
                                 <span class="tk-priority {{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
                             </div>
+
                             <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:.45rem;">
                                 <div style="display:flex;align-items:center;gap:5px;">
                                     @if($task->assignee)
@@ -229,6 +246,7 @@
                                         <span style="font-size:11px;color:var(--soft);font-style:italic;font-weight:500;">Unassigned</span>
                                     @endif
                                 </div>
+
                                 @if($task->members->count() > 0)
                                 <div style="display:flex;align-items:center;">
                                     @php $mColors = ['av-teal','av-purple','av-green','av-pink','av-amber','av-indigo']; @endphp
@@ -247,8 +265,9 @@
                                 </div>
                                 @endif
                             </div>
-                        </div>
-                    </div>
+                        </div>{{-- end .tk-card-footer --}}
+
+                    </div>{{-- end .tk-card --}}
                     @endforeach
                 </div>
 
@@ -337,31 +356,42 @@
 
 <div style="margin-top:1rem;">
     <div class="tk-field-label" style="margin-bottom:.65rem;">Collaborators</div>
-    
-    {{-- 1. Searchable Input --}}
-<div class="tk-collab-search-wrap" style="position:relative; margin-bottom: 1rem;">
-    <input type="text" id="collabSearch" class="tk-field-input" 
-           placeholder="Search members..." 
-           onclick="showAllCollabs()" 
-           oninput="filterCollabDropdown()"
-           autocomplete="off">
-           
-    <div id="collabDropdown" class="tk-collab-dropdown" style="display:none;">
-        @foreach($users as $user)
-            <div class="tk-collab-option" 
-                 data-user-id="{{ $user->id }}" 
-                 data-user-name="{{ strtolower($user->name) }}"
-                 onclick="selectCollab({{ $user->id }}, '{{ $user->name }}')">
-                 {{ $user->name }}
-            </div>
-        @endforeach
-    </div>
-</div>
-
-    {{-- 2. Selected Pills (The ones that actually get saved) --}}
-    <div class="tk-collaborator-grid" id="dt-selected-collabs">
+ 
+    {{-- Searchable dropdown --}}
+    <div class="tk-collab-search-wrap" id="collabSearchWrap">
+        <div class="tk-collab-search-input-row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#9ca3af;flex-shrink:0;">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+                type="text"
+                id="collabSearch"
+                class="tk-collab-search-input"
+                placeholder="Search or add members…"
+                autocomplete="off"
+            >
         </div>
-
+ 
+        <div id="collabDropdown" class="tk-collab-dropdown" style="display:none;">
+            @foreach($users as $user)
+            <div class="tk-collab-option"
+                 data-user-id="{{ $user->id }}"
+                 data-user-name="{{ strtolower($user->name) }}"
+                 data-user-display="{{ $user->name }}">
+                <div class="tk-collab-option-av">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+                <span>{{ $user->name }}</span>
+                <svg class="tk-collab-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M20 6L9 17l-5-5"/>
+                </svg>
+            </div>
+            @endforeach
+        </div>
+    </div>
+ 
+    {{-- Selected pills appear here --}}
+    <div class="tk-selected-collabs" id="dt-selected-collabs"></div>
+ 
+    {{-- Hidden input sent to Laravel --}}
     <input type="hidden" name="collaborators" id="dt-collabs-input">
 </div>
             </form>
@@ -399,6 +429,41 @@
                         onkeydown="if(event.key==='Enter'){event.preventDefault();addCheckItem();}">
                     <button onclick="addCheckItem()">Add</button>
                 </div>
+            </div>
+
+            {{-- Attachments --}}
+            <div>
+                <div class="tk-section-head">
+                    <div class="tk-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                        Attachments
+                    </div>
+                    <label class="tk-attach-btn" for="attachInput">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add
+                        <input type="file" id="attachInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style="display:none;" onchange="uploadAttachments(this)">
+                    </label>
+                </div>
+
+                {{-- Drop zone --}}
+                <div class="tk-dropzone" id="attachDropzone"
+                     ondragover="event.preventDefault();this.classList.add('drag-over')"
+                     ondragleave="this.classList.remove('drag-over')"
+                     ondrop="handleAttachDrop(event)">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#9ca3af;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    <span>Drop files here or <label for="attachInput" style="color:var(--blue);cursor:pointer;font-weight:700;">browse</label></span>
+                </div>
+
+                {{-- Upload progress --}}
+                <div id="attachProgress" style="display:none;margin-top:.6rem;">
+                    <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+                        <div id="attachProgressBar" style="height:100%;background:var(--blue);border-radius:99px;width:0%;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:12px;color:var(--soft);margin-top:.3rem;font-weight:600;">Uploading…</div>
+                </div>
+
+                {{-- Attachment list --}}
+                <div id="dt-attachments" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.5rem;"></div>
             </div>
 
             {{-- Recent Activity --}}

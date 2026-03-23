@@ -13,9 +13,17 @@ return new class extends Migration
     {
         Schema::create('calendar_events', function (Blueprint $table) {
             $table->id();
+            $table->string('title');
+            $table->date('date');
+            $table->string('time')->nullable();
+            $table->string('type')->default('meeting');
+            $table->string('color')->default('blue');
+            $table->text('description')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
             $table->timestamps();
         });
     }
+    
 
     /**
      * Reverse the migrations.

@@ -224,11 +224,31 @@ class TaskController extends Controller
      */
     public function detail(Task $task)
     {
-        $task->load(['checklistItems', 'members', 'activities.user', 'assignee', 'column']);
-
-        $data             = $task->toArray();
-        $data['subtasks'] = [];
-
-        return response()->json($data);
+    $task->load([
+        'checklistItems',
+        'members',
+        'activities.user',
+        'assignee',
+        'column',
+        'attachments.uploader', // ← ADD THIS
+    ]);
+ 
+    $data = $task->toArray();
+ 
+    // Add formatted attachment data for the JS
+    $data['attachments'] = $task->attachments->map(fn($a) => [
+        'id'            => $a->id,
+        'original_name' => $a->original_name,
+        'mime_type'     => $a->mime_type,
+        'size'          => $a->humanSize(),
+        'url'           => $a->url(),
+        'is_image'      => $a->isImage(),
+        'uploader'      => $a->uploader?->name,
+        'created_at'    => $a->created_at,
+    ]);
+ 
+    $data['subtasks'] = [];
+ 
+    return response()->json($data);
     }
 }

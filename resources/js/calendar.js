@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const dd  = String(d).padStart(2, '0');
             const key = `${y}-${mm}-${dd}`;
 
-            const tasks  = tasksByDate[key]  || [];
-            const events = eventsByDate[key] || [];
+            const tasks  = window.CAL_TASKS[key]  || [];
+            const events = window.CAL_EVENTS[key] || [];
 
             const allItems = [
                 ...tasks.map(t => ({

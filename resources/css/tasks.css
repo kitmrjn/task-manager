@@ -520,55 +520,203 @@
     margin-left: 2px;
 }
 
-/* Hover state: Red "danger" look when about to remove */
-.tk-collab-pill:hover {
-    background: #fee2e2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
+/* ================================================================
+   COLLABORATOR SEARCH — add these to the bottom of tasks.css
+================================================================ */
 
-.tk-collab-pill:hover .tk-remove-x {
-    color: #dc2626;
+/* Search input row */
+.tk-collab-search-wrap      { position: relative; }
+.tk-collab-search-input-row {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .6rem .9rem;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--white); transition: border-color .15s, box-shadow .15s;
 }
+.tk-collab-search-input-row:focus-within {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.tk-collab-search-input {
+    border: none; outline: none; background: transparent;
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    color: var(--text); width: 100%;
+}
+.tk-collab-search-input::placeholder { color: var(--soft); font-weight: 400; }
 
-/* Dropdown styling */
+/* Dropdown list */
 .tk-collab-dropdown {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e2e8f0 !important;
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,40,.12);
+    z-index: 9999; max-height: 210px; overflow-y: auto;
+    padding: 5px;
 }
-
-.tk-collab-option:hover {
-    background-color: #f8fafc;
-    color: #2563eb;
-}
-.tk-collab-search-wrap {
-    position: relative; /* This keeps the dropdown attached to the search bar */
-}
-
-.tk-collab-dropdown {
-    position: absolute;
-    top: 100%; /* Directly under the search bar */
-    left: 0;
-    width: 100%;
-    z-index: 999; /* Float above everything else */
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    margin-top: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-}
+.tk-collab-dropdown::-webkit-scrollbar       { width: 4px; }
+.tk-collab-dropdown::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
 
 .tk-collab-option {
-    padding: 10px 15px;
-    cursor: pointer;
-    font-size: 14px;
-    border-bottom: 1px solid #f8fafc;
-    transition: background 0.2s;
+    display: flex; align-items: center; gap: .65rem;
+    padding: .6rem .8rem; border-radius: 7px;
+    cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted);
+    transition: background .13s, color .13s;
+}
+.tk-collab-option:hover    { background: var(--blue-lt); color: var(--blue); }
+.tk-collab-option.selected { background: var(--blue-lt); color: var(--blue); }
+
+.tk-collab-option-av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1b2b5e);
+    color: #fff; font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
 
-.tk-collab-option:hover {
-    background-color: #f1f5f9;
-    color: #2563eb;
+/* Checkmark shown when option is selected */
+.tk-collab-check        { margin-left: auto; color: var(--blue); display: none; flex-shrink: 0; }
+.tk-collab-option.selected .tk-collab-check { display: block; }
+
+/* Selected pills area */
+.tk-selected-collabs {
+    display: flex; flex-wrap: wrap; gap: 7px;
+    margin-top: .65rem; min-height: 0;
+}
+
+/* Pill */
+.tk-collab-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px 4px 5px;
+    background: var(--blue-lt); border: 1.5px solid #bfdbfe;
+    border-radius: 99px; cursor: pointer;
+    font-size: 12.5px; font-weight: 600; color: var(--blue);
+    transition: background .15s, border-color .15s, color .15s;
+}
+.tk-collab-pill:hover        { background: var(--red-lt); border-color: #fecaca; color: var(--red); }
+.tk-collab-pill:hover .tk-remove-x { color: var(--red); }
+
+.tk-avatar-mini {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    font-size: 10px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.tk-collab-pill:hover .tk-avatar-mini { background: var(--red); }
+
+.tk-remove-x {
+    font-size: 15px; line-height: 1; color: #93c5fd;
+    margin-left: 1px; flex-shrink: 0;
+    transition: color .15s;
+}
+/* ================================================================
+   ATTACHMENTS — append to the bottom of tasks.css
+================================================================ */
+
+/* Add button label */
+.tk-attach-btn {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .35rem .85rem; background: var(--blue-lt);
+    border: 1.5px solid #bfdbfe; border-radius: 7px;
+    color: var(--blue); font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: background .15s, border-color .15s;
+    font-family: var(--font);
+}
+.tk-attach-btn:hover { background: #dbeafe; border-color: var(--blue); }
+
+/* Drop zone */
+.tk-dropzone {
+    border: 2px dashed var(--border-2);
+    border-radius: 10px; padding: .9rem 1rem;
+    display: flex; align-items: center; justify-content: center;
+    gap: .65rem; color: var(--soft);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: border-color .18s, background .18s;
+    background: var(--bg);
+}
+.tk-dropzone:hover,
+.tk-dropzone.drag-over {
+    border-color: var(--blue);
+    background: var(--blue-lt);
+    color: var(--blue);
+}
+.tk-dropzone.drag-over { box-shadow: 0 0 0 4px rgba(37,99,235,.1); }
+
+/* Attachment list item */
+.tk-attach-item {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem .75rem;
+    border: 1.5px solid var(--border); border-radius: 9px;
+    background: var(--white); transition: border-color .15s, box-shadow .15s;
+}
+.tk-attach-item:hover { border-color: #93c5fd; box-shadow: 0 2px 8px rgba(37,99,235,.08); }
+
+/* Image thumbnail */
+.tk-attach-thumb {
+    width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 7px; background-size: cover; background-position: center;
+    background-color: var(--bg); border: 1px solid var(--border);
+    cursor: zoom-in; transition: opacity .15s;
+}
+.tk-attach-thumb:hover { opacity: .85; }
+
+/* Non-image icon */
+.tk-attach-icon {
+    width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 7px; background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+}
+
+/* Info */
+.tk-attach-info { flex: 1; min-width: 0; }
+.tk-attach-name {
+    font-size: 13.5px; font-weight: 700; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tk-attach-meta { font-size: 12px; color: var(--soft); font-weight: 500; margin-top: 2px; }
+
+/* Action buttons */
+.tk-attach-actions    { display: flex; align-items: center; gap: .3rem; flex-shrink: 0; }
+.tk-attach-action-btn {
+    width: 30px; height: 30px; border-radius: 7px;
+    border: 1.5px solid var(--border); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); text-decoration: none;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.tk-attach-action-btn:hover { background: var(--bg); color: var(--text); }
+.tk-attach-del:hover         { background: var(--red-lt) !important; color: var(--red) !important; border-color: var(--red) !important; }
+
+/* Card cover image preview (shown on kanban card) */
+.tk-card-cover {
+    width: calc(100% + 2.1rem);
+    margin: -1rem -1.05rem 0.75rem;
+    height: 110px;
+    background-size: cover;
+    background-position: center;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    border-bottom: 1px solid var(--border);
+    order: -1; /* always appears at top of card */
+}
+.tk-card-attach-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--soft); /* Matches your date color */
+    background: var(--bg); /* Light grey background */
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+/* Optional: change color if there are many files */
+.tk-card-attach-count svg {
+    margin-top: 1px;
+}
+
+.tk-card:hover .tk-card-attach-count {
+    color: var(--text);
+    background: #e2e8f0;
 }

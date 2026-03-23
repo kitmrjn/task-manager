@@ -10,6 +10,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TaskAttachmentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -71,11 +72,17 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     // ── Team ───────────────────────────────────────────────────────────
     Route::get('/team/{user}/tasks', [TeamController::class, 'memberTasks'])->name('team.tasks');
     Route::patch('/team/{user}/role', [TeamController::class, 'updateRole'])->name('team.role');
+    Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update'); // ← add this
+    
 
     // ── Settings ───────────────────────────────────────────────────────
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password',  [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::delete('/settings/account', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
+
+    // ── Attachment ──────────────────────────────────────────────────
+    Route::post('/tasks/{task}/attachments',      [TaskAttachmentController::class, 'store']);
+    Route::delete('/attachments/{attachment}',    [TaskAttachmentController::class, 'destroy']);
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', function () {

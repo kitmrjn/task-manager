@@ -1,38 +1,21 @@
 /**
  * tasks.js  →  resources/js/tasks.js
- *
- * Handles:
- *   - Sortable drag-and-drop between columns
- *   - Card click: ripple + pop animation → open detail modal
- *   - Column CRUD: move, edit, delete, filter
- *   - Task detail modal: load, save, delete, toggle complete
- *   - Checklist: add, toggle, delete items
- *   - Comments: render, post, live poll every 5s
- *   - Activity history: preview + full modal
- *   - Start date toggle in detail form
- *   - Color swatch selector (no radio buttons)
- *   - Notifications dropdown
- *   - Search/filter cards
  */
-
-// SortableJS must be loaded before this file (via CDN or npm)
-// <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
     let currentTaskHistory     = [];
     let currentTaskId          = null;
     let commentPollingInterval = null;
 
-    // Wrap Sortable logic so we can call it anytime the board refreshes
+    /* ================================================================
+       SORTABLE
+    ================================================================ */
     function initSortable() {
         document.querySelectorAll('.sortable-column').forEach(col => {
-            // Clean up old instances to prevent memory leaks/bugs
             const existing = Sortable.get(col);
             if (existing) existing.destroy();
-
             new Sortable(col, {
                 group: 'shared',
                 animation: 200,
@@ -47,83 +30,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Define the Sync Loop
     function startBoardSync() {
         setInterval(async () => {
-            // Stop sync if user is dragging or looking at a task detail
-            if (document.querySelector('.sortable-ghost') || 
-                document.getElementById('detailModal').classList.contains('open')) {
-                return;
-            }
-
+            if (document.querySelector('.sortable-ghost') ||
+                document.getElementById('detailModal').classList.contains('open')) return;
             try {
-                const res = await fetch(window.location.href, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const html = await res.text();
-                
-                const parser = new DOMParser();
-                const newDoc = parser.parseFromString(html, 'text/html');
+                const res      = await fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const html     = await res.text();
+                const parser   = new DOMParser();
+                const newDoc   = parser.parseFromString(html, 'text/html');
                 const newBoard = newDoc.getElementById('boardContainer');
-                const currentBoard = document.getElementById('boardContainer');
-
-                // Update only if content changed
-                if (newBoard && currentBoard && newBoard.innerHTML.trim() !== currentBoard.innerHTML.trim()) {
-                    currentBoard.innerHTML = newBoard.innerHTML;
-                    initSortable(); // RE-BIND drag-and-drop to the new HTML
+                const curBoard = document.getElementById('boardContainer');
+                if (newBoard && curBoard && newBoard.innerHTML.trim() !== curBoard.innerHTML.trim()) {
+                    curBoard.innerHTML = newBoard.innerHTML;
+                    initSortable();
                     updateCounts();
                 }
-            } catch (e) { console.error("Sync failed:", e); }
-        }, 5000); 
+            } catch (e) { console.error('Sync failed:', e); }
+        }, 5000);
     }
 
-    initSortable();   // Initialize drag-and-drop
-    startBoardSync(); // Start the auto-sync loop
+    initSortable();
+    startBoardSync();
 
     /* ================================================================
-       SORTABLE — drag cards between columns
-    ================================================================ */
-    document.querySelectorAll('.sortable-column').forEach(col => {
-        new Sortable(col, {
-            group: 'shared',
-            animation: 200,
-            onEnd(evt) {
-                fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                    body: JSON.stringify({ board_column_id: evt.to.dataset.columnId })
-                }).then(() => updateCounts());
-            }
-        });
-    });
-
-    /* ================================================================
-       CARD CLICK — ripple + pop animation, then open detail
+       CARD CLICK
     ================================================================ */
     window.handleCardClick = function(event, taskId) {
-        const card = event.currentTarget;
-
-        // Ripple at exact cursor position
+        const card   = event.currentTarget;
         const rect   = card.getBoundingClientRect();
         const size   = Math.max(rect.width, rect.height);
         const ripple = document.createElement('span');
-        ripple.className   = 'tk-card-ripple';
-        ripple.style.cssText = `width:${size}px;height:${size}px;left:${event.clientX - rect.left - size / 2}px;top:${event.clientY - rect.top - size / 2}px;`;
+        ripple.className     = 'tk-card-ripple';
+        ripple.style.cssText = `width:${size}px;height:${size}px;left:${event.clientX - rect.left - size/2}px;top:${event.clientY - rect.top - size/2}px;`;
         card.appendChild(ripple);
         ripple.addEventListener('animationend', () => ripple.remove());
-
-        // Pop squeeze animation
         card.classList.add('card-pop');
         card.addEventListener('animationend', () => card.classList.remove('card-pop'), { once: true });
-
-        // Slight delay so animation plays before modal opens
         setTimeout(() => openDetail(taskId), 120);
     };
 
     /* ================================================================
-       COLOR SWATCH SELECTOR
-       Works for both "add" and "edit" column modals.
-       Replaces the old radio-button approach.
+       COLOR SWATCH
     ================================================================ */
     window.selectColor = function(context, key) {
         const container = document.getElementById(`${context}-swatches`);
@@ -155,18 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el) return;
         const sibling = direction === 'left' ? el.previousElementSibling : el.nextElementSibling;
         if (sibling && sibling.classList.contains('tk-col')) {
-            direction === 'left'
-                ? el.parentNode.insertBefore(el, sibling)
-                : el.parentNode.insertBefore(sibling, el);
+            direction === 'left' ? el.parentNode.insertBefore(el, sibling) : el.parentNode.insertBefore(sibling, el);
         } else return;
-
         fetch(`/columns/${colId}/move`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
             body: JSON.stringify({ direction })
-        }).then(r => r.json()).then(d => {
-            if (!d.success) console.error('Column move failed');
-        });
+        }).then(r => r.json()).then(d => { if (!d.success) console.error('Column move failed'); });
     };
 
     function updateCounts() {
@@ -201,6 +144,213 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* ================================================================
+       COLLABORATOR SEARCH & SELECT
+    ================================================================ */
+    (function initCollabSearch() {
+        const searchInput = document.getElementById('collabSearch');
+        const dropdown    = document.getElementById('collabDropdown');
+        const wrap        = document.getElementById('collabSearchWrap');
+        if (!searchInput || !dropdown || !wrap) return;
+
+        searchInput.addEventListener('focus', e => { e.stopPropagation(); openCollabDropdown(); });
+        searchInput.addEventListener('click', e => { e.stopPropagation(); openCollabDropdown(); });
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase().trim();
+            dropdown.querySelectorAll('.tk-collab-option').forEach(opt => {
+                opt.style.display = (!q || opt.dataset.userName.includes(q)) ? '' : 'none';
+            });
+            openCollabDropdown();
+        });
+        wrap.addEventListener('click', e => e.stopPropagation());
+        dropdown.querySelectorAll('.tk-collab-option').forEach(opt => {
+            opt.addEventListener('click', e => {
+                e.stopPropagation();
+                toggleCollab(opt.dataset.userId, opt.dataset.userDisplay, opt);
+                searchInput.value = '';
+                dropdown.querySelectorAll('.tk-collab-option').forEach(o => o.style.display = '');
+                searchInput.focus();
+            });
+        });
+        document.addEventListener('click', () => closeCollabDropdown());
+    })();
+
+    function openCollabDropdown() {
+        const d = document.getElementById('collabDropdown');
+        if (d) d.style.display = 'block';
+    }
+    function closeCollabDropdown() {
+        const d = document.getElementById('collabDropdown');
+        if (d) d.style.display = 'none';
+    }
+
+    function toggleCollab(userId, userName, optionEl) {
+        const container = document.getElementById('dt-selected-collabs');
+        const existing  = container.querySelector(`[data-user-id="${userId}"]`);
+        if (existing) {
+            existing.remove();
+            if (optionEl) optionEl.classList.remove('selected');
+        } else {
+            const pill = document.createElement('div');
+            pill.className      = 'tk-collab-pill';
+            pill.dataset.userId = userId;
+            pill.innerHTML = `
+                <div class="tk-avatar-mini">${userName.charAt(0).toUpperCase()}</div>
+                <span>${userName}</span>
+                <span class="tk-remove-x">×</span>`;
+            pill.addEventListener('click', e => {
+                e.stopPropagation();
+                pill.remove();
+                const opt = document.querySelector(`#collabDropdown [data-user-id="${userId}"]`);
+                if (opt) opt.classList.remove('selected');
+                updateCollabInput();
+            });
+            container.appendChild(pill);
+            if (optionEl) optionEl.classList.add('selected');
+        }
+        updateCollabInput();
+    }
+
+    window.selectCollab = function(userId, userName) {
+        const container = document.getElementById('dt-selected-collabs');
+        if (!container) return;
+        if (container.querySelector(`[data-user-id="${userId}"]`)) return;
+        const opt = document.querySelector(`#collabDropdown [data-user-id="${userId}"]`);
+        toggleCollab(String(userId), userName, opt);
+    };
+
+    function updateCollabInput() {
+        const selected = Array.from(document.querySelectorAll('#dt-selected-collabs .tk-collab-pill')).map(p => p.dataset.userId);
+        const input = document.getElementById('dt-collabs-input');
+        if (input) input.value = JSON.stringify(selected);
+    }
+
+    /* ================================================================
+       ATTACHMENTS — all inside DOMContentLoaded so renderAttachments
+       is in the same scope as openDetail
+    ================================================================ */
+    function renderAttachments(attachments) {
+        const container = document.getElementById('dt-attachments');
+        if (!container) return;
+
+        if (!attachments || attachments.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = attachments.map(a => {
+            const icon = getFileIcon(a.mime_type);
+            return `<div class="tk-attach-item" id="attach-${a.id}">
+                ${a.is_image
+                    ? `<div class="tk-attach-thumb" style="background-image:url('${a.url}')" onclick="openLightbox('${a.url}','${a.original_name}')"></div>`
+                    : `<div class="tk-attach-icon">${icon}</div>`
+                }
+                <div class="tk-attach-info">
+                    <div class="tk-attach-name" title="${a.original_name}">${a.original_name}</div>
+                    <div class="tk-attach-meta">${a.size} · ${a.uploader || 'You'}</div>
+                </div>
+                <div class="tk-attach-actions">
+                    <a href="${a.url}" download="${a.original_name}" class="tk-attach-action-btn" title="Download">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                    <button class="tk-attach-action-btn tk-attach-del" onclick="deleteAttachment(${a.id})" title="Delete">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    window.uploadAttachments = async function(input) {
+        if (!input.files.length || !currentTaskId) return;
+        const formData = new FormData();
+        Array.from(input.files).forEach(f => formData.append('files[]', f));
+        const progressWrap = document.getElementById('attachProgress');
+        const progressBar  = document.getElementById('attachProgressBar');
+        progressWrap.style.display = '';
+        progressBar.style.width    = '30%';
+        try {
+            const res  = await fetch(`/tasks/${currentTaskId}/attachments`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF },
+                body: formData,
+            });
+            progressBar.style.width = '90%';
+            const data = await res.json();
+            progressBar.style.width = '100%';
+            setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0%'; }, 500);
+            if (data.success) openDetail(currentTaskId);
+        } catch (e) {
+            console.error('Upload failed:', e);
+            progressWrap.style.display = 'none';
+        }
+        input.value = '';
+    };
+
+    window.handleAttachDrop = function(event) {
+        event.preventDefault();
+        document.getElementById('attachDropzone').classList.remove('drag-over');
+        const dt = event.dataTransfer;
+        if (!dt.files.length || !currentTaskId) return;
+        const formData = new FormData();
+        Array.from(dt.files).forEach(f => formData.append('files[]', f));
+        const progressWrap = document.getElementById('attachProgress');
+        const progressBar  = document.getElementById('attachProgressBar');
+        progressWrap.style.display = '';
+        progressBar.style.width    = '40%';
+        fetch(`/tasks/${currentTaskId}/attachments`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            progressBar.style.width = '100%';
+            setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0%'; }, 500);
+            if (data.success) openDetail(currentTaskId);
+        })
+        .catch(() => { progressWrap.style.display = 'none'; });
+    };
+
+    window.deleteAttachment = function(attachmentId) {
+        if (!confirm('Remove this attachment?')) return;
+        fetch(`/attachments/${attachmentId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+        })
+        .then(r => r.json())
+        .then(data => { if (data.success) openDetail(currentTaskId); });
+    };
+
+    window.openLightbox = function(url, name) {
+        let lb = document.getElementById('tk-lightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'tk-lightbox';
+            lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;cursor:zoom-out;';
+            lb.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:900px;padding:0 1.5rem;">
+                    <span id="lb-name" style="font-size:14px;font-weight:600;color:rgba(255,255,255,.7);"></span>
+                    <button onclick="document.getElementById('tk-lightbox').remove()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;width:36px;height:36px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+                </div>
+                <img id="lb-img" style="max-width:90vw;max-height:82vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);" src="">`;
+            lb.addEventListener('click', e => { if (e.target === lb) lb.remove(); });
+            document.body.appendChild(lb);
+        }
+        document.getElementById('lb-img').src          = url;
+        document.getElementById('lb-name').textContent = name;
+        lb.style.display = 'flex';
+    };
+
+    function getFileIcon(mime) {
+        if (mime.includes('pdf'))                               return '📄';
+        if (mime.includes('word') || mime.includes('document')) return '📝';
+        if (mime.includes('sheet') || mime.includes('excel'))   return '📊';
+        if (mime.includes('zip')  || mime.includes('rar'))      return '🗜️';
+        if (mime.includes('text'))                              return '📃';
+        return '📎';
+    }
+
+    /* ================================================================
        DETAIL MODAL — open, close, save
     ================================================================ */
     window.openDetail = async function(taskId) {
@@ -217,16 +367,15 @@ document.addEventListener('DOMContentLoaded', () => {
             currentTaskHistory = task.activities || [];
             renderHistoryPreview();
 
-            document.getElementById('dt-title').textContent  = task.title;
-            document.getElementById('dt-title-input').value  = task.title;
-            document.getElementById('detailForm').action      = `/tasks/${taskId}`;
-            document.getElementById('dt-desc').value          = task.description || '';
-            document.getElementById('dt-duedate').value       = task.due_date    ? task.due_date.substr(0, 10) : '';
-            document.getElementById('dt-priority').value      = task.priority    || 'medium';
-            document.getElementById('dt-assignee').value      = task.assigned_to || '';
-            document.getElementById('dt-status').value        = task.board_column_id || '';
+            document.getElementById('dt-title').textContent = task.title;
+            document.getElementById('dt-title-input').value = task.title;
+            document.getElementById('detailForm').action    = `/tasks/${taskId}`;
+            document.getElementById('dt-desc').value        = task.description || '';
+            document.getElementById('dt-duedate').value     = task.due_date    ? task.due_date.substr(0,10) : '';
+            document.getElementById('dt-priority').value    = task.priority    || 'medium';
+            document.getElementById('dt-assignee').value    = task.assigned_to || '';
+            document.getElementById('dt-status').value      = task.board_column_id || '';
 
-            // Complete button state
             const completeBtn = document.getElementById('dt-complete-btn');
             if (task.is_completed) {
                 completeBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Completed ✓`;
@@ -236,37 +385,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 completeBtn.style.cssText += 'background:var(--green-lt);color:var(--green);border-color:#bbf7d0;';
             }
 
-            // Tags row
             document.getElementById('dt-tags').innerHTML = `
                 ${task.priority ? `<span class="tk-priority ${task.priority}">${task.priority.toUpperCase()}</span>` : ''}
                 ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
 
-            // Collaborators
-const selectedContainer = document.getElementById('dt-selected-collabs');
-if (selectedContainer) {
-    selectedContainer.innerHTML = ''; 
-}
+            const selectedContainer = document.getElementById('dt-selected-collabs');
+            if (selectedContainer) selectedContainer.innerHTML = '';
+            document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.classList.remove('selected'));
+            (task.members || []).forEach(m => window.selectCollab(m.id, m.name));
 
-// 2. Load the members from the fetched task data
-if (task.members && task.members.length > 0) {
-    task.members.forEach(member => {
-        // Use the selectCollab function to create the pills in the modal
-        selectCollab(member.id, member.name);
-    });
-} else {
-    // If no members, make sure the hidden input is empty
-    updateCollabInput();
-}
-
-            // Delete form
             document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
             document.getElementById('dt-delete-btn').onclick = () => {
                 if (confirm('Delete this task?')) document.getElementById('dt-delete-form').submit();
             };
 
-            // Start date
             if (task.start_date) {
-                document.getElementById('dt-startdate').value             = task.start_date.substr(0, 10);
+                document.getElementById('dt-startdate').value             = task.start_date.substr(0,10);
                 document.getElementById('start-date-field').style.display = '';
                 const btn = document.getElementById('start-date-toggle');
                 btn.textContent = '− Remove'; btn.style.color = 'var(--red)'; btn.style.background = 'var(--red-lt)';
@@ -279,6 +413,7 @@ if (task.members && task.members.length > 0) {
 
             renderChecklist(task.checklist_items || []);
             renderComments(task.activities || []);
+            renderAttachments(task.attachments || []); // ✅ works now — same scope
             startCommentPolling();
 
         } catch (err) { console.error('openDetail error:', err); }
@@ -286,6 +421,7 @@ if (task.members && task.members.length > 0) {
 
     window.closeDetail = function() {
         document.getElementById('detailModal').classList.remove('open');
+        closeCollabDropdown();
         currentTaskId = null;
         stopCommentPolling();
     };
@@ -295,7 +431,6 @@ if (task.members && task.members.length > 0) {
         const saveBtn = document.querySelector('.tk-btn-save');
         const orig    = saveBtn.textContent;
         saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
-
         fetch(form.action, {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
@@ -315,32 +450,19 @@ if (task.members && task.members.length > 0) {
     };
 
     /* ================================================================
-       COLLABORATORS
-    ================================================================ */
-    window.toggleCollabSelection = function(el) { el.classList.toggle('active'); updateCollabInput(); };
-
-    function updateCollabInput() {
-        const selected = Array.from(document.querySelectorAll('.tk-collab-pill.active')).map(p => p.dataset.userId);
-        document.getElementById('dt-collabs-input').value = JSON.stringify(selected);
-    }
-
-    /* ================================================================
        CHECKLIST
     ================================================================ */
     function renderChecklist(items) {
         const done  = items.filter(i => i.is_completed).length;
         const total = items.length;
         const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-
-        document.getElementById('dt-check-badge').textContent          = `${done}/${total}`;
-        document.getElementById('dt-prog-section').style.display       = total > 0 ? '' : 'none';
-
+        document.getElementById('dt-check-badge').textContent    = `${done}/${total}`;
+        document.getElementById('dt-prog-section').style.display = total > 0 ? '' : 'none';
         if (total > 0) {
             document.getElementById('dt-pct').textContent       = pct + '%';
             document.getElementById('dt-prog-fill').style.width = pct + '%';
             document.getElementById('dt-prog-sub').textContent  = `${done} of ${total} checklist item${total > 1 ? 's' : ''} done`;
         }
-
         document.getElementById('dt-checklist').innerHTML = items.map(item => `
             <div class="tk-check-item" id="ci-${item.id}">
                 <input type="checkbox" ${item.is_completed ? 'checked' : ''} onchange="toggleCheck(${item.id})">
@@ -355,13 +477,11 @@ if (task.members && task.members.length > 0) {
         fetch(`/checklist-items/${id}/toggle`, { method: 'PATCH', headers: { 'X-CSRF-TOKEN': CSRF } })
             .then(() => openDetail(currentTaskId));
     };
-
     window.deleteCheck = function(id) {
         if (!confirm('Remove?')) return;
         fetch(`/checklist-items/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF } })
             .then(() => openDetail(currentTaskId));
     };
-
     window.addCheckItem = function() {
         const input = document.getElementById('checkInput');
         const title = input.value.trim();
@@ -379,15 +499,12 @@ if (task.members && task.members.length > 0) {
     function renderComments(activities) {
         const container = document.getElementById('dt-comments');
         if (!container) return;
-
         const comments = (activities || []).filter(a => a.action === 'comment' || a.action === 'comment_added');
         document.getElementById('dt-comment-count').textContent = comments.length;
-
         if (comments.length === 0) {
             container.innerHTML = '<div style="font-size:14px;color:var(--soft);font-weight:500;padding:.5rem 0;">No comments yet.</div>';
             return;
         }
-
         container.innerHTML = comments.map(a => {
             const name     = a.user?.name || 'Someone';
             const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substr(0, 2);
@@ -403,7 +520,6 @@ if (task.members && task.members.length > 0) {
                     </div>
                 </div>`;
         }).join('');
-
         container.scrollTop = container.scrollHeight;
     }
 
@@ -411,10 +527,8 @@ if (task.members && task.members.length > 0) {
         const input = document.getElementById('commentInput');
         const text  = input.value.trim();
         if (!text || !currentTaskId) return;
-
         const btn = document.querySelector('.tk-comment-post');
         btn.disabled = true; btn.textContent = 'Posting…';
-
         fetch(`/tasks/${currentTaskId}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
@@ -437,7 +551,6 @@ if (task.members && task.members.length > 0) {
             } catch (e) {}
         }, 5000);
     }
-
     function stopCommentPolling() {
         if (commentPollingInterval) { clearInterval(commentPollingInterval); commentPollingInterval = null; }
     }
@@ -500,54 +613,6 @@ if (task.members && task.members.length > 0) {
     };
 
     /* ================================================================
-       NOTIFICATIONS
-    ================================================================ */
-    let notifOpen = false;
-    const ICON_MAP = { comment: '💬', created: '✅', priority_change: '🔥', lead_change: '👤', column_change: '📋', completed: '🎉', checklist_added: '☑️' };
-
-    window.toggleNotifications = async function() {
-        const dropdown = document.getElementById('notif-dropdown');
-        notifOpen = !notifOpen;
-        dropdown.style.display = notifOpen ? 'block' : 'none';
-
-        if (!notifOpen) return;
-
-        try {
-            const res  = await fetch('/notifications', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } });
-            const data = await res.json();
-            const list = document.getElementById('notif-list');
-            document.getElementById('notif-count').textContent = data.length + ' new';
-
-            if (!data.length) {
-                list.innerHTML = '<div style="padding:1.5rem;text-align:center;font-size:14px;color:#6b7280;">You\'re all caught up! 🎉</div>';
-                return;
-            }
-
-            list.innerHTML = data.map(n => `
-                <div style="display:flex;gap:.75rem;padding:.9rem 1.1rem;border-bottom:1px solid #f0f2f6;cursor:pointer;"
-                     onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-                    <div style="width:38px;height:38px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${ICON_MAP[n.action] || '🔔'}</div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:13.5px;font-weight:500;color:#0d1117;line-height:1.4;">
-                            <strong>${n.user || 'Someone'}</strong> ${n.description}
-                            ${n.task ? `<span style="color:#6b7280;"> on <em>${n.task}</em></span>` : ''}
-                        </div>
-                        <div style="font-size:12px;color:#9ba3ae;margin-top:3px;">${n.time}</div>
-                    </div>
-                </div>`).join('');
-        } catch (e) {
-            document.getElementById('notif-list').innerHTML = '<div style="padding:1rem;text-align:center;font-size:13.5px;color:#dc2626;">Failed to load notifications.</div>';
-        }
-    };
-
-    document.addEventListener('click', e => {
-        if (!document.getElementById('notif-btn')?.contains(e.target)) {
-            document.getElementById('notif-dropdown').style.display = 'none';
-            notifOpen = false;
-        }
-    });
-
-    /* ================================================================
        MODAL CLOSE BEHAVIOURS
     ================================================================ */
     document.getElementById('detailModal').addEventListener('click', e => {
@@ -572,19 +637,16 @@ if (task.members && task.members.length > 0) {
     ================================================================ */
     document.querySelector('.tk-topnav-search input').addEventListener('input', function () {
         const q = this.value.toLowerCase().trim();
-
         document.querySelectorAll('.tk-card').forEach(card => {
             if (!q) { card.style.display = ''; return; }
             const title = card.querySelector('.tk-card-title')?.textContent.toLowerCase() || '';
             const desc  = card.querySelector('.tk-card-desc')?.textContent.toLowerCase()  || '';
             card.style.display = (title.includes(q) || desc.includes(q)) ? '' : 'none';
         });
-
         updateCounts();
-
         document.querySelectorAll('.sortable-column').forEach(col => {
             const visible = col.querySelectorAll('.tk-card:not([style*="display: none"])').length;
-            let noRes     = col.querySelector('.tk-no-results');
+            let noRes = col.querySelector('.tk-no-results');
             if (q && visible === 0) {
                 if (!noRes) {
                     noRes = document.createElement('div');
@@ -621,38 +683,30 @@ if (task.members && task.members.length > 0) {
         const btn  = document.getElementById(btnId);
         const drop = document.getElementById(dropId);
         if (!btn || !drop) return;
-
         btn.addEventListener('click', e => {
             e.stopPropagation();
             const isOpen = drop.classList.contains('open');
-
-            // close all
             document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
             document.querySelectorAll('.tk-nav-profile').forEach(u => u.classList.remove('active'));
             document.querySelectorAll('.tk-nav-chevron').forEach(c => c.style.transform = '');
-
             if (!isOpen) {
                 drop.classList.add('open');
                 if (chevId) {
                     const chev = document.getElementById(chevId);
                     if (chev) chev.style.transform = 'rotate(180deg)';
                 }
-                if (btnId === 'profile-btn') {
-                    btn.closest('.tk-nav-profile')?.classList.add('active');
-                }
+                if (btnId === 'profile-btn') btn.closest('.tk-nav-profile')?.classList.add('active');
                 if (btnId === 'notif-btn') loadNotifications(drop);
             }
         });
     }
 
-    // Close on outside click
     document.addEventListener('click', () => {
         document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
         document.querySelectorAll('.tk-nav-profile').forEach(u => u.classList.remove('active'));
         document.querySelectorAll('.tk-nav-chevron').forEach(c => c.style.transform = '');
     });
 
-    // Bind both
     bindDropdown('notif-btn',   'notif-dropdown');
     bindDropdown('profile-btn', 'profile-dropdown', 'profile-chevron');
 
@@ -682,187 +736,4 @@ if (task.members && task.members.length > 0) {
             list.innerHTML = '<div style="padding:1rem;text-align:center;font-size:13px;color:var(--red);">Failed to load.</div>';
         }
     }
-    
-    /* ================================================================
-    BOARD AUTO-SYNC (Multi-Account Sync)
-================================================================ */
-let boardSyncInterval = null;
-
-function startBoardSync() {
-    // Poll every 5 seconds (adjust as needed)
-    boardSyncInterval = setInterval(async () => {
-        // Don't refresh if the user is currently dragging or has a modal open
-        if (document.querySelector('.sortable-ghost') || 
-            document.getElementById('detailModal').classList.contains('open')) {
-            return;
-        }
-
-        try {
-            const res = await fetch(window.location.href, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const html = await res.text();
-            
-            // Create a temporary element to parse the new HTML
-            const parser = new DOMParser();
-            const newDoc = parser.parseFromString(html, 'text/html');
-            const newBoard = newDoc.getElementById('boardContainer');
-            const currentBoard = document.getElementById('boardContainer');
-
-            // Only update if the content is actually different
-            if (newBoard && currentBoard && newBoard.innerHTML !== currentBoard.innerHTML) {
-                currentBoard.innerHTML = newBoard.innerHTML;
-                
-                // CRITICAL: Re-initialize Sortable on the new columns
-                initSortable(); 
-                updateCounts();
-                console.log('Board synced with server.');
-            }
-        } catch (e) {
-            console.error('Sync error:', e);
-        }
-    }, 5000); 
-}
-
-// Wrap your Sortable logic into a reusable function
-function initSortable() {
-    document.querySelectorAll('.sortable-column').forEach(col => {
-        // Destroy existing instance if it exists to prevent duplicates
-        if (Sortable.get(col)) Sortable.get(col).destroy();
-
-        new Sortable(col, {
-            group: 'shared',
-            animation: 200,
-            onEnd(evt) {
-                fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                    body: JSON.stringify({ board_column_id: evt.to.dataset.columnId })
-                }).then(() => updateCounts());
-            }
-        });
-    });
-}
-
-/* ================================================================
-    NEW COLLABORATOR SEARCH & SELECT
-================================================================ */
-
-window.filterCollabDropdown = function() {
-    const query = document.getElementById('collabSearch').value.toLowerCase();
-    const dropdown = document.getElementById('collabDropdown');
-    const options = dropdown.querySelectorAll('.tk-collab-option');
-    
-    if (query.length > 0) {
-        dropdown.style.display = 'block';
-        options.forEach(opt => {
-            const name = opt.dataset.userName;
-            opt.style.display = name.includes(query) ? 'block' : 'none';
-        });
-    } else {
-        dropdown.style.display = 'none';
-    }
-};
-
-window.selectCollab = function(userId, userName) {
-    const selectedContainer = document.getElementById('dt-selected-collabs');
-    if (!selectedContainer) return;
-    
-    // Prevent adding duplicates
-    if (selectedContainer.querySelector(`[data-user-id="${userId}"]`)) return;
-
-    const initials = userName.charAt(0).toUpperCase();
-    
-    const pill = document.createElement('div');
-    pill.className = 'tk-collab-pill active';
-    pill.dataset.userId = userId;
-    
-    // Allow removal by clicking
-    pill.onclick = function(e) { 
-        e.stopPropagation(); 
-        this.remove(); 
-        updateCollabInput(); 
-    };
-
-    pill.innerHTML = `
-        <div class="tk-avatar-mini" style="background:#2563eb;">${initials}</div>
-        <span>${userName}</span>
-        <span class="tk-remove-x">×</span>
-    `;
-
-    selectedContainer.appendChild(pill);
-    updateCollabInput();
-
-    // Only clear search if the user actually typed something (manual selection)
-    const searchInput = document.getElementById('collabSearch');
-    if (searchInput && searchInput.value !== '') {
-        searchInput.value = '';
-        document.getElementById('collabDropdown').style.display = 'none';
-    }
-};
-
-// Update the input for the Laravel backend
-function updateCollabInput() {
-    const selected = Array.from(document.querySelectorAll('#dt-selected-collabs .tk-collab-pill'))
-                         .map(p => p.dataset.userId);
-    document.getElementById('dt-collabs-input').value = JSON.stringify(selected);
-}
-
-// Update the existing openDetail to render selected pills correctly
-// Inside your openDetail function, replace the collaborator loop with:
-const selectedContainer = document.getElementById('dt-selected-collabs');
-selectedContainer.innerHTML = ''; // clear current
-
-(task.members || []).forEach(user => {
-    selectCollab(user.id, user.name);
-});
-
-
-
-
 })();
-/* ================================================================
-    COLLABORATOR SEARCH & SELECT (Show on Click)
-================================================================ */
-
-// 1. Show all members immediately when clicked
-window.showAllCollabs = function() {
-    console.log("Collab search clicked!"); // Check F12 console for this!
-    const dropdown = document.getElementById('collabDropdown');
-    
-    if (dropdown) {
-        dropdown.style.display = 'block';
-        dropdown.style.opacity = '1';
-        dropdown.style.visibility = 'visible';
-        
-        // Ensure all options are visible
-        const options = dropdown.querySelectorAll('.tk-collab-option');
-        options.forEach(opt => opt.style.display = 'block');
-    } else {
-        console.error("Could not find collabDropdown element!");
-    }
-};
-
-// Global click listener to close it
-document.addEventListener('mousedown', function(e) {
-    const wrap = document.querySelector('.tk-collab-search-wrap');
-    const dropdown = document.getElementById('collabDropdown');
-    
-    if (dropdown && wrap && !wrap.contains(e.target)) {
-        dropdown.style.display = 'none';
-    }
-});
-
-// 2. Filter the list as you type
-window.filterCollabDropdown = function() {
-    const query = document.getElementById('collabSearch').value.toLowerCase();
-    const dropdown = document.getElementById('collabDropdown');
-    const options = dropdown.querySelectorAll('.tk-collab-option');
-    
-    dropdown.style.display = 'block'; 
-    
-    options.forEach(opt => {
-        const name = opt.dataset.userName;
-        opt.style.display = name.includes(query) ? 'block' : 'none';
-    });
-};

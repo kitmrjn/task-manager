@@ -23,7 +23,9 @@ class BoardController extends Controller
         }, 
         'columns.tasks.assignee', 
         'columns.tasks.checklistItems', // <--- ADD THIS LINE
-        'columns.tasks.members'
+        'columns.tasks.members',
+        'columns.tasks.attachments'
+
     ])->first();
 
     $users = User::all();
