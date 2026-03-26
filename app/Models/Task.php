@@ -6,47 +6,52 @@ use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
-protected $fillable = [
-        'board_column_id', 
-        'title', 
-        'description', 
-        'assigned_to', 
-        'priority', 
-        'due_date', 
+    protected $fillable = [
+        'board_column_id',
+        'title',
+        'description',
+        'assigned_to',
+        'creator_id',      // ← NEW
+        'priority',
+        'due_date',
         'start_date',
         'order',
-        'is_completed', // <--- ADD THIS LINE HERE
-        
+        'is_completed',
     ];
 
-    // 1. This Task belongs inside a specific Column
     public function column()
     {
         return $this->belongsTo(BoardColumn::class, 'board_column_id');
     }
 
-    // 2. This Task is assigned to a specific User
     public function assignee()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
-    //Checklist Item
-    public function checklistItems() {
+
+    // ← NEW: who created this task
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function checklistItems()
+    {
         return $this->hasMany(ChecklistItem::class);
     }
-    //Adding member to task
-public function members()
-{
-    return $this->belongsToMany(User::class, 'task_user');
-}
-    //Activity Logs
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'task_user');
+    }
+
     public function activities()
     {
         return $this->hasMany(TaskActivity::class)->latest();
     }
-        // ← NEW
+
     public function attachments()
     {
-        return $this->hasMany(TaskAttachment::class)->latest();    
+        return $this->hasMany(TaskAttachment::class)->latest();
     }
 }

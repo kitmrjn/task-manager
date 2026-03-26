@@ -33,13 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${h12}:${m} ${ampm}`;
     }
 
-    /* ============================================================
-       RENDER CALENDAR GRID
+/* ============================================================
+        RENDER CALENDAR GRID
     ============================================================ */
     window.renderCal = function() {
         const y     = cur.getFullYear();
         const m     = cur.getMonth();
         const today = new Date();
+        
+        // Get today's date in YYYY-MM-DD format for comparison
+        const todayKey = today.toISOString().split('T')[0];
 
         document.getElementById('calMonthLabel').textContent =
             cur.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -65,15 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const events = window.CAL_EVENTS[key] || [];
 
             const allItems = [
-                ...tasks.map(t => ({
-                    label:  t.title,
-                    color:  getPriorityColor(t.priority),
-                    done:   t.is_completed,
-                    type:   'task',
-                    id:     t.id,
-                    column: t.column,
-                    date:   key,
-                })),
+                ...tasks.map(t => {
+                    // Logic: If the task date (key) is strictly less than today 
+                    // and it's not completed, it is overdue.
+                    const isOverdue = (key < todayKey) && !t.is_completed;
+                    
+                    return {
+                        label:  t.title,
+                        // If overdue, we use the 'red' color or 'overdue' class
+                        color:  isOverdue ? 'red' : getPriorityColor(t.priority),
+                        done:   t.is_completed,
+                        type:   'task',
+                        id:     t.id,
+                        column: t.column,
+                        date:   key,
+                        isOverdue: isOverdue
+                    };
+                }),
                 ...events.map(e => ({
                     label: e.title,
                     color: e.color,
@@ -84,14 +95,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     desc:  e.description,
                     etype: e.type,
                     date:  key,
+                    isOverdue: false
                 }))
             ];
 
             const showMax = 3;
             let evtHtml = allItems.slice(0, showMax).map(item => {
                 const strike = item.done ? 'text-decoration:line-through;opacity:.55;' : '';
-                return `<div class="cal-event ${item.color}" style="${strike}"
-                             title="${item.label}"
+                
+                // Add 'overdue' class to the div if the item is overdue
+                const overdueClass = item.isOverdue ? 'overdue' : '';
+
+                return `<div class="cal-event ${item.color} ${overdueClass}" 
+                             style="${strike}"
+                             title="${item.label} ${item.isOverdue ? '(Overdue)' : ''}"
                              onclick="event.stopPropagation(); viewItem(${JSON.stringify(item).replace(/"/g, '&quot;')})"
                         >${item.label}</div>`;
             }).join('');
@@ -171,20 +188,51 @@ document.addEventListener('DOMContentLoaded', () => {
         currentViewEventDate = null;
     };
 
-    /* ============================================================
-       DELETE EVENT
-    ============================================================ */
-    window.deleteEvent = function() {
-        if (!currentViewEventId || !confirm('Delete this event?')) return;
+/* ============================================================
+    DELETE EVENT
+============================================================ */
+window.deleteEvent = function() {
+    if (!currentViewEventId) return;
 
-        fetch('/calendar/events', {
-            method:  'DELETE',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-            body:    JSON.stringify({ date: currentViewEventDate, id: currentViewEventId }),
-        })
-        .then(r => r.json())
-        .then(data => { if (data.success) { closeViewModal(); window.location.reload(); } });
-    };
+    Swal.fire({
+        title: 'Delete this event?',
+        text: "This action cannot be undone!",
+        icon: 'warning',
+        width: '380px',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        
+        // --- ADD THESE FOR THE CURVES ---
+        borderRadius: '16px', 
+        background: '#ffffff',
+        customClass: {
+            popup: 'tk-rounded-modal',
+            confirmButton: 'tk-swal-btn',
+            cancelButton: 'tk-swal-btn'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch('/calendar/events', {
+                method:  'DELETE',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': CSRF 
+                },
+                body: JSON.stringify({ id: currentViewEventId }),
+            })
+            .then(r => r.json())
+            .then(data => { 
+                if (data.success) { 
+                    window.location.reload(); 
+                } 
+            });
+        }
+    });
+};
 
     /* ============================================================
        ADD EVENT MODAL

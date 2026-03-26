@@ -43,7 +43,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--c-soft);font-size:14px;}
 
 .tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;}
-.tm-card{background:var(--c-white);border:1px solid var(--c-border);border-radius:var(--radius);padding:1.4rem;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:.75rem;animation:fadeUp .4s ease both;transition:box-shadow .2s,transform .2s;cursor:pointer;}
+.tm-card{background:var(--c-white);border:1px solid var(--c-border);border-radius:var(--radius);padding:1.4rem;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:.75rem;animation:fadeUp .4s ease both;transition:box-shadow .2s,transform .2s;}
 .tm-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
 .tm-card:nth-child(2){animation-delay:.06s;}.tm-card:nth-child(3){animation-delay:.12s;}
 .tm-card:nth-child(4){animation-delay:.18s;}.tm-card:nth-child(5){animation-delay:.24s;}
@@ -56,6 +56,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-role{display:inline-block;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:4px;letter-spacing:.04em;}
 .tm-role.admin{background:var(--c-blue-lt);color:var(--c-blue);}
 .tm-role.member{background:var(--c-teal-lt);color:var(--c-teal);}
+.tm-role.manager{background:var(--c-amber-lt);color:var(--c-amber);}
 .tm-tasks-label{font-size:11px;color:var(--c-soft);}
 .tm-tasks-label span{font-weight:600;color:var(--c-text);}
 .tm-online{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
@@ -67,12 +68,19 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-sum-val{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--c-navy);}
 .tm-sum-label{font-size:11px;color:var(--c-soft);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-top:.2rem;}
 
-/* ── Edit button ── */
+/* Edit button */
 .tm-edit-btn{position:absolute;top:0;right:0;background:none;border:none;cursor:pointer;color:var(--c-soft);font-size:15px;padding:2px 4px;border-radius:6px;transition:color .15s,background .15s;}
 .tm-edit-btn:hover{color:var(--c-blue);background:var(--c-blue-lt);}
 
-/* ── Modal ── */
-.tm-modal-bg{display:none;position:fixed;inset:0;background:rgba(27,43,94,.35);z-index:999;align-items:center;justify-content:center;}
+/* Card action buttons row */
+.tm-card-actions{display:flex;gap:.45rem;margin-top:.25rem;}
+.tm-card-action-btn{flex:1;padding:.4rem .6rem;border-radius:7px;border:1.5px solid var(--c-border);background:var(--c-white);font-family:'Epilogue',sans-serif;font-size:11.5px;font-weight:600;color:var(--c-muted);cursor:pointer;transition:all .15s;text-align:center;}
+.tm-card-action-btn:hover{border-color:var(--c-blue);color:var(--c-blue);background:var(--c-blue-lt);}
+.tm-card-action-btn.perms{border-color:#c4b5fd;color:var(--c-purple);background:var(--c-purple-lt);}
+.tm-card-action-btn.perms:hover{background:#ede9fe;}
+
+/* ── Edit Modal ── */
+.tm-modal-bg{display:none;position:fixed;inset:0;background:rgba(27,43,94,.35);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;}
 .tm-modal-bg.open{display:flex;}
 .tm-modal{background:var(--c-white);border-radius:14px;padding:2rem;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(27,43,94,.18);animation:fadeUp .25s ease;}
 .tm-modal h3{font-size:16px;font-weight:700;color:var(--c-text);margin-bottom:1.2rem;}
@@ -86,54 +94,41 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-btn.ghost{background:var(--c-bg);color:var(--c-muted);border:1.5px solid var(--c-border);}
 .tm-save-msg{font-size:12px;color:var(--c-green);margin-right:auto;display:none;}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* ── Permissions Modal ── */
+.tm-perm-modal-bg{display:none;position:fixed;inset:0;background:rgba(27,43,94,.4);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:1rem;}
+.tm-perm-modal-bg.open{display:flex;}
+.tm-perm-modal{background:var(--c-white);border-radius:16px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);animation:fadeUp .25s ease;overflow:hidden;}
+.tm-perm-head{padding:1.3rem 1.5rem;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:.85rem;}
+.tm-perm-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.tm-perm-name{font-size:15px;font-weight:700;color:var(--c-text);}
+.tm-perm-sub{font-size:11.5px;color:var(--c-soft);margin-top:1px;}
+.tm-perm-close{margin-left:auto;width:30px;height:30px;border:1.5px solid var(--c-border);border-radius:7px;background:var(--c-white);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c-muted);font-size:15px;}
+.tm-perm-close:hover{background:var(--c-bg);}
+.tm-perm-body{padding:1.3rem 1.5rem;display:flex;flex-direction:column;gap:.6rem;}
+.tm-perm-section-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--c-soft);margin-bottom:.2rem;margin-top:.4rem;}
+
+/* Toggle row */
+.tm-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border:1.5px solid var(--c-border);border-radius:9px;background:var(--c-surface);transition:border-color .15s;}
+.tm-toggle-row:hover{border-color:var(--c-border-2);}
+.tm-toggle-label{display:flex;align-items:center;gap:.6rem;}
+.tm-toggle-icon{font-size:16px;width:22px;text-align:center;}
+.tm-toggle-text{font-size:13px;font-weight:600;color:var(--c-text);}
+.tm-toggle-desc{font-size:11px;color:var(--c-soft);margin-top:1px;}
+
+/* The actual toggle switch */
+.tm-toggle{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
+.tm-toggle input{opacity:0;width:0;height:0;}
+.tm-toggle-slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:99px;transition:.25s;}
+.tm-toggle-slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.tm-toggle input:checked + .tm-toggle-slider{background:var(--c-blue);}
+.tm-toggle input:checked + .tm-toggle-slider:before{transform:translateX(18px);}
+
+.tm-perm-footer{padding:1rem 1.5rem;border-top:1px solid var(--c-border);display:flex;justify-content:flex-end;gap:.6rem;background:var(--c-surface);}
+.tm-perm-save-msg{font-size:12px;color:var(--c-green);margin-right:auto;display:none;align-items:center;gap:.3rem;}
+
 .av-1{background:#2d52c4;}.av-2{background:#0e9f8e;}.av-3{background:#c47c0e;}
 .av-4{background:#c0354a;}.av-5{background:#6d52c4;}.av-6{background:#1a8a5a;}
 .av-7{background:#db2777;}.av-8{background:#0d9488;}
-
-/* ── MEMBER DETAIL MODAL ── */
-.tm-modal-overlay{position:fixed;inset:0;background:rgba(16,24,40,.5);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
-.tm-modal-overlay.open{display:flex;}
-.tm-modal{background:var(--c-white);border-radius:16px;width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:fadeUp .25s ease both;overflow:hidden;}
-.tm-modal-head{padding:1.3rem 1.5rem;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:1rem;flex-shrink:0;}
-.tm-modal-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;}
-.tm-modal-name{font-size:17px;font-weight:700;color:var(--c-text);}
-.tm-modal-email{font-size:12px;color:var(--c-soft);margin-top:2px;}
-.tm-modal-close{margin-left:auto;width:32px;height:32px;border:1.5px solid var(--c-border);border-radius:8px;background:var(--c-white);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c-muted);font-size:16px;flex-shrink:0;}
-.tm-modal-close:hover{background:var(--c-bg);}
-.tm-modal-body{flex:1;overflow-y:auto;padding:1.3rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem;}
-
-/* Role management */
-.tm-role-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:1rem 1.2rem;}
-.tm-role-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--c-soft);margin-bottom:.75rem;}
-.tm-role-options{display:flex;gap:.5rem;}
-.tm-role-opt{flex:1;padding:.5rem;border:1.5px solid var(--c-border);border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:var(--c-white);color:var(--c-muted);}
-.tm-role-opt:hover{border-color:var(--c-blue);color:var(--c-blue);}
-.tm-role-opt.selected.admin{border-color:var(--c-blue);background:var(--c-blue-lt);color:var(--c-blue);}
-.tm-role-opt.selected.manager{border-color:var(--c-amber);background:var(--c-amber-lt);color:var(--c-amber);}
-.tm-role-opt.selected.member{border-color:var(--c-teal);background:var(--c-teal-lt);color:var(--c-teal);}
-.tm-save-role{margin-top:.75rem;width:100%;padding:.55rem;background:var(--c-navy);color:#fff;border:none;border-radius:8px;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
-.tm-save-role:hover{background:var(--c-blue);}
-
-/* Task list in modal */
-.tm-task-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c-soft);margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;}
-.tm-task-item{display:flex;align-items:center;gap:.75rem;padding:.65rem .85rem;border:1px solid var(--c-border);border-radius:8px;margin-bottom:.4rem;background:var(--c-white);transition:border-color .15s;}
-.tm-task-item:hover{border-color:#93c5fd;}
-.tm-task-title{flex:1;font-size:13px;font-weight:500;color:var(--c-text);}
-.tm-task-col{font-size:11px;color:var(--c-soft);}
-.tm-task-due{font-size:11px;color:var(--c-soft);}
-.tm-priority{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;}
-.tm-priority.high{background:var(--c-red-lt);color:var(--c-red);}
-.tm-priority.medium{background:var(--c-amber-lt);color:var(--c-amber);}
-.tm-priority.low{background:var(--c-green-lt);color:var(--c-green);}
-.tm-collab-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--c-purple-lt);color:var(--c-purple);}
-
-.tm-empty{font-size:13px;color:var(--c-soft);text-align:center;padding:1rem 0;font-style:italic;}
-
-.tm-stats-row{display:flex;gap:.75rem;}
-.tm-mini-stat{flex:1;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:.7rem 1rem;text-align:center;}
-.tm-mini-stat-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--c-navy);}
-.tm-mini-stat-label{font-size:10px;color:var(--c-soft);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-top:2px;}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 </style>
@@ -168,59 +163,56 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
     {{-- Member Grid --}}
     <div class="tm-grid" id="memberGrid">
         @forelse($members ?? [] as $member)
-            @php
-                $roleClass = match(strtolower($member->role ?? 'team_member')) { 'admin'=>'admin','manager'=>'manager',default=>'member' };
-                $avIdx = ($loop->index % 6) + 1;
-                $initials = strtoupper(substr($member->name,0,1) . (strpos($member->name,' ')!==false ? substr($member->name,strpos($member->name,' ')+1,1) : ''));
-            @endphp
-            <div class="tm-card" data-name="{{ strtolower($member->name) }}" data-id="{{ $member->id }}">
-                <div class="tm-card-top">
-                    <div class="tm-av av-{{ $avIdx }}">{{ $initials }}</div>
-                    <div>
-                        <div class="tm-name">{{ $member->name }}</div>
-                        <div class="tm-email">{{ $member->email }}</div>
-                    </div>
-                    <div class="tm-online {{ $member->last_active && \Carbon\Carbon::parse($member->last_active)->diffInMinutes() < 30 ? 'active' : '' }}" style="margin-left:auto" title="Online status"></div>
-                    @if(auth()->user()->role === 'admin')
-                    <button class="tm-edit-btn"
-                        onclick="openEdit(this)"
-                        data-id="{{ $member->id }}"
-                        data-name="{{ $member->name }}"
-                        data-email="{{ $member->email }}"
-                        data-role="{{ $member->role ?? 'team_member' }}"
-                        title="Edit member">✏️</button>
-                    @endif
+        @php
+            $roleClass = match(strtolower($member->role ?? 'team_member')) { 'admin'=>'admin','manager'=>'manager',default=>'member' };
+            $avIdx     = ($loop->index % 8) + 1;
+            $initials  = strtoupper(substr($member->name,0,1) . (strpos($member->name,' ')!==false ? substr($member->name,strpos($member->name,' ')+1,1) : ''));
+            $perms     = $member->getPermissions();
+        @endphp
+        <div class="tm-card" data-name="{{ strtolower($member->name) }}" data-id="{{ $member->id }}">
+            <div class="tm-card-top">
+                <div class="tm-av av-{{ $avIdx }}">{{ $initials }}</div>
+                <div>
+                    <div class="tm-name">{{ $member->name }}</div>
+                    <div class="tm-email">{{ $member->email }}</div>
                 </div>
-                <div class="tm-role-row">
-                    <span class="tm-role {{ $roleClass }}">{{ ucfirst($member->role ?? 'Member') }}</span>
-                    <span class="tm-tasks-label"><span>{{ $member->tasks_count ?? 0 }}</span> tasks</span>
-                </div>
+                <div class="tm-online {{ $member->last_active && \Carbon\Carbon::parse($member->last_active)->diffInMinutes() < 30 ? 'active' : '' }}" style="margin-left:auto" title="Online status"></div>
+                @if(auth()->user()->role === 'admin')
+                <button class="tm-edit-btn"
+                    onclick="openEdit(this)"
+                    data-id="{{ $member->id }}"
+                    data-name="{{ $member->name }}"
+                    data-email="{{ $member->email }}"
+                    data-role="{{ $member->role ?? 'team_member' }}"
+                    title="Edit member">✏️</button>
+                @endif
             </div>
+            <div class="tm-role-row">
+                <span class="tm-role {{ $roleClass }}">{{ ucfirst(str_replace('_',' ', $member->role ?? 'Member')) }}</span>
+                <span class="tm-tasks-label"><span>{{ $member->tasks_count ?? 0 }}</span> tasks</span>
+            </div>
+
+            {{-- Permission toggles — only shown to admin, and only for non-admin members --}}
+            @if(auth()->user()->role === 'admin' && $member->role !== 'admin')
+            <div class="tm-card-actions">
+                <button class="tm-card-action-btn perms" onclick="openPerms(
+                    {{ $member->id }},
+                    '{{ addslashes($member->name) }}',
+                    'av-{{ $avIdx }}',
+                    {{ $perms->can_view_calendar  ? 'true' : 'false' }},
+                    {{ $perms->can_view_analytics ? 'true' : 'false' }},
+                    {{ $perms->can_view_team      ? 'true' : 'false' }},
+                    {{ $perms->can_view_reports   ? 'true' : 'false' }},
+                    {{ $perms->can_create_tasks   ? 'true' : 'false' }},
+                    {{ $perms->can_delete_tasks   ? 'true' : 'false' }}
+                )">
+                    🔐 Manage Permissions
+                </button>
+            </div>
+            @endif
+        </div>
         @empty
-            {{-- Placeholder cards (no edit btn since no real IDs) --}}
-            @foreach([
-                ['Anna Reyes','anna@company.com','Admin','AR','av-1',5,true],
-                ['Marco Santos','marco@company.com','Manager','MS','av-2',8,true],
-                ['Lena Cruz','lena@company.com','Member','LC','av-3',3,false],
-                ['James Uy','james@company.com','Member','JU','av-4',6,true],
-                ['Sofia Lim','sofia@company.com','Member','SL','av-5',2,false],
-                ['Totok Michael','totok@company.com','Manager','TM','av-6',4,true],
-            ] as [$n,$e,$r,$i,$av,$tc,$on])
-            <div class="tm-card" data-name="{{ strtolower($n) }}">
-                <div class="tm-card-top">
-                    <div class="tm-av {{ $av }}">{{ $i }}</div>
-                    <div>
-                        <div class="tm-name">{{ $n }}</div>
-                        <div class="tm-email">{{ $e }}</div>
-                    </div>
-                    <div class="tm-online {{ $on ? 'active' : '' }}" style="margin-left:auto"></div>
-                </div>
-                <div class="tm-role-row">
-                    <span class="tm-role {{ strtolower($r) }}">{{ $r }}</span>
-                    <span class="tm-tasks-label"><span>{{ $tc }}</span> tasks</span>
-                </div>
-            </div>
-            @endforeach
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--c-soft);font-size:14px;">No team members found.</div>
         @endforelse
     </div>
 
@@ -259,14 +251,108 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
     </div>
 </div>
 
-<script>
-const CSRF       = document.querySelector('meta[name="csrf-token"]').content;
-const IS_ADMIN   = {{ auth()->user()->role === 'admin' ? 'true' : 'false' }};
-let currentMemberId   = null;
-let selectedRole      = null;
-let avColors = ['#2d52c4','#0e9f8e','#c47c0e','#c0354a','#6d52c4','#1a8a5a','#db2777','#0d9488'];
+{{-- ── Permissions Modal ── --}}
+<div class="tm-perm-modal-bg" id="permModalBg">
+    <div class="tm-perm-modal">
+        <div class="tm-perm-head">
+            <div class="tm-perm-av" id="perm-av">AB</div>
+            <div>
+                <div class="tm-perm-name" id="perm-name">Member Name</div>
+                <div class="tm-perm-sub">Feature access permissions</div>
+            </div>
+            <button class="tm-perm-close" onclick="closePerms()">×</button>
+        </div>
 
-// ── Search ────────────────────────────────────────────────────
+        <input type="hidden" id="permUserId">
+
+        <div class="tm-perm-body">
+            <div class="tm-perm-section-label">📄 Pages</div>
+
+            <div class="tm-toggle-row">
+                <div class="tm-toggle-label">
+                    <span class="tm-toggle-icon">📅</span>
+                    <div>
+                        <div class="tm-toggle-text">Calendar</div>
+                        <div class="tm-toggle-desc">View and manage calendar events</div>
+                    </div>
+                </div>
+                <label class="tm-toggle">
+                    <input type="checkbox" id="perm_calendar" onchange="savePerms()">
+                    <span class="tm-toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="tm-toggle-row">
+                <div class="tm-toggle-label">
+                    <span class="tm-toggle-icon">📊</span>
+                    <div>
+                        <div class="tm-toggle-text">Analytics</div>
+                        <div class="tm-toggle-desc">View performance reports and charts</div>
+                    </div>
+                </div>
+                <label class="tm-toggle">
+                    <input type="checkbox" id="perm_analytics" onchange="savePerms()">
+                    <span class="tm-toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="tm-toggle-row">
+                <div class="tm-toggle-label">
+                    <span class="tm-toggle-icon">👥</span>
+                    <div>
+                        <div class="tm-toggle-text">Team Page</div>
+                        <div class="tm-toggle-desc">View team members</div>
+                    </div>
+                </div>
+                <label class="tm-toggle">
+                    <input type="checkbox" id="perm_team" onchange="savePerms()">
+                    <span class="tm-toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="tm-perm-section-label" style="margin-top:.4rem;">⚙️ Task Actions</div>
+
+            <div class="tm-toggle-row">
+                <div class="tm-toggle-label">
+                    <span class="tm-toggle-icon">➕</span>
+                    <div>
+                        <div class="tm-toggle-text">Create Tasks</div>
+                        <div class="tm-toggle-desc">Add new tasks to any column</div>
+                    </div>
+                </div>
+                <label class="tm-toggle">
+                    <input type="checkbox" id="perm_create_tasks" onchange="savePerms()">
+                    <span class="tm-toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="tm-toggle-row">
+                <div class="tm-toggle-label">
+                    <span class="tm-toggle-icon">🗑️</span>
+                    <div>
+                        <div class="tm-toggle-text">Delete Tasks</div>
+                        <div class="tm-toggle-desc">Remove tasks from the board</div>
+                    </div>
+                </div>
+                <label class="tm-toggle">
+                    <input type="checkbox" id="perm_delete_tasks" onchange="savePerms()">
+                    <span class="tm-toggle-slider"></span>
+                </label>
+            </div>
+            
+        </div>
+
+        <div class="tm-perm-footer">
+            <span class="tm-perm-save-msg" id="permSaveMsg">✔ Saved!</span>
+            <button class="tm-btn ghost" onclick="closePerms()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+
+/* ── Search ── */
 function filterMembers() {
     const q = document.getElementById('memberSearch').value.toLowerCase();
     document.querySelectorAll('.tm-card').forEach(c => {
@@ -274,6 +360,7 @@ function filterMembers() {
     });
 }
 
+/* ── Edit Modal ── */
 function openEdit(btn) {
     document.getElementById('editId').value       = btn.dataset.id;
     document.getElementById('editName').value     = btn.dataset.name;
@@ -283,15 +370,12 @@ function openEdit(btn) {
     document.getElementById('saveMsg').style.display = 'none';
     document.getElementById('editModalBg').classList.add('open');
 }
-
 function closeEdit() {
     document.getElementById('editModalBg').classList.remove('open');
 }
-
 document.getElementById('editModalBg').addEventListener('click', function(e) {
     if (e.target === this) closeEdit();
 });
-
 async function saveEdit() {
     const id       = document.getElementById('editId').value;
     const name     = document.getElementById('editName').value;
@@ -304,10 +388,7 @@ async function saveEdit() {
 
     const res = await fetch(`/team/members/${id}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
         body: JSON.stringify(payload),
     });
 
@@ -317,17 +398,13 @@ async function saveEdit() {
             card.dataset.name = name.toLowerCase();
             card.querySelector('.tm-name').textContent  = name;
             card.querySelector('.tm-email').textContent = email;
-            const roleSpan = card.querySelector('.tm-role');
+            const roleSpan  = card.querySelector('.tm-role');
             const roleLabel = role === 'team_member' ? 'Team Member' : role.charAt(0).toUpperCase() + role.slice(1);
             const roleClass = role === 'team_member' ? 'member' : role;
             roleSpan.textContent = roleLabel;
             roleSpan.className   = `tm-role ${roleClass}`;
             const editBtn = card.querySelector('.tm-edit-btn');
-            if (editBtn) {
-                editBtn.dataset.name  = name;
-                editBtn.dataset.email = email;
-                editBtn.dataset.role  = role;
-            }
+            if (editBtn) { editBtn.dataset.name = name; editBtn.dataset.email = email; editBtn.dataset.role = role; }
         }
         document.getElementById('saveMsg').style.display = 'inline';
         setTimeout(closeEdit, 1200);
@@ -335,6 +412,75 @@ async function saveEdit() {
         const err = await res.json();
         alert('Failed to save: ' + (err.message ?? JSON.stringify(err)));
     }
+}
+
+/* ── Permissions Modal ── */
+function openPerms(userId, name, avClass, calendar, analytics, team, reports, createTasks, deleteTasks) {
+    document.getElementById('permUserId').value          = userId;
+    document.getElementById('perm-name').textContent     = name;
+    document.getElementById('perm-av').textContent       = name.split(' ').map(n=>n[0]).join('').toUpperCase().substr(0,2);
+    document.getElementById('perm-av').className         = 'tm-perm-av ' + avClass;
+    document.getElementById('perm_calendar').checked     = calendar;
+    document.getElementById('perm_analytics').checked    = analytics;
+    document.getElementById('perm_team').checked         = team;
+    document.getElementById('perm_create_tasks').checked = createTasks;
+    document.getElementById('perm_delete_tasks').checked = deleteTasks;
+    document.getElementById('permSaveMsg').style.display = 'none';
+    document.getElementById('permModalBg').classList.add('open');
+}
+function closePerms() {
+    document.getElementById('permModalBg').classList.remove('open');
+}
+document.getElementById('permModalBg').addEventListener('click', function(e) {
+    if (e.target === this) closePerms();
+});
+
+async function savePerms() {
+    const userId = document.getElementById('permUserId').value;
+    if (!userId) return;
+
+    const payload = {
+        can_view_calendar:  document.getElementById('perm_calendar').checked,
+        can_view_analytics: document.getElementById('perm_analytics').checked,
+        can_view_team:      document.getElementById('perm_team').checked,
+        can_view_reports:   false, // reserved for future
+        can_create_tasks:   document.getElementById('perm_create_tasks').checked,
+        can_delete_tasks:   document.getElementById('perm_delete_tasks').checked,
+    };
+
+    const res = await fetch(`/team/members/${userId}/permissions`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        body: JSON.stringify(payload),
+    });
+
+if (res.ok) {
+    // Show saved message
+    const msg = document.getElementById('permSaveMsg');
+    msg.style.display = 'flex';
+    setTimeout(() => msg.style.display = 'none', 2000);
+
+    // Update the button's data attributes so reopening the modal shows correct state
+    const userId = document.getElementById('permUserId').value;
+    const card   = document.querySelector(`.tm-card[data-id="${userId}"]`);
+    if (card) {
+        const btn = card.querySelector('.tm-card-action-btn.perms');
+        if (btn) {
+            // Rebuild the onclick with updated values
+            const calendar    = document.getElementById('perm_calendar').checked;
+            const analytics   = document.getElementById('perm_analytics').checked;
+            const team        = document.getElementById('perm_team').checked;
+            const createTasks = document.getElementById('perm_create_tasks').checked;
+            const deleteTasks = document.getElementById('perm_delete_tasks').checked;
+            const name        = document.getElementById('perm-name').textContent;
+            const avClass     = document.getElementById('perm-av').className.replace('tm-perm-av ', '');
+
+            btn.setAttribute('onclick', `openPerms(${userId},'${name}','${avClass}',${calendar},${analytics},${team},false,${createTasks},${deleteTasks})`);
+        }
+    }
+} else {
+    alert('Failed to save permissions.');
+}
 }
 </script>
 </x-app-layout>

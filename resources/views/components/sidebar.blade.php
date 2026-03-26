@@ -51,6 +51,7 @@
                 @endif
             </a>
 
+            @if(auth()->user()->can_access('can_view_calendar'))
             <a href="{{ Route::has('calendar.index') ? route('calendar.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -61,7 +62,9 @@
                 </span>
                 <span class="tf-nav-text">Calendar</span>
             </a>
+            @endif
 
+            @if(auth()->user()->can_access('can_view_analytics'))
             <a href="{{ Route::has('analytics.index') ? route('analytics.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('analytics.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -72,7 +75,9 @@
                 </span>
                 <span class="tf-nav-text">Analytics</span>
             </a>
+            @endif
 
+            @if(auth()->user()->can_access('can_view_team'))
             <a href="{{ Route::has('team.index') ? route('team.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('team.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -84,6 +89,7 @@
                 </span>
                 <span class="tf-nav-text">Team</span>
             </a>
+            @endif
         </div>
 
         <div class="tf-nav-section">
@@ -113,18 +119,6 @@
                     <span class="tf-nav-text">Help</span>
              </a>
 
-            <form method="POST" action="{{ route('logout') }}" style="margin:0">
-                @csrf
-                <button type="submit" class="tf-nav-item tf-nav-item--btn">
-                    <span class="tf-nav-icon">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                    </span>
-                    <span class="tf-nav-text">Logout</span>
-                </button>
-            </form>
         </div>
     </nav>
 <p style="color:red;font-size:12px;padding:1rem;">

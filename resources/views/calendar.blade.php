@@ -13,7 +13,6 @@
             <div class="tk-dropdown-wrap">
                 <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    <span class="tk-notif-dot">3</span>
                 </button>
                 <div id="notif-dropdown" class="tk-dropdown">
                     <div class="tk-dropdown-header">
@@ -83,7 +82,10 @@
     <script>
         window.CAL_TASKS  = {!! json_encode($tasksByDate  ?? []) !!};
         window.CAL_EVENTS = {!! json_encode($eventsByDate ?? []) !!};
+        
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite('resources/js/calendar.js')
 @endpush
 
@@ -130,29 +132,25 @@
                 <div class="card-title">Upcoming Events</div>
             </div>
             <div class="upcoming-list">
-                @php
-                    /*
-                     * Merge task deadlines ($upcomingTasks) + calendar events ($eventsByDate)
-                     * into one list sorted by date ascending.
-                     * Both variables are passed from CalendarController.
-                     */
-                    $upcomingAll = collect();
+@php
+    $upcomingAll = collect();
 
-                    // ── Tasks with due dates ──────────────────
-                    foreach (($upcomingTasks ?? []) as $task) {
-                        $due  = \Carbon\Carbon::parse($task->due_date);
-                        $diff = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
-                        $upcomingAll->push([
-                            'title'    => $task->title,
-                            'diff'     => $diff,
-                            'dotColor' => $diff < 0 ? 'var(--red)' : ($diff <= 2 ? 'var(--amber)' : 'var(--blue)'),
-                            'subLabel' => $diff < 0
-                                ? 'Overdue'
-                                : ($diff == 0 ? 'Today · All Day'
-                                    : ($diff == 1 ? 'Tomorrow · All Day'
-                                        : $due->format('M j') . ' · All Day')),
-                        ]);
-                    }
+    foreach (($upcomingTasks ?? []) as $task) {
+        $due  = \Carbon\Carbon::parse($task->due_date);
+        $diff = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
+        
+        // Only mark as red/overdue if NOT completed
+        $isTaskOverdue = ($diff < 0 && !$task->is_completed);
+
+        $upcomingAll->push([
+            'title'    => $task->title,
+            'diff'     => $diff,
+            'dotColor' => $isTaskOverdue ? 'var(--red)' : ($diff <= 2 ? 'var(--amber)' : 'var(--blue)'),
+            'subLabel' => $isTaskOverdue 
+                ? 'OVERDUE' 
+                : ($diff == 0 ? 'Today' : ($diff == 1 ? 'Tomorrow' : $due->format('M j'))),
+        ]);
+    }
 
                     // ── Calendar events (added via the modal) ─
                     $dotMap = [

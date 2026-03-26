@@ -142,7 +142,35 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('create-col-id').value = colId;
         document.getElementById('createTaskModal').style.display = 'flex';
     };
-
+    window.confirmDeleteColumn = function(columnId, columnTitle) {
+    Swal.fire({
+        title: `Delete "${columnTitle}"?`,
+        text: "All tasks inside this column will also be deleted! This cannot be undone.",
+        icon: 'warning',
+        width: '400px', // Slightly wider to fit the column name if it's long
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Yes, delete column',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        borderRadius: '16px',
+        background: '#ffffff',
+        customClass: {
+            popup: 'tk-rounded-modal',
+            confirmButton: 'tk-swal-btn',
+            cancelButton: 'tk-swal-btn'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Find that hidden form by ID and submit it
+            const form = document.getElementById(`del-col-${columnId}`);
+            if (form) {
+                form.submit();
+            }
+        }
+    });
+};
     /* ================================================================
        COLLABORATOR SEARCH & SELECT
     ================================================================ */
@@ -169,6 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchInput.value = '';
                 dropdown.querySelectorAll('.tk-collab-option').forEach(o => o.style.display = '');
                 searchInput.focus();
+                document.getElementById('collabSearch').value = '';
+                closeCollabDropdown();
             });
         });
         document.addEventListener('click', () => closeCollabDropdown());
@@ -223,6 +253,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('dt-collabs-input');
         if (input) input.value = JSON.stringify(selected);
     }
+    window.handleCollabEnter = function(event) {
+    if (event.key === 'Enter') {
+        // 1. Stop the form from submitting (Prevents that {"success":true} screen)
+        event.preventDefault();
+
+        const dropdown = document.getElementById('collabDropdown');
+        const searchInput = document.getElementById('collabSearch');
+        
+        // 2. Find the first visible option in the dropdown
+        const firstVisibleOption = Array.from(dropdown.querySelectorAll('.tk-collab-option'))
+            .find(opt => opt.style.display !== 'none');
+
+        if (firstVisibleOption) {
+            // 3. Trigger the click logic for that person
+            const userId = firstVisibleOption.dataset.userId;
+            const userName = firstVisibleOption.dataset.userDisplay;
+            
+            window.selectCollab(userId, userName);
+            searchInput.value = ''; // Clear the text
+            closeCollabDropdown();
+
+            // 4. Clear search and keep focus for the next person
+            searchInput.value = '';
+            // Reset dropdown visibility for next search
+            dropdown.querySelectorAll('.tk-collab-option').forEach(o => o.style.display = '');
+        }
+    }
+};
 
     /* ================================================================
        ATTACHMENTS — all inside DOMContentLoaded so renderAttachments
@@ -311,16 +369,55 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(() => { progressWrap.style.display = 'none'; });
     };
 
+    /* ================================================================
+    DELETE ATTACHMENT
+    ================================================================ */
     window.deleteAttachment = function(attachmentId) {
-        if (!confirm('Remove this attachment?')) return;
-        fetch(`/attachments/${attachmentId}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': CSRF },
-        })
-        .then(r => r.json())
-        .then(data => { if (data.success) openDetail(currentTaskId); });
+        Swal.fire({
+            title: 'Remove attachment?',
+            text: "This file will be permanently deleted.",
+            icon: 'warning',
+            width: '380px', // Matches the smaller size we used for Calendar
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Yes, remove it',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            borderRadius: '16px',
+            background: '#ffffff',
+            customClass: {
+                popup: 'tk-rounded-modal',
+                confirmButton: 'tk-swal-btn',
+                cancelButton: 'tk-swal-btn'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/attachments/${attachmentId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': CSRF },
+                })
+                .then(r => r.json())
+                .then(data => { 
+                    if (data.success) {
+                        // Re-fetch the task details to refresh the list without reloading the whole page
+                        openDetail(currentTaskId); 
+                        
+                        // Show a quick success toast
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Attachment removed',
+                            showConfirmButton: false,
+                            timer: 1500,
+                            timerProgressBar: true
+                        });
+                    } 
+                });
+            }
+        });
     };
-
     window.openLightbox = function(url, name) {
         let lb = document.getElementById('tk-lightbox');
         if (!lb) {
@@ -373,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dt-desc').value        = task.description || '';
             document.getElementById('dt-duedate').value     = task.due_date    ? task.due_date.substr(0,10) : '';
             document.getElementById('dt-priority').value    = task.priority    || 'medium';
-            document.getElementById('dt-assignee').value    = task.assigned_to || '';
+            document.getElementById('dt-assignee').value = task.assigned_to ? String(task.assigned_to) : '';
             document.getElementById('dt-status').value      = task.board_column_id || '';
 
             const completeBtn = document.getElementById('dt-complete-btn');
@@ -389,14 +486,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${task.priority ? `<span class="tk-priority ${task.priority}">${task.priority.toUpperCase()}</span>` : ''}
                 ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
 
-            const selectedContainer = document.getElementById('dt-selected-collabs');
-            if (selectedContainer) selectedContainer.innerHTML = '';
-            document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.classList.remove('selected'));
-            (task.members || []).forEach(m => window.selectCollab(m.id, m.name));
+  // 1. Clear current view
+const selectedContainer = document.getElementById('dt-selected-collabs');
+if (selectedContainer) selectedContainer.innerHTML = '';
+
+// 2. Clear dropdown highlights
+document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.classList.remove('selected'));
+
+// 3. FIX: Change 'members' to 'collaborators' to match your Controller
+(task.collaborators || []).forEach(m => window.selectCollab(m.id, m.name));
 
             document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
             document.getElementById('dt-delete-btn').onclick = () => {
-                if (confirm('Delete this task?')) document.getElementById('dt-delete-form').submit();
+                Swal.fire({
+                    title: 'Delete this task?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    // --- ADD THESE LINES FOR CURVED EDGES ---
+                    background: '#ffffff',
+                    color: '#1e293b',
+                    borderRadius: '16px', // This curves the outer edges
+                    customClass: {
+                        popup: 'tk-rounded-modal',
+                        confirmButton: 'tk-swal-btn',
+                        cancelButton: 'tk-swal-btn'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('dt-delete-form').submit();
+                    }
+                });
             };
 
             if (task.start_date) {
