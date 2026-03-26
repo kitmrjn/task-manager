@@ -1,10 +1,7 @@
 <x-app-layout>
 <x-slot name="header">
     <div class="tk-topnav">
-        <div class="tk-topnav-search">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" placeholder="Search tasks, projects…" />
-        </div>
+
         <div class="tk-topnav-right">
             <button class="tk-nav-icon-btn" title="Messages">
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -13,7 +10,6 @@
             <div class="tk-dropdown-wrap">
                 <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
                     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    <span class="tk-notif-dot">3</span>
                 </button>
                 <div id="notif-dropdown" class="tk-dropdown" style="width:340px;">
                     <div class="tk-dropdown-header">
@@ -47,22 +43,22 @@
                             <div class="tk-profile-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ Auth::user()->email }}</div>
                         </div>
                     </div>
-<div style="padding:.3rem 0;">
-@if(auth()->user()->role === 'admin')
-<a href="{{ route('settings.index') }}" class="tk-profile-item">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    My Profile & Settings
-</a>
-@endif
-    <div class="tk-profile-divider"></div>
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="tk-profile-item tk-profile-item--danger">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Log Out
-        </button>
-    </form>
-</div>
+                    <div style="padding:.3rem 0;">
+                        @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('settings.index') }}" class="tk-profile-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            My Profile & Settings
+                        </a>
+                        @endif
+                        <div class="tk-profile-divider"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="tk-profile-item tk-profile-item--danger">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Log Out
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,183 +69,12 @@
     @vite('resources/css/tasks.css')
 @endpush
 
-<<<<<<< HEAD
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     @vite('resources/js/tasks.js')
 @endpush
 
-=======
-:root {
-    --bg:#f0f2f6;--white:#ffffff;--border:#e4e7ec;--border-2:#d0d5dd;
-    --text:#0d1117;--muted:#4b5563;--soft:#6b7280;
-    --blue:#2563eb;--blue-lt:#eff6ff;--green:#16a34a;--green-lt:#f0fdf4;
-    --amber:#d97706;--amber-lt:#fffbeb;--red:#dc2626;--red-lt:#fef2f2;
-    --radius:10px;--radius-sm:8px;
-    --shadow:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.04);
-    --shadow-md:0 4px 10px rgba(16,24,40,.10);
-    --shadow-lg:0 12px 32px rgba(16,24,40,.14);
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
-.tf-main-header{background:var(--white)!important;border-bottom:1px solid var(--border)!important;padding:0!important;}
-.tf-main-header-inner{max-width:100%!important;padding:0!important;}
-.tk-topnav{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.5rem;gap:1rem;height:54px;}
-.tk-topnav-search{display:flex;align-items:center;gap:.5rem;background:#f5f6fa;border:1.5px solid var(--border);border-radius:8px;padding:.45rem .85rem;width:280px;flex-shrink:0;}
-.tk-topnav-search svg{color:var(--soft);flex-shrink:0;}
-.tk-topnav-search input{border:none;background:transparent;outline:none;font-family:'Geist',sans-serif;font-size:13px;color:var(--text);flex:1;min-width:0;}
-.tk-topnav-search input::placeholder{color:var(--soft);}
-.tk-topnav-kbd{font-size:10px;font-weight:600;color:var(--soft);background:var(--white);border:1px solid var(--border);border-radius:4px;padding:1px 5px;flex-shrink:0;}
-.tk-topnav-right{display:flex;align-items:center;gap:.75rem;margin-left:auto;}
-.tk-topnav-icon{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);position:relative;transition:background .15s;}
-.tk-topnav-icon:hover{background:var(--bg);}
-.tk-topnav-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--white);}
-.tk-topnav-user{display:flex;align-items:center;gap:.6rem;cursor:pointer;padding:.3rem .5rem;border-radius:8px;transition:background .15s;}
-.tk-topnav-user:hover{background:var(--bg);}
-.tk-topnav-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.tk-topnav-username{display:block;font-size:13px;font-weight:600;color:var(--text);line-height:1.2;}
-.tk-topnav-email{display:block;font-size:11px;color:var(--soft);}
-.tk-page-body{padding:1.75rem 1.75rem 0;}
-.tk-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap;}
-.tk-page-title{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.02em;}
-.tk-page-sub{font-size:13px;color:var(--soft);margin-top:3px;font-weight:400;}
-.tk-new-btn{display:flex;align-items:center;gap:.4rem;padding:.6rem 1.3rem;background:var(--blue);color:#fff;border:none;border-radius:9px;font-family:'Geist',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(37,99,235,.35);transition:background .15s;white-space:nowrap;flex-shrink:0;}
-.tk-new-btn:hover{background:#1d4ed8;}
-.tk-filter-tabs{display:flex;background:#eaecf0;border-radius:9px;padding:3px;gap:2px;border:1px solid var(--border);margin-bottom:1.5rem;width:fit-content;}
-.tk-filter-tab{padding:.35rem 1.1rem;border:none;background:transparent;border-radius:7px;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;}
-.tk-filter-tab.active{background:var(--white);color:var(--text);font-weight:600;box-shadow:var(--shadow);}
-.tk-filter-tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.55);}
-.tk-board{display:flex;gap:1.25rem;overflow-x:auto;align-items:flex-start;padding-bottom:2rem;}
-.tk-board::-webkit-scrollbar{height:5px;}
-.tk-board::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:99px;}
-.tk-col{width:290px;min-width:290px;flex-shrink:0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;max-height:calc(100vh - 230px);overflow:hidden;}
-.tk-col-head{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;flex-shrink:0;border-radius:var(--radius) var(--radius) 0 0;}
-.tk-col-title-row{display:flex;align-items:center;gap:.55rem;}
-.tk-col-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.tk-col-name{font-size:14px;font-weight:700;color:var(--text);}
-.tk-col-count{background:var(--bg);color:var(--muted);font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid var(--border);}
-.tk-col-actions{display:flex;align-items:center;gap:.2rem;}
-.tk-col-action{width:26px;height:26px;border:none;background:transparent;color:var(--soft);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;font-size:17px;line-height:1;}
-.tk-col-action:hover{background:var(--bg);color:var(--text);}
-.tk-cards{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.65rem;min-height:80px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
-.tk-cards::-webkit-scrollbar{width:4px;}
-.tk-cards::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
-.tk-add-task-btn{padding:.65rem 1rem;border:none;background:transparent;color:var(--soft);font-family:'Geist',sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-align:center;width:100%;border-top:1px solid var(--border);flex-shrink:0;transition:color .15s,background .15s;}
-.tk-add-task-btn:hover{color:var(--blue);background:var(--blue-lt);}
-.tk-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:1rem;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;animation:cardIn .3s ease both;}
-.tk-card:hover{border-color:#93c5fd;box-shadow:var(--shadow-md);transform:translateY(-2px);}
-.tk-card.is-completed{opacity:.65;}
-.tk-card.is-completed .tk-card-title{text-decoration:line-through;color:var(--soft);}
-@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.tk-card-tag{display:inline-flex;align-items:center;gap:.3rem;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-bottom:.55rem;}
-.tk-card-title{font-size:14.5px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:.35rem;letter-spacing:-.01em;}
-.tk-card-desc{font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:.65rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.tk-card-prog{margin-bottom:.6rem;}
-.tk-card-prog-row{display:flex;justify-content:space-between;margin-bottom:.3rem;}
-.tk-card-prog-label{font-size:11px;color:var(--soft);}
-.tk-card-prog-val{font-size:11px;font-weight:700;color:var(--muted);}
-.tk-prog-track{height:5px;background:var(--bg);border-radius:99px;overflow:hidden;}
-.tk-prog-fill{height:100%;border-radius:99px;transition:width .5s ease;}
-.tk-prog-fill.blue{background:var(--blue);}
-.tk-prog-fill.green{background:var(--green);}
-.tk-card-footer{display:flex;flex-direction:column;gap:.45rem;margin-top:.6rem;}
-.tk-card-assignee{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
-.tk-card-meta{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
-.tk-card-date{font-size:11.5px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:.3rem;}
-.tk-card-date svg{width:12px;height:12px;}
-.tk-priority{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.02em;}
-.tk-priority.high{background:var(--red-lt);color:var(--red);}
-.tk-priority.medium{background:var(--amber-lt);color:var(--amber);}
-.tk-priority.low{background:var(--green-lt);color:var(--green);}
-.tk-complete-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--green-lt);color:var(--green);border:1px solid #bbf7d0;margin-bottom:.5rem;}
-.tk-col-add{width:260px;min-width:260px;flex-shrink:0;border:2px dashed var(--border-2);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;padding:2.5rem 1rem;color:var(--soft);cursor:pointer;transition:border-color .15s,color .15s;}
-.tk-col-add:hover{border-color:var(--blue);color:var(--blue);}
-.tk-col-add-icon{font-size:22px;}
-.tk-col-add-label{font-size:13px;font-weight:600;}
-.tk-modal-overlay{position:fixed;inset:0;background:rgba(16,24,40,.5);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
-.tk-modal-overlay.open{display:flex;}
-.tk-detail{background:var(--white);border-radius:16px;width:100%;max-width:1000px;height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:modalIn .25s ease both;overflow:hidden;}
-@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
-.tk-detail-head{padding:1.4rem 1.5rem 1.1rem;border-bottom:1px solid var(--border);background:var(--white);z-index:10;flex-shrink:0;}
-.tk-detail-head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.65rem;}
-.tk-detail-title{font-size:19px;font-weight:800;color:var(--text);line-height:1.3;flex:1;letter-spacing:-.02em;}
-.tk-detail-close{width:32px;height:32px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;transition:background .15s;}
-.tk-detail-close:hover{background:var(--bg);}
-.tk-detail-tags{display:flex;gap:.4rem;flex-wrap:wrap;}
-.tk-fields{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
-.tk-field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--soft);margin-bottom:.4rem;}
-.tk-field-select,.tk-field-input{width:100%;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Geist',sans-serif;font-size:13.5px;color:var(--text);background:var(--white);outline:none;transition:border-color .15s,box-shadow .15s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2398a2b3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;}
-.tk-field-input{background-image:none;}
-.tk-field-select:focus,.tk-field-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.tk-field-textarea{width:100%;padding:.7rem .85rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Geist',sans-serif;font-size:13.5px;color:var(--text);resize:vertical;min-height:95px;outline:none;transition:border-color .15s,box-shadow .15s;}
-.tk-field-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.tk-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
-.tk-section-title{display:flex;align-items:center;gap:.5rem;font-size:14.5px;font-weight:700;color:var(--text);}
-.tk-section-title svg{width:16px;height:16px;color:var(--muted);}
-.tk-section-badge{font-size:12px;font-weight:700;background:var(--bg);color:var(--muted);padding:2px 9px;border-radius:99px;border:1px solid var(--border);}
-.tk-progress-block{background:var(--bg);border-radius:10px;padding:1.1rem 1.2rem;display:flex;align-items:center;gap:1rem;}
-.tk-progress-pct{font-size:24px;font-weight:800;color:var(--blue);min-width:52px;letter-spacing:-.02em;}
-.tk-progress-right{flex:1;}
-.tk-progress-sub{font-size:12.5px;color:var(--muted);margin-top:.3rem;font-weight:500;}
-.tk-progress-track{height:8px;background:#dbeafe;border-radius:99px;overflow:hidden;margin-bottom:.3rem;}
-.tk-progress-fill{height:100%;background:var(--blue);border-radius:99px;transition:width .6s ease;}
-.tk-checklist{display:flex;flex-direction:column;gap:.45rem;}
-.tk-check-item{display:flex;align-items:center;gap:.7rem;padding:.65rem .85rem;border:1.5px solid var(--border);border-radius:8px;transition:border-color .15s,background .15s;}
-.tk-check-item:hover{border-color:#93c5fd;background:var(--blue-lt);}
-.tk-check-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue);flex-shrink:0;}
-.tk-check-text{flex:1;font-size:13.5px;color:var(--text);font-weight:500;}
-.tk-check-text.done{text-decoration:line-through;color:var(--soft);}
-.tk-check-del{width:22px;height:22px;border:none;background:transparent;color:var(--soft);cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s;flex-shrink:0;}
-.tk-check-del:hover{color:var(--red);background:var(--red-lt);}
-.tk-check-add{display:flex;gap:.5rem;margin-top:.4rem;}
-.tk-check-add input{flex:1;padding:.6rem .85rem;border:1.5px dashed var(--border-2);border-radius:8px;font-family:'Geist',sans-serif;font-size:13.5px;color:var(--text);outline:none;background:var(--bg);transition:border-color .15s,background .15s;}
-.tk-check-add input:focus{border-color:var(--blue);background:var(--white);border-style:solid;}
-.tk-check-add button{padding:.6rem 1.1rem;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
-.tk-check-add button:hover{background:#1d4ed8;}
-.tk-comments{display:flex;flex-direction:column;gap:.85rem;}
-.tk-comment{display:flex;gap:.85rem;}
-.tk-comment-av{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.tk-comment-body{flex:1;}
-.tk-comment-meta{display:flex;align-items:center;gap:.45rem;margin-bottom:.35rem;}
-.tk-comment-name{font-size:13px;font-weight:700;color:var(--text);}
-.tk-comment-time{font-size:11.5px;color:var(--soft);}
-.tk-comment-text{font-size:13px;color:var(--muted);line-height:1.55;font-weight:500;background:var(--bg);padding:.65rem .9rem;border-radius:8px;border:1px solid var(--border);}
-.tk-comment-input-av{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-.tk-comment-input{flex:1;padding:.65rem .9rem;border:1.5px solid var(--border);border-radius:8px;font-family:'Geist',sans-serif;font-size:13.5px;color:var(--text);outline:none;resize:none;transition:border-color .15s,box-shadow .15s;}
-.tk-comment-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.tk-comment-post{padding:.6rem 1.1rem;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
-.tk-comment-post:hover{background:#1d4ed8;}
-.tk-detail-footer{padding:1.1rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--white);}
-.tk-btn-delete{font-size:12.5px;font-weight:600;color:var(--red);background:transparent;border:1.5px solid var(--border);border-radius:7px;padding:.5rem 1rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:background .15s,border-color .15s;}
-.tk-btn-delete:hover{background:var(--red-lt);border-color:var(--red);}
-.tk-btn-save{font-size:13px;font-weight:700;color:#fff;background:var(--blue);border:none;border-radius:7px;padding:.5rem 1.2rem;cursor:pointer;transition:background .15s;}
-.tk-btn-save:hover{background:#1d4ed8;}
-.tk-create-modal{background:var(--white);border-radius:16px;width:100%;max-width:500px;box-shadow:var(--shadow-lg);animation:modalIn .25s ease both;}
-.tk-create-head{padding:1.3rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.tk-create-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.02em;}
-.tk-create-body{padding:1.3rem 1.5rem;display:flex;flex-direction:column;gap:1rem;}
-.tk-create-footer{padding:1.1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.65rem;}
-.tk-btn-cancel{padding:.55rem 1.1rem;border:1.5px solid var(--border);border-radius:7px;background:var(--white);font-family:'Geist',sans-serif;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;}
-.tk-btn-cancel:hover{background:var(--bg);}
-.tk-col.col-gray{background:#f8f9fb;} .tk-col.col-blue{background:#f4f7ff;} .tk-col.col-green{background:#f3faf5;} .tk-col.col-yellow{background:#fdf8ee;} .tk-col.col-red{background:#fdf4f4;} .tk-col.col-orange{background:#fff7ed;} .tk-col.col-purple{background:#faf5ff;} .tk-col.col-pink{background:#fdf2f8;} .tk-col.col-teal{background:#f0fdfa;} .tk-col.col-indigo{background:#eef2ff;}
-.tk-col.col-gray .tk-cards{background:#f8f9fb;} .tk-col.col-blue .tk-cards{background:#f4f7ff;} .tk-col.col-green .tk-cards{background:#f3faf5;} .tk-col.col-yellow .tk-cards{background:#fdf8ee;} .tk-col.col-red .tk-cards{background:#fdf4f4;} .tk-col.col-orange .tk-cards{background:#fff7ed;} .tk-col.col-purple .tk-cards{background:#faf5ff;} .tk-col.col-pink .tk-cards{background:#fdf2f8;} .tk-col.col-teal .tk-cards{background:#f0fdfa;} .tk-col.col-indigo .tk-cards{background:#eef2ff;}
-.tk-col.col-gray .tk-col-head,.tk-col.col-blue .tk-col-head,.tk-col.col-green .tk-col-head,.tk-col.col-yellow .tk-col-head,.tk-col.col-red .tk-col-head,.tk-col.col-orange .tk-col-head,.tk-col.col-purple .tk-col-head,.tk-col.col-pink .tk-col-head,.tk-col.col-teal .tk-col-head,.tk-col.col-indigo .tk-col-head{background:inherit;}
-.tk-col .tk-card{background:#ffffff;}
-.av-blue{background:#2563eb}.av-teal{background:#0d9488}.av-amber{background:#d97706}.av-red{background:#dc2626}.av-purple{background:#7c3aed}.av-green{background:#16a34a}.av-pink{background:#db2777}.av-indigo{background:#4f46e5}
-.tk-col-menu{position:absolute;top:35px;right:0;width:160px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);z-index:100;padding:6px;display:flex;flex-direction:column;gap:2px;}
-.tk-col-menu.hidden{display:none;}
-.tk-col-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:none;background:transparent;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;color:var(--muted);border-radius:6px;cursor:pointer;transition:background .15s;}
-.tk-col-menu button:hover{background:var(--bg);color:var(--text);}
-.tk-col-menu button.delete{color:var(--red);}
-.tk-col-menu button.delete:hover{background:var(--red-lt);}
-.tk-collaborator-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:120px;overflow-y:auto;padding:2px;}
-.tk-collab-pill{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:all 0.2s;font-size:12px;font-weight:500;color:var(--muted);}
-.tk-collab-pill:hover{border-color:var(--blue);}
-.tk-collab-pill.active{background:#eff6ff;border-color:var(--blue);color:var(--blue);}
-</style>
-
-{{-- PAGE BODY --}}
->>>>>>> main
 <div class="tk-page-body">
     <div class="tk-page-header">
         <div>
@@ -257,18 +82,14 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
             <p class="tk-page-sub">Drag cards between columns · Click a card to open detail</p>
         </div>
         <div style="display:flex;gap:.6rem;flex-shrink:0;">
-<<<<<<< HEAD
+            @if(auth()->user()->can_access('can_create_tasks'))
             <button class="tk-add-col-btn" onclick="document.getElementById('addColumnModal').style.display='flex'">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
                 Add Column
-=======
-            <button class="tk-new-btn" style="background:var(--white);color:var(--blue);border:1.5px solid var(--blue);box-shadow:none;"
-                    onclick="document.getElementById('addColumnModal').style.display='flex'">
-                + Add Column
->>>>>>> main
             </button>
+            @endif
         </div>
     </div>
 
@@ -298,11 +119,7 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                         <div style="min-width:0;">
                             <span class="tk-col-name">{{ $column->title }}</span>
                             @if($column->description)
-<<<<<<< HEAD
                                 <div style="font-size:11.5px;color:var(--soft);margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">
-=======
-                                <div style="font-size:11px;color:var(--soft);margin-top:2px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">
->>>>>>> main
                                     {{ $column->description }}
                                 </div>
                             @endif
@@ -321,14 +138,15 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                         </button>
                         <div id="menu-{{ $column->id }}" class="tk-col-menu hidden">
                             <button onclick="openEditColumn({{ $column->id }}, '{{ addslashes($column->title) }}', '{{ $column->color ?? 'gray' }}', '{{ addslashes($column->description ?? '') }}')">
-<<<<<<< HEAD
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                                 Edit Column
                             </button>
-                            <button class="delete" onclick="if(confirm('Delete list?')) document.getElementById('del-col-{{ $column->id }}').submit()">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                                Delete List
-                            </button>
+                        @if(auth()->user()->can_access('can_delete_tasks'))
+                        <button class="delete" type="button" onclick="confirmDeleteColumn({{ $column->id }}, '{{ addslashes($column->title) }}')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                            Delete Column
+                        </button>
+                        @endif
                         </div>
                         <form id="del-col-{{ $column->id }}" action="{{ route('columns.destroy', $column->id) }}" method="POST" class="hidden">
                             @csrf @method('DELETE')
@@ -336,61 +154,41 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                     </div>
                 </div>
 
-<div class="tk-cards sortable-column" id="column-{{ $column->id }}" data-column-id="{{ $column->id }}">
-=======
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                                Edit Column
-                            </button>
-                            <button class="delete" onclick="if(confirm('Delete list?')) document.getElementById('del-col-{{ $column->id }}').submit()">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                                Delete List
-                            </button>
-                        </div>
-                        <form id="del-col-{{ $column->id }}" action="{{ route('columns.destroy', $column->id) }}" method="POST" class="hidden">@csrf @method('DELETE')</form>
-                    </div>
-                </div>
-
                 <div class="tk-cards sortable-column" id="column-{{ $column->id }}" data-column-id="{{ $column->id }}">
->>>>>>> main
                     @foreach($column->tasks as $task)
                     @php
-                        $total     = $task->checklistItems->count();
-                        $done      = $task->checklistItems->where('is_completed', true)->count();
-                        $pct       = $total > 0 ? round(($done / $total) * 100) : 0;
-                        $progColor = $pct == 100 ? 'green' : 'blue';
-                        $avColors  = ['av-blue','av-teal','av-amber','av-red','av-purple','av-green','av-pink','av-indigo'];
-<<<<<<< HEAD
-                        $avClass   = $avColors[($task->assigned_to ?? 0) % 8];
+                        $total      = $task->checklistItems->count();
+                        $done       = $task->checklistItems->where('is_completed', true)->count();
+                        $pct        = $total > 0 ? round(($done / $total) * 100) : 0;
+                        $progColor  = $pct == 100 ? 'green' : 'blue';
+                        $avColors   = ['av-blue','av-teal','av-amber','av-red','av-purple','av-green','av-pink','av-indigo'];
+                        $avClass    = $avColors[($task->assigned_to ?? 0) % 8];
                         $coverImage = $task->attachments->first(fn($a) => str_starts_with($a->mime_type, 'image/'));
-=======
-                        $avClass   = $avColors[($task->assigned_to ? (int)$task->assigned_to : 0) % 8];
->>>>>>> main
                     @endphp
+
                     <div class="tk-card {{ $task->is_completed ? 'is-completed' : '' }}"
-<<<<<<< HEAD
                          data-task-id="{{ $task->id }}"
                          data-col-id="{{ $column->id }}"
                          onclick="handleCardClick(event, {{ $task->id }})">
 
-                        {{-- Cover image (if any attachment is an image) --}}
+                        {{-- Cover image --}}
                         @if($coverImage)
                         <div class="tk-card-cover" style="background-image:url('{{ $coverImage->url() }}')"></div>
                         @endif
 
-=======
-                         data-task-id="{{ $task->id }}" data-col-id="{{ $column->id }}"
-                         onclick="openDetail({{ $task->id }})">
->>>>>>> main
                         @if($task->tag ?? null)
                         <div class="tk-card-tag" style="background:#eff6ff;color:#2563eb">
                             <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>
                             {{ $task->tag }}
                         </div>
                         @endif
+
                         <div class="tk-card-title">{{ $task->title }}</div>
+
                         @if($task->description)
                         <div class="tk-card-desc">{{ $task->description }}</div>
                         @endif
+
                         @if($total > 0)
                         <div class="tk-card-prog">
                             <div class="tk-card-prog-row">
@@ -402,15 +200,16 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                             </div>
                         </div>
                         @endif
+
                         @if($task->is_completed)
                         <div class="tk-complete-badge">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                             Completed
                         </div>
                         @endif
+
                         <div class="tk-card-footer">
                             <div class="tk-card-meta">
-<<<<<<< HEAD
                                 @if($task->due_date)
                                     <span class="tk-card-date">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -421,33 +220,19 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                                         @endif
                                         {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
                                     </span>
-=======
-                                @if($task->start_date || $task->due_date)
-                                <span class="tk-card-date">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    @if($task->start_date && $task->due_date)
-                                        {{ \Carbon\Carbon::parse($task->start_date)->format('M d') }} → {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
-                                    @elseif($task->due_date)
-                                        {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
-                                    @elseif($task->start_date)
-                                        From {{ \Carbon\Carbon::parse($task->start_date)->format('M d') }}
-                                    @endif
-                                </span>
->>>>>>> main
                                 @endif
 
-                                {{-- 📎 ATTACHMENT INDICATOR --}}
-    @if($task->attachments->count() > 0)
-        <span class="tk-card-attach-count" title="{{ $task->attachments->count() }} attachments">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-            </svg>
-            {{ $task->attachments->count() }}
-        </span>
-    @endif
+                                @if($task->attachments->count() > 0)
+                                <span class="tk-card-attach-count" title="{{ $task->attachments->count() }} attachments">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                                    </svg>
+                                    {{ $task->attachments->count() }}
+                                </span>
+                                @endif
+
                                 <span class="tk-priority {{ $task->priority }}">{{ ucfirst($task->priority) }}</span>
                             </div>
-<<<<<<< HEAD
 
                             <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:.45rem;">
                                 <div style="display:flex;align-items:center;gap:5px;">
@@ -463,31 +248,12 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                                     @endif
                                 </div>
 
-=======
-                            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:.4rem;">
-                                <div style="display:flex;align-items:center;gap:5px;">
-                                    @if($task->assignee)
-                                        <div class="tk-card-assignee {{ $avClass }}" title="Lead: {{ $task->assignee->name }}" style="border:2px solid #fff;flex-shrink:0;">
-                                            {{ strtoupper(substr($task->assignee->name, 0, 1)) }}
-                                        </div>
-                                        <span style="font-size:10.5px;color:var(--soft);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;">
-                                            {{ $task->assignee->name }}
-                                        </span>
-                                    @else
-                                        <span style="font-size:10.5px;color:var(--soft);font-style:italic;">Unassigned</span>
-                                    @endif
-                                </div>
->>>>>>> main
                                 @if($task->members->count() > 0)
                                 <div style="display:flex;align-items:center;">
                                     @php $mColors = ['av-teal','av-purple','av-green','av-pink','av-amber','av-indigo']; @endphp
                                     @foreach($task->members->take(3) as $member)
                                         <div class="tk-card-assignee {{ $mColors[$loop->index % 6] }}"
-<<<<<<< HEAD
                                              title="{{ $member->name }}"
-=======
-                                             title="Collaborator: {{ $member->name }}"
->>>>>>> main
                                              style="margin-left:{{ $loop->first ? '0' : '-8px' }};border:2px solid #fff;position:relative;z-index:{{ 10 - $loop->index }};flex-shrink:0;">
                                             {{ strtoupper(substr($member->name, 0, 1)) }}
                                         </div>
@@ -500,34 +266,26 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                                 </div>
                                 @endif
                             </div>
-<<<<<<< HEAD
                         </div>{{-- end .tk-card-footer --}}
 
                     </div>{{-- end .tk-card --}}
-=======
-                        </div>
-                    </div>{{-- /.tk-card --}}
->>>>>>> main
                     @endforeach
                 </div>
+                @if(auth()->user()->can_access('can_create_tasks'))
                 <button class="tk-add-task-btn" onclick="openCreate({{ $column->id }})">+ Add Task</button>
+                @endif
             </div>
             @endforeach
         @endif
     </div>
 </div>
 
-<<<<<<< HEAD
-{{-- TASK DETAIL MODAL --}}
-=======
-{{-- ══════════════════════════════════════════════
+{{-- ================================================================
      TASK DETAIL MODAL
-══════════════════════════════════════════════ --}}
->>>>>>> main
+================================================================ --}}
 <div class="tk-modal-overlay" id="detailModal">
 <div class="tk-detail">
 
-    {{-- Header --}}
     <div class="tk-detail-head">
         <div class="tk-detail-head-top">
             <div class="tk-detail-title" id="dt-title">Loading…</div>
@@ -537,8 +295,8 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
         </div>
         <div class="tk-detail-tags" id="dt-tags"></div>
     </div>
-<<<<<<< HEAD
 
+    {{-- Two-column body --}}
     <div style="display:flex;flex:1;overflow:hidden;min-height:0;">
 
         {{-- Left panel --}}
@@ -547,9 +305,10 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
             <form id="detailForm" method="POST">
                 @csrf @method('PUT')
                 <input type="hidden" name="title" id="dt-title-input">
+
                 <div class="tk-fields" style="margin-bottom:.2rem">
                     <div>
-                        <div class="tk-field-label">Status</div>
+                        <div class="tk-field-label">Column</div>
                         <select name="board_column_id" class="tk-field-select" id="dt-status">
                             @foreach($board->columns ?? [] as $col)
                                 <option value="{{ $col->id }}">{{ $col->title }}</option>
@@ -604,22 +363,19 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
 
 <div style="margin-top:1rem;">
     <div class="tk-field-label" style="margin-bottom:.65rem;">Collaborators</div>
- 
-    {{-- Searchable dropdown --}}
+
+    {{-- 1. SELECTED PILLS (Moved to the top) --}}
+    <div class="tk-selected-collabs" id="dt-selected-collabs" style="margin-bottom: 0.65rem; display: flex; flex-wrap: wrap; gap: 6px;"></div>
+
+    {{-- 2. SEARCH BAR (Now below the selected members) --}}
     <div class="tk-collab-search-wrap" id="collabSearchWrap">
         <div class="tk-collab-search-input-row">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#9ca3af;flex-shrink:0;">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
-            <input
-                type="text"
-                id="collabSearch"
-                class="tk-collab-search-input"
-                placeholder="Search or add members…"
-                autocomplete="off"
-            >
+            <input type="text" id="collabSearch" class="tk-collab-search-input" placeholder="Search or add members…" autocomplete="off" onkeydown="handleCollabEnter(event)">
         </div>
- 
+
         <div id="collabDropdown" class="tk-collab-dropdown" style="display:none;">
             @foreach($users as $user)
             <div class="tk-collab-option"
@@ -635,11 +391,8 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
             @endforeach
         </div>
     </div>
- 
-    {{-- Selected pills appear here --}}
-    <div class="tk-selected-collabs" id="dt-selected-collabs"></div>
- 
-    {{-- Hidden input sent to Laravel --}}
+
+    {{-- Hidden input remains at the bottom --}}
     <input type="hidden" name="collaborators" id="dt-collabs-input">
 </div>
             </form>
@@ -692,8 +445,6 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                         <input type="file" id="attachInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" style="display:none;" onchange="uploadAttachments(this)">
                     </label>
                 </div>
-
-                {{-- Drop zone --}}
                 <div class="tk-dropzone" id="attachDropzone"
                      ondragover="event.preventDefault();this.classList.add('drag-over')"
                      ondragleave="this.classList.remove('drag-over')"
@@ -701,16 +452,12 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#9ca3af;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
                     <span>Drop files here or <label for="attachInput" style="color:var(--blue);cursor:pointer;font-weight:700;">browse</label></span>
                 </div>
-
-                {{-- Upload progress --}}
                 <div id="attachProgress" style="display:none;margin-top:.6rem;">
                     <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
                         <div id="attachProgressBar" style="height:100%;background:var(--blue);border-radius:99px;width:0%;transition:width .3s;"></div>
                     </div>
                     <div style="font-size:12px;color:var(--soft);margin-top:.3rem;font-weight:600;">Uploading…</div>
                 </div>
-
-                {{-- Attachment list --}}
                 <div id="dt-attachments" style="margin-top:.5rem;display:flex;flex-direction:column;gap:.5rem;"></div>
             </div>
 
@@ -756,193 +503,21 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
             </div>
         </div>{{-- /.right panel --}}
 
-    </div>{{-- /.two-column body --}}
-=======
-
-    {{-- Two-column body --}}
-    <div style="display:flex;flex:1;overflow:hidden;min-height:0;">
-
-        {{-- LEFT PANEL --}}
-        <div style="flex:1;overflow-y:auto;padding:1.3rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem;border-right:1px solid var(--border);">
-
-            <form id="detailForm" method="POST">
-                @csrf @method('PUT')
-                <input type="hidden" name="title" id="dt-title-input">
-
-                <div class="tk-fields" style="margin-bottom:.2rem">
-                    <div>
-                        <div class="tk-field-label">Status</div>
-                        <select name="board_column_id" class="tk-field-select" id="dt-status">
-                            @foreach($board->columns ?? [] as $col)
-                                <option value="{{ $col->id }}">{{ $col->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <div class="tk-field-label">Priority</div>
-                        <select name="priority" class="tk-field-select" id="dt-priority">
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                    <div>
-                        <div class="tk-field-label">Assignee</div>
-                        <select name="assigned_to" class="tk-field-select" id="dt-assignee">
-                            <option value="">Unassigned</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    {{-- START DATE --}}
-                    <div>
-                        <div class="tk-field-label" style="display:flex;align-items:center;justify-content:space-between;">
-                            Start Date
-                            <button type="button" id="start-date-toggle" onclick="toggleStartDate()"
-                                    style="font-size:10px;font-weight:600;color:var(--blue);background:var(--blue-lt);border:none;border-radius:5px;padding:2px 8px;cursor:pointer;">
-                                + Add
-                            </button>
-                        </div>
-                        <div id="start-date-field" style="display:none;margin-top:.4rem;">
-                            <div style="display:flex;align-items:center;gap:.4rem;">
-                                <input type="date" name="start_date" class="tk-field-input" id="dt-startdate" style="flex:1;">
-                                <button type="button" onclick="clearStartDate()"
-                                        style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);color:var(--soft);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    ×
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    {{-- DUE DATE --}}
-                    <div>
-                        <div class="tk-field-label">Due Date</div>
-                        <input type="date" name="due_date" class="tk-field-input" id="dt-duedate">
-                    </div>
-                </div>{{-- /.tk-fields --}}
-
-                {{-- Description --}}
-                <div style="margin-top:.75rem">
-                    <div class="tk-field-label" style="margin-bottom:.45rem;">Description</div>
-                    <textarea name="description" class="tk-field-textarea" id="dt-desc" placeholder="Add a description…"></textarea>
-                </div>
-
-                {{-- Collaborators --}}
-                <div style="margin-top:1rem;">
-                    <div class="tk-field-label" style="margin-bottom:.6rem;">Collaborators</div>
-                    <div class="tk-collaborator-grid" id="dt-collaborator-selection">
-                        @foreach($users as $user)
-                            <div class="tk-collab-pill" data-user-id="{{ $user->id }}" onclick="toggleCollabSelection(this)">
-                                <div style="width:20px;height:20px;font-size:10px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                                <span>{{ $user->name }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                    <input type="hidden" name="collaborators" id="dt-collabs-input">
-                </div>
-            </form>
-
-            {{-- Progress --}}
-            <div id="dt-prog-section" style="display:none">
-                <div class="tk-section-head">
-                    <div class="tk-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Progress
-                    </div>
-                    <span style="font-size:12px;color:var(--soft);font-weight:500">auto-tracked from checklist</span>
-                </div>
-                <div class="tk-progress-block">
-                    <div class="tk-progress-pct" id="dt-pct">0%</div>
-                    <div class="tk-progress-right">
-                        <div class="tk-progress-track"><div class="tk-progress-fill" id="dt-prog-fill" style="width:0%"></div></div>
-                        <div class="tk-progress-sub" id="dt-prog-sub">0 of 0 checklist items done</div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Checklist --}}
-            <div>
-                <div class="tk-section-head">
-                    <div class="tk-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        Checklist
-                    </div>
-                    <span class="tk-section-badge" id="dt-check-badge">0/0</span>
-                </div>
-                <div class="tk-checklist" id="dt-checklist"></div>
-                <div class="tk-check-add" style="margin-top:.5rem">
-                    <input type="text" id="checkInput" placeholder="Add checklist item… (press Enter to add)"
-                        onkeydown="if(event.key==='Enter'){event.preventDefault();addCheckItem();}">
-                    <button onclick="addCheckItem()">Add</button>
-                </div>
-            </div>
-
-            {{-- Recent Activity --}}
-            <div style="border-top:1px solid var(--border);padding-top:1rem;">
-                <div class="tk-section-head">
-                    <div class="tk-section-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Recent Activity
-                    </div>
-                    <button type="button" onclick="openFullHistory()"
-                        style="font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;font-weight:600;">
-                        View All →
-                    </button>
-                </div>
-                <div id="dt-history-preview"></div>
-            </div>
-
-        </div>{{-- /.left panel --}}
-
-        {{-- RIGHT PANEL — Comments --}}
-        <div style="width:320px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;">
-            <div style="padding:.9rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-                <div style="display:flex;align-items:center;gap:.5rem;font-size:14px;font-weight:700;color:var(--text);">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                    Comments
-                </div>
-                <span class="tk-section-badge" id="dt-comment-count">0</span>
-            </div>
-            <div id="dt-comments" style="flex:1;overflow-y:auto;padding:.85rem 1.1rem;display:flex;flex-direction:column;gap:.75rem;"></div>
-            <div style="padding:.75rem 1.1rem;border-top:1px solid var(--border);flex-shrink:0;background:var(--white);">
-                <div style="display:flex;gap:.5rem;align-items:flex-start;">
-                    <div class="tk-comment-input-av" style="width:30px;height:30px;font-size:11px;flex-shrink:0;margin-top:2px;">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                    </div>
-                    <div style="flex:1;display:flex;flex-direction:column;gap:.4rem;">
-                        <textarea class="tk-comment-input" id="commentInput" rows="2"
-                            placeholder="Write a comment…"
-                            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postComment();}"></textarea>
-                        <button class="tk-comment-post" onclick="postComment()" style="align-self:flex-end;">Post</button>
-                    </div>
-                </div>
-            </div>
-        </div>{{-- /.right panel --}}
->>>>>>> main
-
-    </div>{{-- /.two-column body --}}
+    </div>{{-- /.two-column body — only ONE closing tag here --}}
 
     {{-- Footer --}}
     <div class="tk-detail-footer">
+        @if(auth()->user()->can_access('can_delete_tasks'))
         <button class="tk-btn-delete" id="dt-delete-btn">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
             Delete
         </button>
+        @endif
         <div style="display:flex;gap:.55rem;align-items:center;">
-<<<<<<< HEAD
             <button id="dt-complete-btn" onclick="toggleComplete()"
                     style="display:flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border-radius:8px;
                            font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Geist',sans-serif;
                            transition:all .15s;border:1.5px solid #bbf7d0;background:var(--green-lt);color:var(--green);">
-=======
-            {{-- Mark Complete Toggle --}}
-            <button id="dt-complete-btn" onclick="toggleComplete()" 
-                    style="display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:7px;
-                        font-family:'Geist',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;
-                        transition:all .15s;border:1.5px solid #bbf7d0;background:var(--green-lt);color:var(--green);">
->>>>>>> main
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                 Mark Complete
             </button>
@@ -950,18 +525,14 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
             <button class="tk-btn-save" onclick="saveDetail()">Save Changes</button>
         </div>
     </div>
-<<<<<<< HEAD
-    <form id="dt-delete-form" method="POST" style="display:none;">@csrf @method('DELETE')</form>
-=======
-
-    {{-- Delete form INSIDE the modal --}}
     <form id="dt-delete-form" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 
->>>>>>> main
-</div>
-</div>
+</div>{{-- /.tk-detail --}}
+</div>{{-- /.tk-modal-overlay #detailModal --}}
 
-{{-- CREATE TASK MODAL --}}
+{{-- ================================================================
+     CREATE TASK MODAL
+================================================================ --}}
 <div class="tk-modal-overlay" id="createTaskModal">
 <div class="tk-create-modal">
     <div class="tk-create-head">
@@ -976,12 +547,7 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
         <div class="tk-create-body">
             <div>
                 <div class="tk-field-label">Title</div>
-                <input type="text" id="collabSearch" class="tk-field-input" 
-       placeholder="Search members..." 
-       onclick="showAllCollabs()" 
-       onfocus="showAllCollabs()" 
-       oninput="filterCollabDropdown()"
-       autocomplete="off">
+                <input type="text" name="title" required class="tk-field-input" placeholder="Task title…" style="width:100%">
             </div>
             <div>
                 <div class="tk-field-label">Description</div>
@@ -1023,9 +589,12 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
 </div>
 </div>
 
-{{-- ADD COLUMN MODAL --}}
+{{-- ================================================================
+     ADD COLUMN MODAL
+================================================================ --}}
 <div class="tk-modal-overlay" id="addColumnModal">
 <div class="tk-create-modal">
+    
     <div class="tk-create-head">
         <div class="tk-create-title">Add Column</div>
         <button class="tk-detail-close" onclick="document.getElementById('addColumnModal').style.display='none'">
@@ -1042,7 +611,6 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                 <input type="text" name="title" required class="tk-field-input" placeholder="e.g. In Review, Blocked…" style="width:100%">
             </div>
             <div>
-<<<<<<< HEAD
                 <div class="tk-field-label">Description <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--soft);font-size:12px;">(optional)</span></div>
                 <textarea name="description" class="tk-field-textarea" placeholder="What kind of tasks go here?" style="min-height:70px;"></textarea>
             </div>
@@ -1056,37 +624,23 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
                          style="background:{{ $c }};">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                     </div>
-=======
-                <div class="tk-field-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soft);font-size:11px;">(optional)</span></div>
-                <textarea name="description" class="tk-field-textarea" placeholder="What kind of tasks go here?" style="min-height:70px;"></textarea>
-            </div>
-            <div>
-                <div class="tk-field-label" style="margin-bottom:.6rem;">Color</div>
-                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                    @foreach(['gray'=>'#94a3b8','blue'=>'#3b82f6','green'=>'#22c55e','yellow'=>'#eab308','red'=>'#ef4444','orange'=>'#f97316','purple'=>'#a855f7','pink'=>'#ec4899','teal'=>'#14b8a6','indigo'=>'#6366f1'] as $k => $c)
-                    <label style="cursor:pointer;">
-                        <input type="radio" name="color" value="{{ $k }}" id="add-color-{{ $k }}" class="hidden" {{ $k === 'gray' ? 'checked' : '' }}>
-                        <div id="add-swatch-{{ $k }}" onclick="selectAddColor('{{ $k }}')"
-                             style="width:36px;height:36px;border-radius:50%;background:{{ $c }};cursor:pointer;border:3px solid {{ $k === 'gray' ? '#1e40af' : 'transparent' }};box-shadow:{{ $k === 'gray' ? '0 0 0 2px #bfdbfe' : 'none' }};display:flex;align-items:center;justify-content:center;transition:all .15s;">
-                            <svg id="add-check-{{ $k }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:{{ $k === 'gray' ? 'block' : 'none' }}">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </div>
-                    </label>
->>>>>>> main
                     @endforeach
                 </div>
             </div>
         </div>
         <div class="tk-create-footer">
             <button type="button" class="tk-btn-cancel" onclick="document.getElementById('addColumnModal').style.display='none'">Cancel</button>
+            @if(auth()->user()->can_access('can_create_tasks'))
             <button type="submit" class="tk-btn-save">Add Column</button>
+            @endif
         </div>
     </form>
 </div>
 </div>
 
-{{-- EDIT COLUMN MODAL --}}
+{{-- ================================================================
+     EDIT COLUMN MODAL
+================================================================ --}}
 <div class="tk-modal-overlay" id="editColumnModal">
 <div class="tk-create-modal">
     <div class="tk-create-head">
@@ -1097,15 +651,11 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
     </div>
     <form id="editColumnForm" method="POST">
         @csrf @method('PUT')
-<<<<<<< HEAD
         <input type="hidden" name="color" id="edit-color-value" value="gray">
-=======
->>>>>>> main
         <div class="tk-create-body">
             <div>
                 <div class="tk-field-label">Title</div>
                 <input type="text" name="title" id="edit-col-title" required class="tk-field-input" style="width:100%">
-<<<<<<< HEAD
             </div>
             <div>
                 <div class="tk-field-label">Description <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--soft);font-size:12px;">(optional)</span></div>
@@ -1133,7 +683,9 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
 </div>
 </div>
 
-{{-- FULL HISTORY MODAL --}}
+{{-- ================================================================
+     FULL HISTORY MODAL
+================================================================ --}}
 <div class="tk-modal-overlay" id="historyModal" style="z-index:9999;">
     <div class="tk-create-modal" style="max-width:500px;">
         <div class="tk-create-head">
@@ -1146,564 +698,4 @@ body{background:var(--bg);font-family:'Geist',sans-serif;color:var(--text);}
     </div>
 </div>
 
-=======
-            </div>
-            <div>
-                <div class="tk-field-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soft);font-size:11px;">(optional)</span></div>
-                <textarea name="description" id="edit-col-description" class="tk-field-textarea" placeholder="What kind of tasks go here?" style="min-height:70px;"></textarea>
-            </div>
-            <div>
-                <div class="tk-field-label" style="margin-bottom:.6rem;">Color</div>
-                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                    @foreach(['gray'=>'#94a3b8','blue'=>'#3b82f6','green'=>'#22c55e','yellow'=>'#eab308','red'=>'#ef4444','orange'=>'#f97316','purple'=>'#a855f7','pink'=>'#ec4899','teal'=>'#14b8a6','indigo'=>'#6366f1'] as $k => $c)
-                    <label style="cursor:pointer;">
-                        <input type="radio" name="color" value="{{ $k }}" id="edit-color-{{ $k }}" class="hidden">
-                        <div id="edit-swatch-{{ $k }}" onclick="selectEditColor('{{ $k }}')"
-                             style="width:36px;height:36px;border-radius:50%;background:{{ $c }};cursor:pointer;border:3px solid transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;transition:all .15s;">
-                            <svg id="edit-check-{{ $k }}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-        <div class="tk-create-footer">
-            <button type="button" class="tk-btn-cancel" onclick="document.getElementById('editColumnModal').style.display='none'">Cancel</button>
-            <button type="submit" class="tk-btn-save">Update Column</button>
-        </div>
-    </form>
-</div>
-</div>
-
-{{-- FULL HISTORY MODAL --}}
-<div class="tk-modal-overlay" id="historyModal" style="z-index:9999;">
-    <div class="tk-create-modal" style="max-width:500px;">
-        <div class="tk-create-head">
-            <div class="tk-create-title">Task History</div>
-            <button class="tk-detail-close" onclick="document.getElementById('historyModal').style.display='none'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="tk-create-body" id="full-history-content" style="max-height:400px;overflow-y:auto;"></div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<script>
-const CSRF = document.querySelector('meta[name="csrf-token"]').content;
-let currentTaskHistory = [];
-let currentTaskId      = null;
-let commentPollingInterval = null;
-
-// ── Sortable ──────────────────────────────────────────────────
-document.querySelectorAll('.sortable-column').forEach(col => {
-    new Sortable(col, {
-        group: 'shared', animation: 200,
-        onEnd(evt) {
-            fetch(`/tasks/${evt.item.dataset.taskId}/move`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                body: JSON.stringify({ board_column_id: evt.to.dataset.columnId })
-            }).then(() => updateCounts());
-        }
-    });
-});
-
-// ── Column helpers ────────────────────────────────────────────
-function toggleColMenu(event, colId) {
-    event.stopPropagation();
-    document.querySelectorAll('.tk-col-menu').forEach(m => { if (m.id !== `menu-${colId}`) m.classList.add('hidden'); });
-    document.getElementById(`menu-${colId}`).classList.toggle('hidden');
-}
-document.addEventListener('click', () => {
-    document.querySelectorAll('.tk-col-menu').forEach(m => m.classList.add('hidden'));
-});
-
-function moveColumn(colId, direction) {
-    const el = document.getElementById(`col-wrapper-${colId}`);
-    if (!el) return;
-    if (direction === 'left') {
-        const prev = el.previousElementSibling;
-        if (prev && prev.classList.contains('tk-col')) el.parentNode.insertBefore(el, prev); else return;
-    } else {
-        const next = el.nextElementSibling;
-        if (next && next.classList.contains('tk-col')) el.parentNode.insertBefore(next, el); else return;
-    }
-    fetch(`/columns/${colId}/move`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-        body: JSON.stringify({ direction })
-    }).then(r => r.json()).then(d => { if (!d.success) console.error('Column move failed'); });
-}
-
-function updateCounts() {
-    document.querySelectorAll('.sortable-column').forEach(col => {
-        const wrap = col.closest('[id^=col-wrapper-]');
-        if (wrap) wrap.querySelector('.column-count').textContent = col.querySelectorAll('.tk-card').length;
-    });
-}
-
-function openEditColumn(colId, title, color, desc) {
-    const form = document.getElementById('editColumnForm');
-    form.action = `/columns/${colId}`;
-    document.getElementById('edit-col-title').value = title || '';
-    document.getElementById('edit-col-description').value = desc || '';
-    document.querySelectorAll('[id^="edit-swatch-"]').forEach(s => { s.style.border = '3px solid transparent'; s.style.boxShadow = 'none'; });
-    document.querySelectorAll('[id^="edit-check-"]').forEach(c => c.style.display = 'none');
-    selectEditColor(color || 'gray');
-    document.getElementById('editColumnModal').style.display = 'flex';
-    document.getElementById(`menu-${colId}`).classList.add('hidden');
-}
-
-function filterCards(colId, btn) {
-    document.querySelectorAll('.tk-filter-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('[id^=col-wrapper-]').forEach(col => {
-        col.style.display = (colId === 'all' || col.dataset.colId == colId) ? '' : 'none';
-    });
-}
-
-function openCreate(colId) {
-    document.getElementById('create-col-id').value = colId;
-    document.getElementById('createTaskModal').style.display = 'flex';
-}
-
-// ── Detail Modal ──────────────────────────────────────────────
-async function openDetail(taskId) {
-    stopCommentPolling();
-    currentTaskId = taskId;
-    document.getElementById('detailModal').classList.add('open');
-
-    try {
-        const res  = await fetch(`/tasks/${taskId}/detail`, {
-            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
-        });
-        const task = await res.json();
-
-        currentTaskHistory = task.activities || [];
-        renderHistoryPreview();
-
-        // Basic fields
-        document.getElementById('dt-title').textContent       = task.title;
-        document.getElementById('dt-title-input').value       = task.title;
-        document.getElementById('detailForm').action          = `/tasks/${taskId}`;
-        document.getElementById('dt-desc').value              = task.description || '';
-        document.getElementById('dt-duedate').value           = task.due_date   ? task.due_date.substr(0,10)   : '';
-        document.getElementById('dt-priority').value          = task.priority   || 'medium';
-        document.getElementById('dt-assignee').value          = task.assigned_to || '';
-        document.getElementById('dt-status').value            = task.board_column_id || '';
-        // Update complete button state
-        const completeBtn = document.getElementById('dt-complete-btn');
-        if (task.is_completed) {
-            completeBtn.innerHTML = `
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                Completed ✓`;
-            completeBtn.style.background     = 'var(--green)';
-            completeBtn.style.color          = '#fff';
-            completeBtn.style.borderColor    = 'var(--green)';
-        } else {
-            completeBtn.innerHTML = `
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                Mark Complete`;
-            completeBtn.style.background     = 'var(--green-lt)';
-            completeBtn.style.color          = 'var(--green)';
-            completeBtn.style.borderColor    = '#bbf7d0';
-        }
-
-        // Tags
-        document.getElementById('dt-tags').innerHTML = `
-            ${task.priority ? `<span class="tk-priority ${task.priority}">${task.priority.toUpperCase()}</span>` : ''}
-            ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
-
-        // Collaborators
-        const activeIds = (task.members || task.collaborators || []).map(u => Number(u.id));
-        document.querySelectorAll('.tk-collab-pill').forEach(pill => {
-            pill.classList.toggle('active', activeIds.includes(parseInt(pill.dataset.userId)));
-        });
-        updateCollabInput();
-
-        // Delete form
-        document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
-        document.getElementById('dt-delete-btn').onclick = () => {
-            if (confirm('Delete this task?')) document.getElementById('dt-delete-form').submit();
-        };
-
-        // Start date
-        if (task.start_date) {
-            document.getElementById('dt-startdate').value           = task.start_date.substr(0,10);
-            document.getElementById('start-date-field').style.display = '';
-            const btn = document.getElementById('start-date-toggle');
-            btn.textContent = '− Remove'; btn.style.color = 'var(--red)'; btn.style.background = 'var(--red-lt)';
-        } else {
-            document.getElementById('dt-startdate').value           = '';
-            document.getElementById('start-date-field').style.display = 'none';
-            const btn = document.getElementById('start-date-toggle');
-            btn.textContent = '+ Add'; btn.style.color = 'var(--blue)'; btn.style.background = 'var(--blue-lt)';
-        }
-
-        // Checklist & comments
-        renderChecklist(task.checklist_items || []);
-        renderComments(task.activities || []);
-        startCommentPolling();
-
-    } catch (err) {
-        console.error('openDetail error:', err);
-    }
-}
-
-function closeDetail() {
-    document.getElementById('detailModal').classList.remove('open');
-    currentTaskId = null;
-    stopCommentPolling();
-}
-
-// ── Save ──────────────────────────────────────────────────────
-function saveDetail() {
-    const form     = document.getElementById('detailForm');
-    const formData = new FormData(form);
-    const saveBtn  = document.querySelector('.tk-btn-save');
-    const orig     = saveBtn.textContent;
-    saveBtn.textContent = 'Saving…'; saveBtn.disabled = true;
-
-    fetch(form.action, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            saveBtn.textContent = '✓ Saved!'; saveBtn.style.background = '#16a34a';
-            setTimeout(() => window.location.reload(), 800);
-        } else {
-            throw new Error('Save failed');
-        }
-    })
-    .catch(() => {
-        saveBtn.textContent = 'Error!'; saveBtn.style.background = '#dc2626';
-        setTimeout(() => { saveBtn.textContent = orig; saveBtn.style.background = ''; saveBtn.disabled = false; }, 2000);
-    });
-}
-
-// ── Collaborators ─────────────────────────────────────────────
-function toggleCollabSelection(el) { el.classList.toggle('active'); updateCollabInput(); }
-function updateCollabInput() {
-    const selected = Array.from(document.querySelectorAll('.tk-collab-pill.active')).map(p => p.dataset.userId);
-    document.getElementById('dt-collabs-input').value = JSON.stringify(selected);
-}
-
-// ── Checklist ─────────────────────────────────────────────────
-function renderChecklist(items) {
-    const done  = items.filter(i => i.is_completed).length;
-    const total = items.length;
-    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-
-    document.getElementById('dt-check-badge').textContent = `${done}/${total}`;
-
-    if (total > 0) {
-        document.getElementById('dt-prog-section').style.display = '';
-        document.getElementById('dt-pct').textContent       = pct + '%';
-        document.getElementById('dt-prog-fill').style.width = pct + '%';
-        document.getElementById('dt-prog-sub').textContent  = `${done} of ${total} checklist item${total > 1 ? 's' : ''} done`;
-    } else {
-        document.getElementById('dt-prog-section').style.display = 'none';
-    }
-
-    document.getElementById('dt-checklist').innerHTML = items.map(item => `
-        <div class="tk-check-item" id="ci-${item.id}">
-            <input type="checkbox" ${item.is_completed ? 'checked' : ''} onchange="toggleCheck(${item.id})">
-            <span class="tk-check-text ${item.is_completed ? 'done' : ''}">${item.title}</span>
-            <button class="tk-check-del" onclick="deleteCheck(${item.id})">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-        </div>`).join('') || '<div style="font-size:13px;color:var(--soft);padding:.4rem 0;">No checklist items yet.</div>';
-}
-function toggleCheck(id){ fetch(`/checklist-items/${id}/toggle`,{method:'PATCH',headers:{'X-CSRF-TOKEN':CSRF}}).then(()=>openDetail(currentTaskId)); }
-function deleteCheck(id){ if(!confirm('Remove?')) return; fetch(`/checklist-items/${id}`,{method:'DELETE',headers:{'X-CSRF-TOKEN':CSRF}}).then(()=>openDetail(currentTaskId)); }
-function addCheckItem(){
-    const input = document.getElementById('checkInput'), title = input.value.trim(); if(!title) return;
-    fetch(`/tasks/${currentTaskId}/checklist`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({title})})
-        .then(()=>{ input.value=''; openDetail(currentTaskId); });
-}
-
-// ── Comments ──────────────────────────────────────────────────
-function renderComments(activities) {
-    const container = document.getElementById('dt-comments');
-    if (!container) return;
-
-    // Filter: action === 'comment' OR action === 'comment_added'
-    const comments = (activities || []).filter(a => a.action === 'comment' || a.action === 'comment_added');
-
-    document.getElementById('dt-comment-count').textContent = comments.length;
-
-    if (comments.length === 0) {
-        container.innerHTML = '<div style="font-size:13px;color:var(--soft);font-weight:500;padding:.5rem 0;">No comments yet.</div>';
-        return;
-    }
-
-    container.innerHTML = comments.map(a => {
-        const name     = a.user?.name || 'Someone';
-        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substr(0,2);
-        // For comment_added action the text may be stored differently — handle both
-        const text = a.description || '';
-        return `
-            <div class="tk-comment">
-                <div class="tk-comment-av" style="background:#2563eb;flex-shrink:0;">${initials}</div>
-                <div class="tk-comment-body">
-                    <div class="tk-comment-meta">
-                        <span class="tk-comment-name">${name}</span>
-                        <span class="tk-comment-time">${timeAgo(a.created_at)}</span>
-                    </div>
-                    <div class="tk-comment-text">${text}</div>
-                </div>
-            </div>`;
-    }).join('');
-
-    container.scrollTop = container.scrollHeight;
-}
-
-function postComment() {
-    const input = document.getElementById('commentInput');
-    const text  = input.value.trim();
-    if (!text || !currentTaskId) return;
-    const btn = document.querySelector('.tk-comment-post');
-    btn.disabled = true; btn.textContent = 'Posting…';
-
-    fetch(`/tasks/${currentTaskId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-        body: JSON.stringify({ comment: text })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) { input.value = ''; btn.textContent = 'Post'; btn.disabled = false; openDetail(currentTaskId); }
-    })
-    .catch(() => { btn.textContent = 'Post'; btn.disabled = false; });
-}
-
-// ── Comment Polling ───────────────────────────────────────────
-function startCommentPolling() {
-    commentPollingInterval = setInterval(async () => {
-        if (!currentTaskId) return;
-        try {
-            const res  = await fetch(`/tasks/${currentTaskId}/detail`, { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } });
-            const task = await res.json();
-            renderComments(task.activities || []);
-        } catch(e) {}
-    }, 5000);
-}
-function stopCommentPolling() {
-    if (commentPollingInterval) { clearInterval(commentPollingInterval); commentPollingInterval = null; }
-}
-
-// ── History ───────────────────────────────────────────────────
-function renderHistoryPreview() {
-    const container = document.getElementById('dt-history-preview');
-    if (!container) return;
-    const preview = currentTaskHistory.slice(0,3);
-    if (preview.length === 0) { container.innerHTML = '<div style="font-size:13px;color:var(--soft);">No activity yet.</div>'; return; }
-    container.innerHTML = preview.map(item => `
-        <div style="position:relative;padding-left:24px;margin-bottom:16px;">
-            <div style="position:absolute;left:7px;top:0;bottom:-16px;width:2px;background:var(--border);"></div>
-            <div style="position:absolute;left:4px;top:6px;width:8px;height:8px;border-radius:50%;background:#94a3b8;border:2px solid white;"></div>
-            <div style="font-size:13px;">
-                <span style="font-weight:600;color:var(--text);">${item.user?.name || 'Someone'}</span>
-                <span style="color:var(--muted);"> ${item.description}</span>
-            </div>
-            <div style="font-size:11px;color:var(--soft);margin-top:2px;">${timeAgo(item.created_at)}</div>
-        </div>`).join('');
-}
-
-function openFullHistory() {
-    document.getElementById('historyModal').style.display = 'flex';
-    document.getElementById('full-history-content').innerHTML = currentTaskHistory.map(item => `
-        <div style="margin-bottom:20px;padding-left:16px;border-left:2px solid var(--border);">
-            <div style="font-size:13px;">
-                <span style="font-weight:600;color:var(--text);">${item.user?.name || 'Someone'}</span>
-                <span style="color:var(--muted);"> ${item.description}</span>
-            </div>
-            <div style="font-size:11px;color:var(--soft);margin-top:3px;">${new Date(item.created_at).toLocaleString()}</div>
-        </div>`).join('');
-}
-
-// ── Start Date ────────────────────────────────────────────────
-function toggleStartDate() {
-    const field    = document.getElementById('start-date-field');
-    const btn      = document.getElementById('start-date-toggle');
-    const isHidden = field.style.display === 'none';
-    field.style.display  = isHidden ? '' : 'none';
-    btn.textContent      = isHidden ? '− Remove' : '+ Add';
-    btn.style.color      = isHidden ? 'var(--red)' : 'var(--blue)';
-    btn.style.background = isHidden ? 'var(--red-lt)' : 'var(--blue-lt)';
-    if (!isHidden) document.getElementById('dt-startdate').value = '';
-}
-function clearStartDate() {
-    document.getElementById('dt-startdate').value           = '';
-    document.getElementById('start-date-field').style.display = 'none';
-    const btn = document.getElementById('start-date-toggle');
-    btn.textContent = '+ Add'; btn.style.color = 'var(--blue)'; btn.style.background = 'var(--blue-lt)';
-}
-// ── Toggle Complete ────────────────────────────────────────────
-function toggleComplete() {
-    if (!currentTaskId) return;
-    const btn = document.getElementById('dt-complete-btn');
-
-    fetch(`/tasks/${currentTaskId}/toggle-complete`, {
-        method: 'PATCH',
-        headers: { 'X-CSRF-TOKEN': CSRF }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            // Reload detail to get updated state
-            openDetail(currentTaskId);
-        }
-    });
-}
-// ── Color Swatches ────────────────────────────────────────────
-const COLOR_KEYS = ['gray','blue','green','yellow','red','orange','purple','pink','teal','indigo'];
-function selectAddColor(key) {
-    COLOR_KEYS.forEach(k => {
-        const s = document.getElementById(`add-swatch-${k}`), c = document.getElementById(`add-check-${k}`);
-        if(s){ s.style.border='3px solid transparent'; s.style.boxShadow='none'; }
-        if(c) c.style.display='none';
-    });
-    const s = document.getElementById(`add-swatch-${key}`), c = document.getElementById(`add-check-${key}`);
-    if(s){ s.style.border='3px solid #1e40af'; s.style.boxShadow='0 0 0 2px #bfdbfe'; }
-    if(c) c.style.display='block';
-    const r = document.getElementById(`add-color-${key}`); if(r) r.checked=true;
-}
-function selectEditColor(key) {
-    COLOR_KEYS.forEach(k => {
-        const s = document.getElementById(`edit-swatch-${k}`), c = document.getElementById(`edit-check-${k}`);
-        if(s){ s.style.border='3px solid transparent'; s.style.boxShadow='none'; }
-        if(c) c.style.display='none';
-    });
-    const s = document.getElementById(`edit-swatch-${key}`), c = document.getElementById(`edit-check-${key}`);
-    if(s){ s.style.border='3px solid #1e40af'; s.style.boxShadow='0 0 0 2px #bfdbfe'; }
-    if(c) c.style.display='block';
-    const r = document.getElementById(`edit-color-${key}`); if(r) r.checked=true;
-}
-let notifOpen = false;
-
-async function toggleNotifications() {
-    const dropdown = document.getElementById('notif-dropdown');
-    notifOpen = !notifOpen;
-    dropdown.style.display = notifOpen ? 'block' : 'none';
-
-    if (notifOpen) {
-        try {
-            const res  = await fetch('/notifications', {
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
-            });
-            const data = await res.json();
-
-            const list = document.getElementById('notif-list');
-            document.getElementById('notif-count').textContent = data.length + ' new';
-
-            if (data.length === 0) {
-                list.innerHTML = '<div style="padding:1.5rem;text-align:center;font-size:13px;color:#6b7280;">You\'re all caught up! 🎉</div>';
-                document.getElementById('notif-dot').style.display = 'none';
-                return;
-            }
-
-            const iconMap = {
-                'comment':       '💬',
-                'created':       '✅',
-                'priority_change': '🔥',
-                'lead_change':   '👤',
-                'column_change': '📋',
-                'completed':     '🎉',
-                'checklist_added': '☑️',
-            };
-
-            list.innerHTML = data.map(n => `
-                <div style="display:flex;gap:.75rem;padding:.85rem 1rem;border-bottom:1px solid #f0f2f6;transition:background .15s;cursor:pointer;"
-                     onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-                    <div style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
-                        ${iconMap[n.action] || '🔔'}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:13px;font-weight:500;color:#0d1117;line-height:1.4;">
-                            <strong>${n.user || 'Someone'}</strong> ${n.description}
-                            ${n.task ? `<span style="color:#6b7280;"> on <em>${n.task}</em></span>` : ''}
-                        </div>
-                        <div style="font-size:11px;color:#9ba3ae;margin-top:3px;">${n.time}</div>
-                    </div>
-                </div>`).join('');
-
-        } catch(e) {
-            document.getElementById('notif-list').innerHTML =
-                '<div style="padding:1rem;text-align:center;font-size:13px;color:#dc2626;">Failed to load notifications.</div>';
-        }
-    }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-    if (!document.getElementById('notif-btn')?.contains(e.target)) {
-        document.getElementById('notif-dropdown').style.display = 'none';
-        notifOpen = false;
-    }
-});
-// ── Helpers ───────────────────────────────────────────────────
-function timeAgo(ts){ if(!ts) return ''; const d=Math.floor((Date.now()-new Date(ts))/1000); if(d<60) return d+'s ago'; if(d<3600) return Math.floor(d/60)+'m ago'; if(d<86400) return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago'; }
-
-// ── Event Listeners ───────────────────────────────────────────
-document.getElementById('detailModal').addEventListener('click', function(e){ if(e.target===this) closeDetail(); });
-document.getElementById('createTaskModal').addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
-document.getElementById('addColumnModal').addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
-document.addEventListener('keydown', e => {
-    if(e.key==='Escape'){ closeDetail(); document.getElementById('createTaskModal').style.display='none'; document.getElementById('addColumnModal').style.display='none'; }
-});
-
-// ── Search ────────────────────────────────────────────────────
-document.querySelector('.tk-topnav-search input').addEventListener('input', function() {
-    const q = this.value.toLowerCase().trim();
-
-    document.querySelectorAll('.tk-card').forEach(card => {
-        if (!q) {
-            card.style.display = '';
-            return;
-        }
-        const title = card.querySelector('.tk-card-title')?.textContent.toLowerCase() || '';
-        const desc  = card.querySelector('.tk-card-desc')?.textContent.toLowerCase() || '';
-        card.style.display = (title.includes(q) || desc.includes(q)) ? '' : 'none';
-    });
-
-    // Update column counts after filtering
-    updateCounts();
-
-    // Show "no results" message in empty columns
-    document.querySelectorAll('.sortable-column').forEach(col => {
-        const visible = col.querySelectorAll('.tk-card:not([style*="display: none"])').length;
-        let noResults = col.querySelector('.tk-no-results');
-        if (q && visible === 0) {
-            if (!noResults) {
-                noResults = document.createElement('div');
-                noResults.className = 'tk-no-results';
-                noResults.style.cssText = 'font-size:12px;color:var(--soft);text-align:center;padding:.75rem;';
-                noResults.textContent = 'No tasks match';
-                col.appendChild(noResults);
-            }
-        } else if (noResults) {
-            noResults.remove();
-        }
-    });
-});
-
-// Clear search on Escape
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        const searchInput = document.querySelector('.tk-topnav-search input');
-        if (searchInput.value) {
-            searchInput.value = '';
-            searchInput.dispatchEvent(new Event('input'));
-        }
-    }
-});
-</script>
->>>>>>> main
 </x-app-layout>

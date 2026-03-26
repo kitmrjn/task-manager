@@ -720,3 +720,17 @@
     color: var(--text);
     background: #e2e8f0;
 }
+/* Curves the modal popup */
+.tk-rounded-modal {
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    font-family: 'Geist', sans-serif !important;
+}
+
+/* Curves the buttons inside the modal */
+.tk-swal-btn {
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+}

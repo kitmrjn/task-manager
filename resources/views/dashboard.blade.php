@@ -274,7 +274,8 @@
             <div class="card-header">
                 <div class="card-title">Recent Activity</div>
             </div>
-@forelse($recentActivity ?? [] as $activity)
+            <div class="activity-card-body">
+      @forelse($recentActivity ?? [] as $activity)
     @php
         $type    = $activity->type ?? 'created';
         $iconMap = ['created' => '✦', 'moved' => '⇄', 'done' => '✓', 'assigned' => '◈'];
@@ -317,6 +318,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 @endforelse
             @endforelse
         </div>

@@ -369,3 +369,44 @@
 
 /* Profile button active state */
 .tk-nav-profile.active { background: var(--bg); border-color: var(--border); }
+/* Curves the modal popup */
+.tk-rounded-modal {
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    font-family: 'Geist', sans-serif !important;
+}
+
+/* Curves the buttons inside the modal */
+.tk-swal-btn {
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+}
+/* Use this to tweak internal SweetAlert scaling */
+.tk-rounded-modal .swal2-title {
+    font-size: 1.25rem !important; /* Slightly smaller title */
+}
+
+.tk-rounded-modal .swal2-html-container {
+    font-size: 0.9rem !important; /* Slightly smaller text */
+}
+
+.tk-rounded-modal .swal2-icon {
+    transform: scale(0.8); /* Shrinks the warning icon a bit */
+    margin-top: 1rem !important;
+}
+/* Red indicator for overdue items */
+.cal-event.overdue {
+    border-left: 3px solid #ef4444 !important; /* Bright Red */
+    background-color: #fef2f2 !important;     /* Very Light Red background */
+    color: #b91c1c !important;                /* Dark Red text */
+}
+
+/* Optional: Add a small "Overdue" text or dot inside the event */
+.cal-event.overdue::before {
+    content: "●";
+    margin-right: 4px;
+    font-size: 8px;
+    vertical-align: middle;
+}

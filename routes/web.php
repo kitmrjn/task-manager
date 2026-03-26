@@ -16,7 +16,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Tasks page
 Route::get('/tasks', [BoardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('tasks.index');
@@ -24,13 +23,15 @@ Route::get('/tasks', [BoardController::class, 'index'])
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Dashboard ──────────────────────────────────────────────────────
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ── Task Actions ───────────────────────────────────────────────────
-    Route::post('/tasks', [TaskController::class, 'store']);
+    Route::post('/tasks', [TaskController::class, 'store'])
+        ->middleware('permission:can_create_tasks');
     Route::patch('/tasks/{task}/move', [TaskController::class, 'move']);
     Route::put('/tasks/{task}', [TaskController::class, 'update']);
-    Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
+        ->middleware('permission:can_delete_tasks');
     Route::get('/tasks/{task}/detail', [TaskController::class, 'detail'])->name('tasks.detail');
 
     // ── Profile ────────────────────────────────────────────────────────
@@ -39,8 +40,12 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ── Columns ────────────────────────────────────────────────────────
-    Route::post('/columns', [BoardController::class, 'storeColumn'])->name('columns.store');
-    Route::delete('/columns/{column}', [BoardController::class, 'destroyColumn'])->name('columns.destroy');
+    Route::post('/columns', [BoardController::class, 'storeColumn'])
+        ->middleware('permission:can_create_tasks')
+        ->name('columns.store');
+    Route::delete('/columns/{column}', [BoardController::class, 'destroyColumn'])
+        ->middleware('permission:can_delete_tasks')
+        ->name('columns.destroy');
     Route::patch('/columns/{column}/move', [BoardController::class, 'moveColumn'])->name('columns.move');
     Route::put('/columns/{column}', [BoardController::class, 'updateColumn'])->name('columns.update');
 
@@ -56,13 +61,19 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
 
     // ── Pages ──────────────────────────────────────────────────────────
-    Route::get('/calendar',  [CalendarController::class,  'index'])->name('calendar.index');
-    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::get('/team',      [TeamController::class,      'index'])->name('team.index');
-    Route::get('/settings',  [SettingsController::class,  'index'])->name('settings.index');
-    Route::get('/help',      [HelpController::class,      'index'])->name('help.index');
+    Route::get('/calendar', [CalendarController::class, 'index'])
+        ->middleware('permission:can_view_calendar')
+        ->name('calendar.index');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])
+        ->middleware('permission:can_view_analytics')
+        ->name('analytics.index');
+    Route::get('/team', [TeamController::class, 'index'])
+        ->middleware('permission:can_view_team')
+        ->name('team.index');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/help', [HelpController::class, 'index'])->name('help.index');
 
-    // ── Calendar ──────────────────────────────────────────────────────────
+    // ── Calendar Events ────────────────────────────────────────────────
     Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
     Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
 
@@ -72,17 +83,17 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
     // ── Team ───────────────────────────────────────────────────────────
     Route::get('/team/{user}/tasks', [TeamController::class, 'memberTasks'])->name('team.tasks');
     Route::patch('/team/{user}/role', [TeamController::class, 'updateRole'])->name('team.role');
-    Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update'); // ← add this
-    
+    Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
+    Route::patch('/team/members/{user}/permissions', [TeamController::class, 'updatePermissions'])->name('team.permissions');
 
     // ── Settings ───────────────────────────────────────────────────────
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
-    Route::put('/settings/password',  [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::delete('/settings/account', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
 
-    // ── Attachment ──────────────────────────────────────────────────
-    Route::post('/tasks/{task}/attachments',      [TaskAttachmentController::class, 'store']);
-    Route::delete('/attachments/{attachment}',    [TaskAttachmentController::class, 'destroy']);
+    // ── Attachments ────────────────────────────────────────────────────
+    Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store']);
+    Route::delete('/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', function () {

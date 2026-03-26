@@ -114,7 +114,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
             ['Can I set due dates on tasks?', 'Yes! When creating or editing a task, you will find a Due Date field. Tasks with approaching deadlines will be highlighted in the dashboard and calendar.'],
             ['How are task priorities determined?', 'You can manually set each task to Low, Medium, or High priority. High priority tasks appear in your dashboard stats and are flagged in red.'],
             ['How do I change my password?', 'Go to Settings → Account and use the Change Password form. Enter your current password and your new password twice to confirm.'],
-            ['Where can I see all overdue tasks?', 'The Dashboard shows tasks with overdue indicators. The Calendar view also highlights overdue items in red under Upcoming Deadlines.'],
+            ['Where can I see all overdue tasks?', 'The Analytic shows tasks with overdue indicators. The Calendar view also highlights overdue items in red under Upcoming Deadlines.'],
         ] as [$q, $a])
         <div class="faq-item">
             <div class="faq-q" onclick="faqToggle(this)">
@@ -135,15 +135,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                 <a href="mailto:support@taskflow.app" class="hp-contact-link">support@taskflow.app</a>
             </div>
         </div>
-        <div class="hp-contact-card">
-            <div class="hp-contact-icon" style="background:var(--c-teal-lt);">💬</div>
-            <div>
-                <div class="hp-contact-title">Live Chat</div>
-                <div class="hp-contact-sub">Available Mon–Fri, 9am–5pm</div>
-                <a href="#" class="hp-contact-link">Start a conversation →</a>
-            </div>
-        </div>
-    </div>
+
 
 </div>
 </div>
