@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTaskHistory     = [];
     let currentTaskId          = null;
     let commentPollingInterval = null;
+    let currentCanEdit         = true;
 
     /* ================================================================
        SORTABLE
@@ -142,35 +143,34 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('create-col-id').value = colId;
         document.getElementById('createTaskModal').style.display = 'flex';
     };
+
     window.confirmDeleteColumn = function(columnId, columnTitle) {
-    Swal.fire({
-        title: `Delete "${columnTitle}"?`,
-        text: "All tasks inside this column will also be deleted! This cannot be undone.",
-        icon: 'warning',
-        width: '400px', // Slightly wider to fit the column name if it's long
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Yes, delete column',
-        cancelButtonText: 'Cancel',
-        reverseButtons: true,
-        borderRadius: '16px',
-        background: '#ffffff',
-        customClass: {
-            popup: 'tk-rounded-modal',
-            confirmButton: 'tk-swal-btn',
-            cancelButton: 'tk-swal-btn'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Find that hidden form by ID and submit it
-            const form = document.getElementById(`del-col-${columnId}`);
-            if (form) {
-                form.submit();
+        Swal.fire({
+            title: `Delete "${columnTitle}"?`,
+            text: "All tasks inside this column will also be deleted! This cannot be undone.",
+            icon: 'warning',
+            width: '400px',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Yes, delete column',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            borderRadius: '16px',
+            background: '#ffffff',
+            customClass: {
+                popup: 'tk-rounded-modal',
+                confirmButton: 'tk-swal-btn',
+                cancelButton: 'tk-swal-btn'
             }
-        }
-    });
-};
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById(`del-col-${columnId}`);
+                if (form) form.submit();
+            }
+        });
+    };
+
     /* ================================================================
        COLLABORATOR SEARCH & SELECT
     ================================================================ */
@@ -253,38 +253,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('dt-collabs-input');
         if (input) input.value = JSON.stringify(selected);
     }
+
     window.handleCollabEnter = function(event) {
-    if (event.key === 'Enter') {
-        // 1. Stop the form from submitting (Prevents that {"success":true} screen)
-        event.preventDefault();
-
-        const dropdown = document.getElementById('collabDropdown');
-        const searchInput = document.getElementById('collabSearch');
-        
-        // 2. Find the first visible option in the dropdown
-        const firstVisibleOption = Array.from(dropdown.querySelectorAll('.tk-collab-option'))
-            .find(opt => opt.style.display !== 'none');
-
-        if (firstVisibleOption) {
-            // 3. Trigger the click logic for that person
-            const userId = firstVisibleOption.dataset.userId;
-            const userName = firstVisibleOption.dataset.userDisplay;
-            
-            window.selectCollab(userId, userName);
-            searchInput.value = ''; // Clear the text
-            closeCollabDropdown();
-
-            // 4. Clear search and keep focus for the next person
-            searchInput.value = '';
-            // Reset dropdown visibility for next search
-            dropdown.querySelectorAll('.tk-collab-option').forEach(o => o.style.display = '');
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const dropdown    = document.getElementById('collabDropdown');
+            const searchInput = document.getElementById('collabSearch');
+            const firstVisibleOption = Array.from(dropdown.querySelectorAll('.tk-collab-option'))
+                .find(opt => opt.style.display !== 'none');
+            if (firstVisibleOption) {
+                const userId   = firstVisibleOption.dataset.userId;
+                const userName = firstVisibleOption.dataset.userDisplay;
+                window.selectCollab(userId, userName);
+                searchInput.value = '';
+                closeCollabDropdown();
+                dropdown.querySelectorAll('.tk-collab-option').forEach(o => o.style.display = '');
+            }
         }
-    }
-};
+    };
 
     /* ================================================================
-       ATTACHMENTS — all inside DOMContentLoaded so renderAttachments
-       is in the same scope as openDetail
+       ATTACHMENTS
     ================================================================ */
     function renderAttachments(attachments) {
         const container = document.getElementById('dt-attachments');
@@ -370,14 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /* ================================================================
-    DELETE ATTACHMENT
+       DELETE ATTACHMENT
     ================================================================ */
     window.deleteAttachment = function(attachmentId) {
         Swal.fire({
             title: 'Remove attachment?',
             text: "This file will be permanently deleted.",
             icon: 'warning',
-            width: '380px', // Matches the smaller size we used for Calendar
+            width: '380px',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#94a3b8',
@@ -398,12 +387,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'X-CSRF-TOKEN': CSRF },
                 })
                 .then(r => r.json())
-                .then(data => { 
+                .then(data => {
                     if (data.success) {
-                        // Re-fetch the task details to refresh the list without reloading the whole page
-                        openDetail(currentTaskId); 
-                        
-                        // Show a quick success toast
+                        openDetail(currentTaskId);
                         Swal.fire({
                             toast: true,
                             position: 'top-end',
@@ -413,11 +399,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             timer: 1500,
                             timerProgressBar: true
                         });
-                    } 
+                    }
                 });
             }
         });
     };
+
     window.openLightbox = function(url, name) {
         let lb = document.getElementById('tk-lightbox');
         if (!lb) {
@@ -470,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dt-desc').value        = task.description || '';
             document.getElementById('dt-duedate').value     = task.due_date    ? task.due_date.substr(0,10) : '';
             document.getElementById('dt-priority').value    = task.priority    || 'medium';
-            document.getElementById('dt-assignee').value = task.assigned_to ? String(task.assigned_to) : '';
+            document.getElementById('dt-assignee').value    = task.assigned_to ? String(task.assigned_to) : '';
             document.getElementById('dt-status').value      = task.board_column_id || '';
 
             const completeBtn = document.getElementById('dt-complete-btn');
@@ -486,18 +473,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${task.priority ? `<span class="tk-priority ${task.priority}">${task.priority.toUpperCase()}</span>` : ''}
                 ${task.column   ? `<span class="tk-card-tag" style="background:#eff6ff;color:#2563eb"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>${task.column.title}</span>` : ''}`;
 
-  // 1. Clear current view
-const selectedContainer = document.getElementById('dt-selected-collabs');
-if (selectedContainer) selectedContainer.innerHTML = '';
+            // Clear and repopulate collaborators
+            const selectedContainer = document.getElementById('dt-selected-collabs');
+            if (selectedContainer) selectedContainer.innerHTML = '';
+            document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.classList.remove('selected'));
+            (task.collaborators || []).forEach(m => window.selectCollab(m.id, m.name));
 
-// 2. Clear dropdown highlights
-document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.classList.remove('selected'));
-
-// 3. FIX: Change 'members' to 'collaborators' to match your Controller
-(task.collaborators || []).forEach(m => window.selectCollab(m.id, m.name));
-
+            const deleteBtn = document.getElementById('dt-delete-btn');
             document.getElementById('dt-delete-form').action = `/tasks/${taskId}`;
-            document.getElementById('dt-delete-btn').onclick = () => {
+            if (deleteBtn) deleteBtn.onclick = () => {
                 Swal.fire({
                     title: 'Delete this task?',
                     text: "You won't be able to revert this!",
@@ -508,10 +492,9 @@ document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.cl
                     confirmButtonText: 'Yes, delete it!',
                     cancelButtonText: 'Cancel',
                     reverseButtons: true,
-                    // --- ADD THESE LINES FOR CURVED EDGES ---
                     background: '#ffffff',
                     color: '#1e293b',
-                    borderRadius: '16px', // This curves the outer edges
+                    borderRadius: '16px',
                     customClass: {
                         popup: 'tk-rounded-modal',
                         confirmButton: 'tk-swal-btn',
@@ -536,10 +519,15 @@ document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.cl
                 btn.textContent = '+ Add'; btn.style.color = 'var(--blue)'; btn.style.background = 'var(--blue-lt)';
             }
 
+            // Render dynamic content first
             renderChecklist(task.checklist_items || []);
             renderComments(task.activities || []);
-            renderAttachments(task.attachments || []); // ✅ works now — same scope
+            renderAttachments(task.attachments || []);
             startCommentPolling();
+
+            // ← Apply edit mode LAST, after all elements are in the DOM
+            currentCanEdit = task.can_edit !== false;
+            applyEditMode(currentCanEdit);
 
         } catch (err) { console.error('openDetail error:', err); }
     };
@@ -547,11 +535,14 @@ document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.cl
     window.closeDetail = function() {
         document.getElementById('detailModal').classList.remove('open');
         closeCollabDropdown();
-        currentTaskId = null;
+        currentTaskId  = null;
+        currentCanEdit = true;
         stopCommentPolling();
     };
 
     window.saveDetail = function() {
+        if (!currentCanEdit) return; // guard — blocked even if button somehow appears
+
         const form    = document.getElementById('detailForm');
         const saveBtn = document.querySelector('.tk-btn-save');
         const orig    = saveBtn.textContent;
@@ -760,7 +751,8 @@ document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.cl
     /* ================================================================
        SEARCH / FILTER CARDS
     ================================================================ */
-    document.querySelector('.tk-topnav-search input').addEventListener('input', function () {
+    const searchInput = document.querySelector('.tk-topnav-search input');
+    if (searchInput) searchInput.addEventListener('input', function () {
         const q = this.value.toLowerCase().trim();
         document.querySelectorAll('.tk-card').forEach(card => {
             if (!q) { card.style.display = ''; return; }
@@ -797,6 +789,60 @@ document.querySelectorAll('#collabDropdown .tk-collab-option').forEach(o => o.cl
     }
 
 }); // end DOMContentLoaded
+
+/* ============================================================
+   APPLY EDIT MODE
+============================================================ */
+function applyEditMode(canEdit) {
+    const form = document.getElementById('detailForm');
+    if (!form) return;
+
+    // Disable/enable all form inputs
+    form.querySelectorAll('input, select, textarea').forEach(el => {
+        el.disabled = !canEdit;
+    });
+
+    // Footer buttons
+    const saveBtn     = document.querySelector('.tk-btn-save');
+    const deleteBtn   = document.getElementById('dt-delete-btn');
+    const completeBtn = document.getElementById('dt-complete-btn');
+    const attachBtn   = document.querySelector('.tk-attach-btn');
+    const dropzone    = document.getElementById('attachDropzone');
+    const collabSearch = document.getElementById('collabSearchWrap');
+    const startToggle  = document.getElementById('start-date-toggle');
+
+    [saveBtn, deleteBtn, completeBtn, attachBtn, dropzone, collabSearch, startToggle].forEach(el => {
+        if (!el) return;
+        if (!canEdit) el.style.setProperty('display', 'none', 'important');
+        else el.style.removeProperty('display');
+    });
+
+    // Hide dynamic elements (checklist deletes, attachment deletes, collab remove X)
+    document.querySelectorAll('.tk-check-del, .tk-attach-del, .tk-remove-x').forEach(el => {
+        el.style.display = canEdit ? '' : 'none';
+    });
+
+    // Hide checklist add row
+    const checkAdd = document.querySelector('.tk-check-add');
+    if (checkAdd) checkAdd.style.display = canEdit ? '' : 'none';
+
+    // Read-only banner
+    let banner = document.getElementById('readonly-banner');
+    if (!canEdit) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'readonly-banner';
+            banner.style.cssText = 'background:#fef9c3;border:1px solid #fde68a;color:#92400e;font-size:13px;font-weight:600;padding:.8rem 1rem;border-radius:12px;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;flex-shrink:0;';
+            banner.innerHTML = '🔒 View Only — you do not have permission to modify this task.';
+            // Insert at top of left panel
+            const leftPanel = document.querySelector('.tk-detail > div > div:first-child');
+            if (leftPanel) leftPanel.prepend(banner);
+        }
+        banner.style.setProperty('display', 'flex', 'important');
+    } else {
+        if (banner) banner.style.display = 'none';
+    }
+}
 
 /* ============================================================
    TOPNAV DROPDOWNS — profile + notifications

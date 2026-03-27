@@ -1,25 +1,65 @@
 <x-app-layout>
+    @section('title', 'Analytics')
 <x-slot name="header">
-    <div class="an-topnav">
-        <div class="an-topnav-left">
+    <div class="tk-topnav">
 
-        </div>
-        <div class="an-topnav-right">
-            <button class="an-nav-icon-btn" title="Messages">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </button>
-            <button class="an-nav-icon-btn" title="Notifications">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </button>
-            <div class="an-nav-divider"></div>
-            <div class="an-nav-profile">
-                <div class="an-nav-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
-                <div class="an-nav-userinfo">
-                    <span class="an-nav-name">{{ Auth::user()->name }}</span>
-                    <span class="an-nav-email">{{ Auth::user()->email }}</span>
+        <div class="tk-topnav-right">
+
+            {{-- Notifications --}}
+            <div class="tk-dropdown-wrap">
+                <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </button>
+                <div id="notif-dropdown" class="tk-dropdown">
+                    <div class="tk-dropdown-header">
+                        <span class="tk-dropdown-title">Notifications</span>
+                        <span class="tk-badge-pill" id="notif-count"></span>
+                    </div>
+                    <div class="tk-dropdown-body" id="notif-list">
+                        <div style="padding:1.2rem;text-align:center;font-size:13.5px;color:var(--soft);">Loading…</div>
+                    </div>
                 </div>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#9ca3af;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
+
+            <div class="tk-nav-divider"></div>
+
+            {{-- Profile --}}
+            <div class="tk-dropdown-wrap">
+                <div class="tk-nav-profile" id="profile-btn" role="button" tabindex="0">
+                    <div class="tk-nav-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                    <div class="tk-nav-userinfo">
+                        <span class="tk-nav-name">{{ Auth::user()->name }}</span>
+                        <span class="tk-nav-email">{{ Auth::user()->email }}</span>
+                    </div>
+                    <svg id="profile-chevron" class="tk-nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .22s;"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div id="profile-dropdown" class="tk-dropdown tk-profile-dropdown">
+                    <div class="tk-dropdown-header tk-profile-header">
+                        <div class="tk-profile-avatar-lg">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                        <div>
+                            <div style="font-size:14px;font-weight:700;color:var(--text);">{{ Auth::user()->name }}</div>
+                            <div class="tk-profile-meta">{{ Auth::user()->email }}</div>
+                        </div>
+                    </div>
+                    <div class="tk-dropdown-body">
+                            @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('settings.index') }}" class="tk-profile-item">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            My Profile & Settings
+                        </a>
+                        @endif
+                        <div class="tk-profile-divider"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="tk-profile-item tk-profile-item--danger">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </x-slot>
@@ -27,6 +67,172 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
+/* ================================================================
+   TOPNAV DROPDOWNS
+================================================================ */
+.tk-dropdown-wrap { position: relative; }
+
+.tk-dropdown {
+    position: absolute; right: 0; top: calc(100% + 10px);
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: var(--shadow-lg);
+    z-index: 999; overflow: hidden;
+    opacity: 0; transform: translateY(-10px) scale(.96);
+    pointer-events: none;
+    transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1);
+    transform-origin: top right;
+}
+.tk-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+#notif-dropdown      { width: 340px; }
+.tk-profile-dropdown { width: 268px; }
+
+.tk-dropdown-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--rule,#e5e8f0); display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.tk-dropdown-title  { font-size: 15px; font-weight: 800; color: var(--text); }
+.tk-badge-pill      { font-size: 11.5px; font-weight: 700; background: var(--blue-lt); color: var(--blue); padding: 2px 10px; border-radius: 99px; }
+.tk-dropdown-body   { max-height: 360px; overflow-y: auto; }
+
+.tk-notif-item            { display: flex; gap: .85rem; align-items: flex-start; padding: .95rem 1.25rem; border-bottom: 1px solid var(--border); transition: background .15s; }
+.tk-notif-item:last-child { border-bottom: none; }
+.tk-notif-item:hover      { background: var(--surface,#f8f9fc); }
+.tk-notif-icon            { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--blue-lt); color: var(--blue); }
+.tk-notif-content         { flex: 1; min-width: 0; }
+.tk-notif-text            { font-size: 13.5px; color: var(--muted); line-height: 1.5; font-weight: 500; }
+.tk-notif-text strong     { color: var(--text); font-weight: 700; }
+.tk-notif-time            { font-size: 12px; color: var(--soft); font-weight: 600; margin-top: 3px; }
+
+.tk-profile-avatar-lg { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b63d8, #1b2b5e); color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(45,82,196,.3); }
+.tk-profile-meta      { font-size: 12.5px; color: var(--soft); font-weight: 500; margin-top: 2px; }
+
+.tk-profile-item {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .75rem 1.25rem; font-size: 14px; font-weight: 600;
+    color: var(--muted); text-decoration: none;
+    cursor: pointer; border: none; background: none;
+    width: 100%; font-family: var(--font);
+    transition: background .14s, color .14s; text-align: left;
+}
+.tk-profile-item:hover         { background: var(--surface,#f8f9fc); color: var(--text); }
+.tk-profile-item--danger       { color: var(--red); }
+.tk-profile-item--danger:hover { background: var(--red-lt); color: var(--red); }
+.tk-profile-divider            { height: 1px; background: var(--border); margin: .3rem 0; }
+/* --- Dropdown Logic --- */
+.tk-dropdown-wrap {
+    position: relative; /* Crucial: parent for absolute child */
+    display: inline-block;
+}
+
+
+
+/* Specific size for profile dropdown if needed */
+.tk-profile-dropdown {
+    width: 240px;
+}
+
+/* Show class to be toggled by JS */
+.tk-dropdown.show {
+    display: flex;
+}
+
+@keyframes dropdownIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Profile Item Styles --- */
+.tk-profile-item {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: background 0.15s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+}
+
+.tk-profile-item:hover {
+    background: var(--bg);
+}
+
+.tk-profile-item--danger {
+    color: var(--red);
+}
+
+.tk-profile-divider {
+    height: 1px;
+    background: var(--rule);
+    margin: 4px 0;
+}
+* ================================================================
+   TOPNAV  (identical to dashboard & tasks)
+================================================================ */
+.tf-main-header       { background: var(--white) !important; border-bottom: 1px solid var(--border) !important; padding: 0 !important; }
+.tf-main-header-inner { max-width: 100% !important; padding: 0 !important; }
+
+.tk-topnav { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 66px; gap: 1rem; }
+
+.tk-topnav-search {
+    display: flex; align-items: center; gap: .6rem;
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: .6rem 1rem;
+    width: 320px; flex-shrink: 0;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.tk-topnav-search:focus-within        { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,82,196,.1); background: var(--white); }
+.tk-topnav-search svg                 { color: var(--soft); flex-shrink: 0; }
+.tk-topnav-search input               { border: none; background: transparent; outline: none; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--text); flex: 1; min-width: 0; }
+.tk-topnav-search input::placeholder  { color: var(--soft); font-weight: 400; }
+.tk-topnav-kbd    { font-size: 11px; font-weight: 600; color: var(--soft); background: var(--white); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; flex-shrink: 0; }
+
+.tk-topnav-right  { display: flex; align-items: center; gap: .65rem; margin-left: auto; }
+
+.tk-nav-icon-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); position: relative; flex-shrink: 0;
+    transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+.tk-nav-icon-btn:hover { background: var(--bg); border-color: var(--border-2); color: var(--text); transform: translateY(-1px); }
+
+.tk-notif-dot {
+    position: absolute; top: 4px; right: 4px;
+    min-width: 18px; height: 18px; border-radius: 99px;
+    background: var(--red); border: 2px solid var(--white);
+    color: #fff; font-size: 9px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+
+.tk-nav-divider { width: 1px; height: 30px; background: var(--border); flex-shrink: 0; margin: 0 .15rem; }
+
+.tk-nav-profile {
+    display: flex; align-items: center; gap: .65rem;
+    cursor: pointer; padding: .4rem .75rem;
+    border-radius: 10px; border: 1.5px solid transparent;
+    background: transparent; flex-shrink: 0;
+    transition: background .18s, border-color .18s, transform .15s;
+}
+.tk-nav-profile:hover { background: var(--bg); border-color: var(--border); transform: translateY(-1px); }
+
+.tk-nav-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-md), var(--navy));
+    color: #fff; font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 2px 8px rgba(45,82,196,.3);
+}
+.tk-nav-userinfo { display: flex; flex-direction: column; }
+.tk-nav-name     { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.25; letter-spacing: -.01em; }
+.tk-nav-email    { font-size: 12px; color: var(--soft); font-weight: 500; }
+.tk-nav-chevron  { color: var(--soft); flex-shrink: 0; transition: transform .22s; }
+.tk-nav-profile:hover .tk-nav-chevron { transform: rotate(180deg); }
 :root {
     --bg:        #eef0f6;
     --white:     #ffffff;
@@ -396,6 +602,7 @@ body { background: var(--bg); font-family: var(--font); color: var(--text); -web
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
+
 function handlePeriodChange(val) {
     if (val === 'custom') {
         document.getElementById('customRange').style.display = 'flex';
@@ -404,6 +611,7 @@ function handlePeriodChange(val) {
         window.location.href = '{{ route("analytics.index") }}?period=' + val;
     }
 }
+
 function applyCustomRange() {
     const from = document.getElementById('fromDate').value;
     const to   = document.getElementById('toDate').value;
@@ -414,7 +622,9 @@ function applyCustomRange() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Animated counters
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    // ── Animated counters ──
     document.querySelectorAll('[data-count]').forEach(el => {
         const t = parseInt(el.dataset.count);
         if (!t) return;
@@ -423,15 +633,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const ti = setInterval(() => { n = Math.min(n + s, t); el.textContent = n; if (n >= t) clearInterval(ti); }, 20);
     });
 
-    // Progress bars
+    // ── Progress bars ──
     document.querySelectorAll('.bd-fill').forEach((el, i) => {
         setTimeout(() => { el.style.width = el.dataset.w + '%'; }, 400 + i * 60);
     });
 
+    // ── Charts ──
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
     Chart.defaults.color = '#8b94b3';
 
-    // Line chart
     new Chart(document.getElementById('lineChart'), {
         type: 'line',
         data: {
@@ -469,7 +679,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Doughnut chart
     new Chart(document.getElementById('doughnutChart'), {
         type: 'doughnut',
         data: {
@@ -488,6 +697,64 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // ── Dropdown engine ──
+    function bindDropdown(btnId, dropId) {
+        const btn  = document.getElementById(btnId);
+        const drop = document.getElementById(dropId);
+        if (!btn || !drop) return;
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const isOpen = drop.classList.contains('open');
+            closeAll();
+            if (!isOpen) drop.classList.add('open');
+        });
+        drop.addEventListener('click', e => e.stopPropagation());
+    }
+
+    function closeAll() {
+        document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
+    }
+
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+    bindDropdown('notif-btn',   'notif-dropdown');
+    bindDropdown('profile-btn', 'profile-dropdown');
+
+    // ── Load notifications ──
+    const notifBtn = document.getElementById('notif-btn');
+    if (notifBtn) {
+        notifBtn.addEventListener('click', async () => {
+            const list = document.querySelector('#notif-dropdown .tk-dropdown-body');
+            if (!list) return;
+            list.innerHTML = '<div style="padding:1.2rem;text-align:center;font-size:13.5px;color:var(--soft);">Loading…</div>';
+            try {
+                const res  = await fetch('/notifications', {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+                });
+                const data = await res.json();
+                const count = document.getElementById('notif-count');
+                if (count) count.textContent = data.length ? data.length + ' new' : '';
+                if (!data.length) {
+                    list.innerHTML = '<div style="padding:1.5rem;text-align:center;font-size:13.5px;color:var(--soft);">You\'re all caught up! 🎉</div>';
+                    return;
+                }
+                const iconMap = { comment:'💬', created:'✅', priority_change:'🔥', lead_change:'👤', column_change:'📋', completed:'🎉', checklist_added:'☑️' };
+                list.innerHTML = data.map(n => `
+                    <div class="tk-notif-item">
+                        <div class="tk-notif-icon">${iconMap[n.action] || '🔔'}</div>
+                        <div class="tk-notif-content">
+                            <div class="tk-notif-text"><strong>${n.user || 'Someone'}</strong> ${n.description}${n.task ? ` on <em>${n.task}</em>` : ''}</div>
+                            <div class="tk-notif-time">${n.time}</div>
+                        </div>
+                    </div>`).join('');
+            } catch {
+                list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--red);">Failed to load.</div>';
+            }
+        });
+    }
+
 });
 </script>
 </x-app-layout>

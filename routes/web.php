@@ -22,6 +22,7 @@ Route::get('/tasks', [BoardController::class, 'index'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+
     // ── Dashboard ──────────────────────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -73,10 +74,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
 
-    // ── Calendar Events ────────────────────────────────────────────────
-    Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
-    Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
+// ── Calendar Events ────────────────────────────────────────────────
+Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
+Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
+Route::get('/holidays/{year}', [CalendarController::class, 'getHolidays'])->where('year', '[0-9]{4}');
 
+Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
+    
     // ── Comments ───────────────────────────────────────────────────────
     Route::post('/tasks/{task}/comments', [TaskController::class, 'storeComment'])->name('tasks.comment');
 
@@ -95,13 +99,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store']);
     Route::delete('/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
 
+    Route::post('/settings/branding', [App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding');
+    Route::get('/settings/branding/clear/{key}', [SettingsController::class, 'clearBranding'])->name('settings.branding.clear');
+
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', function () {
         $notifications = \App\Models\TaskActivity::with(['user', 'task'])
             ->whereHas('task', function ($q) {
                 $q->where('assigned_to', auth()->id())
-                  ->orWhereHas('members', fn ($q) => $q->where('users.id', auth()->id()));
+                ->orWhereHas('members', fn ($q) => $q->where('users.id', auth()->id()));
             })
+            ->where('user_id', '!=', auth()->id()) // ← don't notify yourself
             ->latest()
             ->take(10)
             ->get();

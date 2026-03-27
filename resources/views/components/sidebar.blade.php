@@ -1,17 +1,40 @@
 {{-- resources/views/components/sidebar.blade.php --}}
 <aside class="tf-sidebar" id="tfSidebar">
 
-    {{-- Logo --}}
-    <div class="tf-logo">
-        <div class="tf-logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity=".9"/>
-                <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".6"/>
-                <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
-            </svg>
-        </div>
-        <span class="tf-logo-text">ProductivityDaily</span>
-    </div>
+{{-- resources/views/components/sidebar.blade.php --}}
+
+{{-- LOGO SECTION --}}
+<div class="tf-logo">
+    {{-- Wrap everything in a link to the root '/' or a named route like 'welcome' --}}
+    <a href="{{ url('/') }}" style="display: flex; align-items: center; gap: .7rem; text-decoration: none; color: inherit;">
+        @if(!empty($siteSettings['app_logo']))
+            {{-- Custom Logo Mode --}}
+            <div class="tf-custom-logo">
+                <img src="{{ asset('storage/' . $siteSettings['app_logo']) }}" alt="Logo">
+            </div>
+        @else
+            {{-- Default Mode --}}
+<div class="tf-logo-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity=".9"/>
+        <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".6"/>
+        <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
+    </svg>
+</div>
+        @endif
+        
+        <span class="tf-logo-text">{{ $siteSettings['app_name'] ?? 'ProductivityDaily' }}</span>
+    </a>
+</div>
+
+{{-- DYNAMIC THEME COLOR --}}
+<style>
+:root {
+    /* Pull the primary color from DB, fallback to your default blue */
+    --sb-badge: {{ $siteSettings['brand_color'] ?? '#3b6be8' }};
+    --sb-accent: {{ $siteSettings['brand_color'] ?? '#4f83ff' }};
+}
+</style>
 
     {{-- Nav --}}
     <nav class="tf-nav">
@@ -134,6 +157,18 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600&display=swap');
 
+/* Add this to your <style> block */
+.tf-logo a {
+    transition: opacity 0.2s ease;
+}
+
+.tf-logo a:hover {
+    opacity: 0.8;
+}
+
+.tf-logo a:active {
+    transform: scale(0.98); /* Slight click feedback */
+}
 :root {
     --sb-w:        240px;
     --sb-bg:       #0f1729;
@@ -166,7 +201,7 @@
     flex-shrink: 0;
 }
 .tf-logo-icon {
-    width: 36px; height: 36px; border-radius: 10px;
+    width: 48px; height: 48px; border-radius: 10px;
     background: var(--sb-badge);
     display: flex; align-items: center; justify-content: center;
     color: #fff; flex-shrink: 0;
@@ -179,6 +214,27 @@
     font-size: 9.5px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .14em; color: var(--sb-label);
     padding: .5rem 1.3rem .4rem; margin: 0;
+}
+/* This ensures the custom logo looks professional and clean */
+.tf-custom-logo {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden; /* Clips any weird edges */
+}
+
+.tf-custom-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Keeps the logo's shape without stretching */
+}
+
+/* If you want the logo to have a rounded look like a 'Pro' app: */
+.tf-custom-logo {
+    border-radius: 8px;
 }
 .tf-nav-item {
     display: flex; align-items: center; gap: .75rem;

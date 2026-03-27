@@ -392,3 +392,12 @@
     from { opacity: 0; transform: translateX(-12px); }
     to   { opacity: 1; transform: translateX(0); }
 }
+.st-topnav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 66px; gap: 1rem;
+    background: var(--white); border-bottom: 1px solid var(--border);
+}
+.st-topnav-left { display: flex; flex-direction: column; justify-content: center; }
+.st-topnav-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); line-height: 1; margin-bottom: 2px; }
+.st-topnav-heading { font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -.02em; line-height: 1; }
+.st-topnav-right { display: flex; align-items: center; gap: .5rem; }

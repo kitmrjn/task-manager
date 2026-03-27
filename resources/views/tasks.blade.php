@@ -1,11 +1,9 @@
 <x-app-layout>
+    @section('title', 'Task')
 <x-slot name="header">
     <div class="tk-topnav">
 
         <div class="tk-topnav-right">
-            <button class="tk-nav-icon-btn" title="Messages">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </button>
 
             <div class="tk-dropdown-wrap">
                 <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
@@ -136,6 +134,7 @@
                         <button class="tk-col-action" onclick="toggleColMenu(event, {{ $column->id }})">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                         </button>
+                        
                         <div id="menu-{{ $column->id }}" class="tk-col-menu hidden">
                             <button onclick="openEditColumn({{ $column->id }}, '{{ addslashes($column->title) }}', '{{ $column->color ?? 'gray' }}', '{{ addslashes($column->description ?? '') }}')">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
@@ -307,11 +306,20 @@
                 <input type="hidden" name="title" id="dt-title-input">
 
                 <div class="tk-fields" style="margin-bottom:.2rem">
-                    <div>
-                        <div class="tk-field-label">Column</div>
-                        <select name="board_column_id" class="tk-field-select" id="dt-status">
-                            @foreach($board->columns ?? [] as $col)
-                                <option value="{{ $col->id }}">{{ $col->title }}</option>
+                <div style="display:none;">
+                    <div class="tk-field-label">Column</div>
+                    <select name="board_column_id" class="tk-field-select" id="dt-status">
+                        @foreach($board->columns ?? [] as $col)
+                            <option value="{{ $col->id }}">{{ $col->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                                    <div>
+                        <div class="tk-field-label">Assignee</div>
+                        <select name="assigned_to" class="tk-field-select" id="dt-assignee">
+                            <option value="">Unassigned</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -323,15 +331,7 @@
                             <option value="high">High</option>
                         </select>
                     </div>
-                    <div>
-                        <div class="tk-field-label">Assignee</div>
-                        <select name="assigned_to" class="tk-field-select" id="dt-assignee">
-                            <option value="">Unassigned</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+
                     <div>
                         <div class="tk-field-label" style="display:flex;align-items:center;justify-content:space-between;">
                             Start Date
