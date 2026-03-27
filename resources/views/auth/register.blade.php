@@ -3,7 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Register — {{ config('app.name', 'TaskFlow') }}</title>
+    <title>Register — {{ $siteSettings['app_name'] ?? config('app.name', 'TaskFlow') }}</title>
+
+<!-- Dynamic Favicon -->
+@if(!empty($siteSettings['app_favicon']))
+    <link rel="icon" type="image/png" href="{{ asset('storage/' . $siteSettings['app_favicon']) }}?v={{ time() }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('storage/' . $siteSettings['app_favicon']) }}?v={{ time() }}">
+@else
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
+@endif
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

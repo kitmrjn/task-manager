@@ -9,7 +9,6 @@ class CalendarEvent extends Model
 {
     use HasFactory;
 
-    // This tells Laravel it's okay to save these specific fields
     protected $fillable = [
         'title', 
         'date', 
@@ -17,10 +16,11 @@ class CalendarEvent extends Model
         'type', 
         'color', 
         'description', 
-        'user_id'
+        'user_id',
+        'recurrence',       // Add this line
+        'recurrence_until'  // Add this line
     ];
 
-    // Optional: Add the relationship to the User
     public function user()
     {
         return $this->belongsTo(User::class);

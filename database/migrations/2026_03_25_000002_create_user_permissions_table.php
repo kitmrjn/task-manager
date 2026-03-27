@@ -16,8 +16,9 @@ return new class extends Migration
             $table->boolean('can_view_team')->default(true);
             $table->boolean('can_view_reports')->default(true);
             $table->boolean('can_create_tasks')->default(true);
-            $table->boolean('can_edit_tasks')->default(true);
             $table->boolean('can_delete_tasks')->default(true);
+            $table->boolean('can_edit_tasks')->default(true)->after('can_delete_tasks');
+            $table->boolean('can_add_column')->default(true)->after('can_edit_tasks');
             $table->timestamps();
         });
     }

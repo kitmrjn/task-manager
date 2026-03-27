@@ -1,13 +1,9 @@
 <x-app-layout>
+    @section('title', 'Calendar')
 <x-slot name="header">
     <div class="tk-topnav">
 
         <div class="tk-topnav-right">
-
-            {{-- Mail --}}
-            <button class="tk-nav-icon-btn" title="Messages">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </button>
 
             {{-- Notifications --}}
             <div class="tk-dropdown-wrap">
@@ -46,7 +42,7 @@
                         </div>
                     </div>
                     <div class="tk-dropdown-body">
-                            @if(auth()->user()->role === 'admin')
+                        @if(auth()->user()->role === 'admin')
                         <a href="{{ route('settings.index') }}" class="tk-profile-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             My Profile & Settings
@@ -68,30 +64,20 @@
     </div>
 </x-slot>
 
-{{-- ── Inject page assets via Vite ───────────────────────────── --}}
 @push('styles')
     @vite('resources/css/calendar.css')
 @endpush
 
 @push('scripts')
-    {{--
-        Pass server-side PHP data to calendar.js via window globals.
-        This pattern lets calendar.js live as a pure external file
-        with no Blade syntax inside it.
-    --}}
     <script>
         window.CAL_TASKS  = {!! json_encode($tasksByDate  ?? []) !!};
         window.CAL_EVENTS = {!! json_encode($eventsByDate ?? []) !!};
-        
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite('resources/js/calendar.js')
 @endpush
 
-{{-- ═══════════════════════════════════════════════════════════
-     PAGE
-════════════════════════════════════════════════════════════ --}}
 <div class="cal-page">
 
     <div class="cal-page-header">
@@ -108,6 +94,12 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
                 <div class="cal-nav-controls">
+                    <div class="cal-view-switcher">
+                        <button class="view-btn active" data-view="month" onclick="changeView('month', this)">Month</button>
+                        <button class="view-btn" data-view="day"   onclick="changeView('day',   this)">Day</button>
+                        <button class="view-btn" data-view="list"  onclick="changeView('list',  this)">List</button>
+                        <button class="view-btn" data-view="year"  onclick="changeView('year',  this)">Year</button>
+                    </div>
                     <span class="cal-month" id="calMonthLabel"></span>
                     <button class="cal-today-btn" onclick="cur=new Date();renderCal()">Today</button>
                 </div>
@@ -116,13 +108,12 @@
                 </button>
             </div>
 
-            <div class="cal-grid">
+            <div class="cal-grid cal-dow-row" id="calDowRow">
                 @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $d)
                     <div class="cal-dow">{{ $d }}</div>
                 @endforeach
             </div>
 
-            {{-- Cells populated by calendar.js → renderCal() --}}
             <div class="cal-grid" id="calCells"></div>
         </div>
 
@@ -138,49 +129,60 @@
     foreach (($upcomingTasks ?? []) as $task) {
         $due  = \Carbon\Carbon::parse($task->due_date);
         $diff = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
-        
-        // Only mark as red/overdue if NOT completed
         $isTaskOverdue = ($diff < 0 && !$task->is_completed);
 
         $upcomingAll->push([
             'title'    => $task->title,
             'diff'     => $diff,
             'dotColor' => $isTaskOverdue ? 'var(--red)' : ($diff <= 2 ? 'var(--amber)' : 'var(--blue)'),
-            'subLabel' => $isTaskOverdue 
-                ? 'OVERDUE' 
+            'subLabel' => $isTaskOverdue
+                ? 'OVERDUE'
                 : ($diff == 0 ? 'Today' : ($diff == 1 ? 'Tomorrow' : $due->format('M j'))),
         ]);
     }
 
-                    // ── Calendar events (added via the modal) ─
-                    $dotMap = [
-                        'blue'   => 'var(--blue)',
-                        'green'  => 'var(--green)',
-                        'red'    => 'var(--red)',
-                        'amber'  => 'var(--amber)',
-                        'purple' => 'var(--purple)',
-                    ];
-                    foreach (($eventsByDate ?? []) as $dateStr => $evs) {
-                        foreach ($evs as $ev) {
-                            $due  = \Carbon\Carbon::parse($dateStr);
-                            $diff = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
-                            if ($diff >= -1) {
-                                $dot     = $dotMap[$ev['color'] ?? 'blue'] ?? 'var(--blue)';
-                                $timeLbl = !empty($ev['time'])
-                                    ? \Carbon\Carbon::createFromFormat('H:i', substr($ev['time'], 0, 5))->format('g:i A')
-                                    : 'All Day';
-                                $upcomingAll->push([
-                                    'title'    => $ev['title'],
-                                    'diff'     => $diff,
-                                    'dotColor' => $dot,
-                                    'subLabel' => $due->format('M j') . ' · ' . $timeLbl,
-                                ]);
-                            }
-                        }
-                    }
+    $dotMap = [
+        'blue'   => 'var(--blue)',
+        'green'  => 'var(--green)',
+        'red'    => 'var(--red)',
+        'amber'  => 'var(--amber)',
+        'purple' => 'var(--purple)',
+    ];
+    $seenEventIds = [];
 
-                    $upcomingAll = $upcomingAll->sortBy('diff')->values();
-                @endphp
+    foreach (($eventsByDate ?? []) as $dateStr => $evs) {
+        foreach ($evs as $ev) {
+            if (in_array($ev['id'], $seenEventIds)) continue;
+            $due  = \Carbon\Carbon::parse($ev['original_date'] ?? $dateStr);
+            $diff = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
+            $isOngoing = !empty($ev['recurrence_until']) && \Carbon\Carbon::parse($ev['recurrence_until'])->startOfDay()->gte(now()->startOfDay());
+
+            if ($diff >= -1 || $isOngoing) {
+                $seenEventIds[] = $ev['id'];
+                $dot     = $dotMap[$ev['color'] ?? 'blue'] ?? 'var(--blue)';
+                $timeLbl = !empty($ev['time'])
+                    ? \Carbon\Carbon::createFromFormat('H:i', substr($ev['time'], 0, 5))->format('g:i A')
+                    : 'All Day';
+
+                if (!empty($ev['recurrence_until'])) {
+                    $endDate = \Carbon\Carbon::parse($ev['recurrence_until']);
+                    $dateStrFormatted = $due->format('M j') . ' - ' . $endDate->format('M j');
+                } else {
+                    $dateStrFormatted = $due->format('M j');
+                }
+
+                $upcomingAll->push([
+                    'title'    => $ev['title'],
+                    'diff'     => $diff,
+                    'dotColor' => $dot,
+                    'subLabel' => $dateStrFormatted . ' · ' . $timeLbl,
+                ]);
+            }
+        }
+    }
+
+    $upcomingAll = $upcomingAll->sortBy('diff')->values();
+@endphp
 
                 @forelse($upcomingAll as $item)
                     <div class="upcoming-item">
@@ -201,9 +203,9 @@
     </div>{{-- /.cal-wrap --}}
 </div>{{-- /.cal-page --}}
 
-{{-- ═══════════════════════════════════════════════════════════
+{{-- ================================================================
      ADD EVENT MODAL
-════════════════════════════════════════════════════════════ --}}
+================================================================ --}}
 <div id="addEventModal" class="cal-modal-overlay">
 <div class="cal-modal">
     <div class="cal-modal-head">
@@ -214,17 +216,18 @@
     </div>
 
     <div class="cal-modal-body">
+
         {{-- Title --}}
         <div>
             <div class="cal-field-label">Title</div>
             <input type="text" id="ev-title" class="cal-field-input" placeholder="e.g. Team Meeting">
         </div>
 
-        {{-- Date + Time --}}
-        <div class="cal-two-col">
+        {{-- Row 1: Date + Time --}}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
                 <div class="cal-field-label">Date</div>
-                <input type="date" id="ev-date" class="cal-field-input">
+                <input type="date" id="ev-date" class="cal-field-input" onchange="updateRecurrenceOptions()">
             </div>
             <div>
                 <div class="cal-field-label">Time <span class="optional">(optional)</span></div>
@@ -232,7 +235,26 @@
             </div>
         </div>
 
-        {{-- Type — SVG icons, no emoji --}}
+        {{-- Row 2: Repeat + Until --}}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div>
+                <div class="cal-field-label">Repeat</div>
+                <select id="ev-recurrence" class="cal-field-input" onchange="toggleRecurrenceEnd()">
+                    <option value="none">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly" id="opt-weekly">Weekly on ...</option>
+                    <option value="monthly" id="opt-monthly">Monthly on the ...</option>
+                    <option value="yearly" id="opt-yearly">Annually on ...</option>
+                    <option value="weekday">Every weekday (Mon–Fri)</option>
+                </select>
+            </div>
+            <div id="recurrence-end-wrap" style="display:none;">
+                <div class="cal-field-label">Until</div>
+                <input type="date" id="ev-until" class="cal-field-input">
+            </div>
+        </div>
+
+        {{-- Type --}}
         <div>
             <div class="cal-field-label">Type</div>
             <div class="cal-type-grid">
@@ -251,7 +273,7 @@
             </div>
         </div>
 
-        {{-- Color swatches — no radio buttons --}}
+        {{-- Color --}}
         <div>
             <div class="cal-field-label">Color</div>
             <div class="cal-color-row">
@@ -271,7 +293,8 @@
             <div class="cal-field-label">Description <span class="optional">(optional)</span></div>
             <textarea id="ev-desc" class="cal-field-textarea" placeholder="Add notes…"></textarea>
         </div>
-    </div>
+
+    </div>{{-- /.cal-modal-body --}}
 
     <div class="cal-modal-footer">
         <button class="cal-btn-ghost" onclick="closeEventModal()">Cancel</button>
@@ -280,9 +303,9 @@
 </div>
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════
+{{-- ================================================================
      VIEW EVENT MODAL
-════════════════════════════════════════════════════════════ --}}
+================================================================ --}}
 <div id="viewEventModal" class="cal-modal-overlay" style="z-index:600;">
 <div class="cal-modal cal-modal-sm">
     <div class="cal-modal-head">

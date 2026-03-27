@@ -14,6 +14,8 @@ class UserPermission extends Model
         'can_view_reports',
         'can_create_tasks',
         'can_delete_tasks',
+        'can_edit_tasks',    // ← add
+        'can_add_column',    // ← add
     ];
 
     protected $casts = [
@@ -23,6 +25,8 @@ class UserPermission extends Model
         'can_view_reports'   => 'boolean',
         'can_create_tasks'   => 'boolean',
         'can_delete_tasks'   => 'boolean',
+        'can_edit_tasks'     => 'boolean',  // ← add
+        'can_add_column'     => 'boolean',  // ← add
     ];
 
     public function user()

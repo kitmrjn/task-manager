@@ -59,7 +59,9 @@ class TaskController extends Controller
         $task->activities()->create([
             'user_id'     => auth()->id(),
             'action'      => 'created',
-            'description' => 'created this task',
+            'description' => $task->assigned_to && $task->assigned_to !== auth()->id()
+        ? 'assigned you this task'
+        : 'created this task',
         ]);
 
         return redirect()->back()->with('success', 'Task created successfully!');
@@ -70,6 +72,12 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
+        if (!auth()->user()->can_access('can_edit_tasks')) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'You do not have permission to edit tasks.'
+        ], 403);
+    }
         $request->validate([
             'title'           => 'required|string|max:255',
             'description'     => 'nullable|string',
@@ -100,7 +108,23 @@ class TaskController extends Controller
         // Sync collaborators
         if ($request->filled('collaborators')) {
             $ids = json_decode($request->collaborators, true);
-            if (is_array($ids)) { $task->members()->sync($ids); }
+            if (is_array($ids)) {
+                $oldMemberIds = $task->members()->pluck('users.id')->toArray();
+                $task->members()->sync($ids);
+
+                // Log activity for newly added collaborators only
+                $newlyAdded = array_diff($ids, $oldMemberIds);
+                foreach ($newlyAdded as $newUserId) {
+                    // Don't notify if they added themselves
+                    if ($newUserId == auth()->id()) continue;
+
+                    $task->activities()->create([
+                        'user_id'     => auth()->id(),
+                        'action'      => 'lead_change',
+                        'description' => 'added you as a collaborator',
+                    ]);
+                }
+            }
         } else {
             $task->members()->sync([]);
         }
@@ -122,6 +146,13 @@ class TaskController extends Controller
                 'description' => "moved to $colName",
             ]);
         }
+        if ($oldLeadId != $task->assigned_to && $task->assigned_to) {
+            $task->activities()->create([
+                'user_id'     => auth()->id(),
+                'action'      => 'lead_change',
+                'description' => 'assigned you this task',
+            ]);
+}
 
         return response()->json(['success' => true]);
     }
@@ -169,6 +200,7 @@ class TaskController extends Controller
             'assignee'        => $task->assignee ? ['id' => $task->assignee->id, 'name' => $task->assignee->name] : null,
             'collaborators'   => $task->members->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
             'checklist_items' => $task->checklistItems->map(fn($i) => ['id' => $i->id, 'title' => $i->title, 'is_completed' => $i->is_completed]),
+            'can_edit'        => auth()->user()->can_access('can_edit_tasks'), 
             'attachments'     => $task->attachments->map(fn($a) => [
                 'id'            => $a->id,
                 'original_name' => $a->original_name,
@@ -190,6 +222,9 @@ class TaskController extends Controller
 
     public function move(Request $request, Task $task)
     {
+        if (!auth()->user()->can_access('can_edit_tasks')) {
+        return response()->json(['success' => false], 403);
+    }
         $request->validate(['board_column_id' => 'required|exists:board_columns,id']);
         $task->update(['board_column_id' => $request->board_column_id]);
         return response()->json(['success' => true]);
