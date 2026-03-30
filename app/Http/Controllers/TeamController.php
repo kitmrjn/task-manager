@@ -67,6 +67,8 @@ class TeamController extends Controller
             'can_view_reports'   => 'boolean',
             'can_create_tasks'   => 'boolean',
             'can_delete_tasks'   => 'boolean',
+            'can_edit_tasks'     => 'boolean', // ← add
+            'can_add_column'     => 'boolean', // ← add
         ]);
 
         // updateOrCreate so it works even if no permissions row exists yet

@@ -10,9 +10,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-            $middleware->alias([
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->alias([
         'permission' => \App\Http\Middleware\CheckPermission::class,
+    ]);
+
+    // Add to web group specifically
+    $middleware->web(append: [
+        \App\Http\Middleware\UpdateLastActive::class,
     ]);
 })
     ->withExceptions(function (Exceptions $exceptions): void {
