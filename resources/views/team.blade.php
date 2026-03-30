@@ -552,6 +552,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                     {{ $perms->can_create_tasks   ? 'true' : 'false' }},
                     {{ $perms->can_delete_tasks   ? 'true' : 'false' }},
                     {{ $perms->can_edit_tasks     ? 'true' : 'false' }}, 
+                    {{ $perms->can_add_column     ? 'true' : 'false' }}
                 )">
                     🔐 Manage Permissions
                 </button>
@@ -587,7 +588,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
             <label>Role</label>
             <select id="editRole">
                 <option value="admin">Admin</option>
-                <option value="team_member">Manager</option>
+                <option value="manager">Manager</option>
                 <option value="team_member">Team Member</option>
             </select>
         </div>
@@ -759,7 +760,7 @@ async function saveEdit() {
             card.querySelector('.tm-name').textContent  = name;
             card.querySelector('.tm-email').textContent = email;
             const roleSpan  = card.querySelector('.tm-role');
-            const roleLabel = role === 'team_member' ? 'Team Member' : role.charAt(0).toUpperCase() + role.slice(1);
+            const roleLabel = role === 'team_member' ? 'Team Member' : role === 'manager' ? 'Manager' : 'Admin';
             const roleClass = role === 'team_member' ? 'member' : role;
             roleSpan.textContent = roleLabel;
             roleSpan.className   = `tm-role ${roleClass}`;

@@ -74,13 +74,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
 
-// ── Calendar Events ────────────────────────────────────────────────
-Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
-Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
-Route::get('/holidays/{year}', [CalendarController::class, 'getHolidays'])->where('year', '[0-9]{4}');
+    // ── Calendar Events ────────────────────────────────────────────────
+    Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
+    Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
+    Route::get('/holidays/{year}', [CalendarController::class, 'getHolidays'])->where('year', '[0-9]{4}');
 
-Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
-    
+    Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
+        
     // ── Comments ───────────────────────────────────────────────────────
     Route::post('/tasks/{task}/comments', [TaskController::class, 'storeComment'])->name('tasks.comment');
 
@@ -89,6 +89,7 @@ Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
     Route::patch('/team/{user}/role', [TeamController::class, 'updateRole'])->name('team.role');
     Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
     Route::patch('/team/members/{user}/permissions', [TeamController::class, 'updatePermissions'])->name('team.permissions');
+    Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
 
     // ── Settings ───────────────────────────────────────────────────────
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
@@ -101,6 +102,10 @@ Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
 
     Route::post('/settings/branding', [App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding');
     Route::get('/settings/branding/clear/{key}', [SettingsController::class, 'clearBranding'])->name('settings.branding.clear');
+
+    //── Verification Email ──────────────────────────────────────────────────
+   Route::get('verify-email', \App\Http\Controllers\Auth\EmailVerificationPromptController::class)
+    ->name('verification.notice');
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', function () {

@@ -13,27 +13,37 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void
-    {
-        // Create the Admin User
-        \App\Models\User::factory()->create([
-            'name' => 'System Admin',
-            'email' => 'admin@example.com',
+public function run(): void
+{
+    \App\Models\User::firstOrCreate(
+        ['email' => 'admin@example.com'],
+        [
+            'name'     => 'System Admin',
             'password' => bcrypt('password'),
-            'role' => 'admin',
-        ]);
+            'role'     => 'admin',
+        ]
+    );
 
-        // Create a Team Member
-        \App\Models\User::factory()->create([
-            'name' => 'Team Member One',
-            'email' => 'member@example.com',
+    \App\Models\User::firstOrCreate(
+        ['email' => 'member@example.com'],
+        [
+            'name'     => 'Team Member One',
             'password' => bcrypt('password'),
-            'role' => 'team_member',
-        ]);
+            'role'     => 'team_member',
+        ]
+    );
 
-        // Call the new BoardSeeder
-        $this->call([
-            BoardSeeder::class,
-        ]);
-    }
+    \App\Models\User::firstOrCreate(
+        ['email' => 'manager@example.com'],
+        [
+            'name'     => 'Manager',
+            'password' => bcrypt('password'),
+            'role'     => 'manager',
+        ]
+    );
+
+    $this->call([
+        BoardSeeder::class,
+    ]);
+}
 }
