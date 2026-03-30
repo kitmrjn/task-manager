@@ -90,7 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
     Route::patch('/team/members/{user}/permissions', [TeamController::class, 'updatePermissions'])->name('team.permissions');
     Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
-
+    Route::delete('/team/members/{user}', [TeamController::class, 'destroy'])->name('team.member.destroy');
     // ── Settings ───────────────────────────────────────────────────────
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');

@@ -303,13 +303,11 @@ select.st-input {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #3b63d8; /* Your brand blue */
+    color: #3b63d8;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
-
-/* This targets the first bullet you already have */
 .eyebrow-dot {
     width: 6px;
     height: 6px;
@@ -318,31 +316,24 @@ select.st-input {
     display: inline-block;
     flex-shrink: 0;
 }
-
-/* This turns every '|' into the same bullet */
-.eyebrow-text {
-    display: inline;
-}
-
+.eyebrow-text { display: inline; }
 .eyebrow-separator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px; /* Space between words */
+    width: 20px;
     height: 10px;
-    color: transparent; /* Hide the actual '|' character */
+    color: transparent;
     position: relative;
 }
-
 .eyebrow-separator::after {
     content: '';
     position: absolute;
-    width: 6px; /* Match the .eyebrow-dot exactly */
+    width: 6px;
     height: 6px;
-    background: #3b63d8; /* Match the first dot's color */
+    background: #3b63d8;
     border-radius: 50%;
 }
-
 </style>
 
 <div class="st-page">
@@ -374,19 +365,20 @@ select.st-input {
         {{-- Sidebar --}}
         <div class="st-tabs">
 
-            <div class="st-tab" onclick="stTab('notifications', this)">
+            <div class="st-tab active" onclick="stTab('notifications', this)">
                 <div class="st-tab-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
                 </div>
                 Notifications
             </div>
+
             <div class="st-tab" onclick="stTab('appearance', this)">
                 <div class="st-tab-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                 </div>
                 Appearance
             </div>
-            {{-- Add this after the 'Appearance' tab --}}
+
             @if(auth()->user()->role === 'admin')
             <div class="st-tab" onclick="stTab('branding', this)">
                 <div class="st-tab-icon">
@@ -394,167 +386,15 @@ select.st-input {
                 </div>
                 System Branding
             </div>
-            
             @endif
-            
-        </div>
 
+        </div>
 
         {{-- Panels --}}
         <div class="st-panels">
 
-            {{-- ── PROFILE ── --}}
-            <div class="st-panel active" id="panel-profile">
-
-                @if(session('success_profile'))
-                <div class="st-alert success">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    {{ session('success_profile') }}
-                </div>
-                @endif
-                @if($errors->has('email') || $errors->has('first_name'))
-                <div class="st-alert error">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    Please fix the errors below.
-                </div>
-                @endif
-
-                <div class="st-card">
-                    <div class="st-card-header">
-                        <div class="st-card-header-icon blue">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <div>
-                            <div class="st-card-title">Profile Information</div>
-                            <div class="st-card-sub">Update your display name and email address</div>
-                        </div>
-                    </div>
-                    <div class="st-card-body">
-                        <div class="st-avatar-row">
-                            <div class="st-big-av">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
-                            <div>
-                                <div class="st-av-name">{{ Auth::user()->name }}</div>
-                                <div class="st-av-role">{{ ucfirst(Auth::user()->role ?? 'Member') }}</div>
-                            </div>
-                        </div>
-
-                        <form method="POST" action="{{ route('settings.profile') }}">
-                            @csrf @method('PATCH')
-                            <div class="st-row" style="margin-bottom:1rem;">
-                                <div class="st-field">
-                                    <label class="st-label">First Name</label>
-                                    <input class="st-input {{ $errors->has('first_name') ? 'error' : '' }}"
-                                           type="text" name="first_name"
-                                           value="{{ old('first_name', explode(' ', Auth::user()->name)[0]) }}" required>
-                                    @error('first_name')<div class="st-error">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="st-field">
-                                    <label class="st-label">Last Name</label>
-                                    <input class="st-input" type="text" name="last_name"
-                                           value="{{ old('last_name', explode(' ', Auth::user()->name)[1] ?? '') }}">
-                                </div>
-                                <div class="st-field full">
-                                    <label class="st-label">Email Address</label>
-                                    <input class="st-input {{ $errors->has('email') ? 'error' : '' }}"
-                                           type="email" name="email"
-                                           value="{{ old('email', Auth::user()->email) }}" required>
-                                    @error('email')<div class="st-error">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="st-btn-row">
-                                <button type="submit" class="st-save">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── ACCOUNT ── --}}
-            <div class="st-panel" id="panel-account">
-
-                @if(session('success_password'))
-                <div class="st-alert success">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    {{ session('success_password') }}
-                </div>
-                @endif
-                @if($errors->has('current_password'))
-                <div class="st-alert error">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    {{ $errors->first('current_password') }}
-                </div>
-                @endif
-
-                <div class="st-card">
-                    <div class="st-card-header">
-                        <div class="st-card-header-icon amber">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                        </div>
-                        <div>
-                            <div class="st-card-title">Change Password</div>
-                            <div class="st-card-sub">Use a strong password you don't use elsewhere</div>
-                        </div>
-                    </div>
-                    <div class="st-card-body">
-                        <form method="POST" action="{{ route('settings.password') }}">
-                            @csrf @method('PUT')
-                            <div class="st-row" style="margin-bottom:1rem;">
-                                <div class="st-field full">
-                                    <label class="st-label">Current Password</label>
-                                    <input class="st-input {{ $errors->has('current_password') ? 'error' : '' }}"
-                                           type="password" name="current_password" required>
-                                    @error('current_password')<div class="st-error">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="st-field">
-                                    <label class="st-label">New Password</label>
-                                    <input class="st-input {{ $errors->has('password') ? 'error' : '' }}"
-                                           type="password" name="password" required>
-                                    @error('password')<div class="st-error">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="st-field">
-                                    <label class="st-label">Confirm Password</label>
-                                    <input class="st-input" type="password" name="password_confirmation" required>
-                                </div>
-                            </div>
-                            <div class="st-btn-row">
-                                <button type="submit" class="st-save">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Update Password
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="st-card danger">
-                    <div class="st-card-header">
-                        <div class="st-card-header-icon red">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        </div>
-                        <div>
-                            <div class="st-card-title">Danger Zone</div>
-                            <div class="st-card-sub">These actions are irreversible — please be certain</div>
-                        </div>
-                    </div>
-                    <div class="st-card-body">
-                        <div class="st-danger-row">
-                            <div>
-                                <div style="font-size:14px;font-weight:700;color:var(--text);">Delete Account</div>
-                                <div style="font-size:12px;color:var(--soft);margin-top:3px;font-weight:500;">Permanently delete your account and all associated data</div>
-                            </div>
-                            <button class="st-btn-danger" onclick="document.getElementById('deleteModal').classList.add('open')">
-                                Delete Account
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {{-- ── NOTIFICATIONS ── --}}
-            <div class="st-panel" id="panel-notifications">
+            <div class="st-panel active" id="panel-notifications">
                 <div class="st-card">
                     <div class="st-card-header">
                         <div class="st-card-header-icon teal">
@@ -640,114 +480,106 @@ select.st-input {
                 </div>
             </div>
 
-            {{-- ── SYSTEM BRANDING (WHITE LABEL) ── --}}
-{{-- ── SYSTEM BRANDING (WHITE LABEL) ── --}}
-@if(auth()->user()->role === 'admin')
-<div class="st-panel" id="panel-branding">
+            {{-- ── SYSTEM BRANDING ── --}}
+            @if(auth()->user()->role === 'admin')
+            <div class="st-panel" id="panel-branding">
 
-    @if(session('success_branding'))
-    <div class="st-alert success">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        {{ session('success_branding') }}
-    </div>
-    @endif
-
-    <div class="st-card">
-        <div class="st-card-header">
-            <div class="st-card-header-icon blue">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-            </div>
-            <div>
-                <div class="st-card-title">System Branding</div>
-                <div class="st-card-sub">Customize the application name, logo, colors, and landing page copy</div>
-            </div>
-        </div>
-        <div class="st-card-body">
-            <form method="POST" action="{{ route('settings.branding') }}" enctype="multipart/form-data">
-                @csrf
-
-                {{-- ── Identity ── --}}
-                <div class="st-section-label" style="margin-bottom:1rem;">🏷️ Identity</div>
-                <div class="st-row" style="margin-bottom:1.5rem;">
-                    <div class="st-field">
-                        <label class="st-label">Company / App Name</label>
-                        <input class="st-input" type="text" name="app_name"
-                               value="{{ $siteSettings['app_name'] ?? 'ProductivityDaily' }}"
-                               placeholder="e.g. Trello">
-                    </div>
+                @if(session('success_branding'))
+                <div class="st-alert success">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    {{ session('success_branding') }}
                 </div>
+                @endif
 
-                {{-- ── Landing Page Copy ── --}}
-                <div class="st-section-label" style="margin-bottom:1rem;">📝 Landing Page Copy</div>
-                <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
-
-                    <div class="st-field">
-                        <label class="st-label">Eyebrow Tag <span style="font-weight:400;color:var(--soft);text-transform:none;letter-spacing:0;">(small text above headline and use - to add bulletin)</span></label>
-                        <input class="st-input" type="text" name="app_eyebrow"
-                               value="{{ $siteSettings['app_eyebrow'] ?? 'Productivity · Simplified' }}"
-                               placeholder="e.g. Production "
-                               maxlength="60">
-                        <span style="font-size:11px;color:var(--soft);margin-top:2px;">Max 60 characters. Shown as the small uppercase label above the headline.</span>
-                    </div>
-
-                    <div class="st-field">
-                        <label class="st-label">Headline</label>
-                        <input class="st-input" type="text" name="app_headline"
-                               value="{{ $siteSettings['app_headline'] ?? 'Streamline your Workflows.' }}"
-                               placeholder="e.g. Manage your Task. Effortlessly."
-                               maxlength="80">
-                        <span style="font-size:11px;color:var(--soft);margin-top:2px;">The bold hero headline on the landing page. Max 80 characters.</span>
-                    </div>
-
-                    <div class="st-field">
-                        <label class="st-label">Short Description</label>
-                        <textarea class="st-input" name="app_description"
-                                  rows="3" maxlength="200"
-                                  placeholder="e.g. Manage your cases, collaborate with your team, and never miss a deadline — all from one secure workspace."
-                                  style="resize:vertical;line-height:1.6;">{{ $siteSettings['app_description'] ?? 'Organize your work, collaborate with your team, and hit every deadline — all from one clean, focused workspace.' }}</textarea>
-                        <span style="font-size:11px;color:var(--soft);margin-top:2px;">Shown below the headline. Max 200 characters.</span>
-                    </div>
-
-                </div>
-
-                {{-- ── Logo & Favicon ── --}}
-                <div class="st-section-label" style="margin-bottom:1rem;">🖼️ Logo & Favicon</div>
-                <div class="st-row" style="margin-bottom:1.5rem;">
-                    <div class="st-field">
-                        <label class="st-label">Company Logo</label>
-                        <input class="st-input" type="file" name="app_logo" accept="image/*">
-                        @if(!empty($siteSettings['app_logo']))
-                        <div style="margin-top:.5rem;padding:.5rem .75rem;background:var(--surface);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-                            <img src="{{ asset('storage/' . $siteSettings['app_logo']) }}" height="24" style="display:block;">
-                            <a href="{{ route('settings.branding.clear', 'app_logo') }}"
-                               style="font-size:11px;color:var(--red);text-decoration:none;font-weight:700;flex-shrink:0;">✕ Remove</a>
+                <div class="st-card">
+                    <div class="st-card-header">
+                        <div class="st-card-header-icon blue">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
                         </div>
-                        @endif
-                    </div>
-                    <div class="st-field">
-                        <label class="st-label">Browser Favicon <span style="font-weight:400;color:var(--soft);text-transform:none;letter-spacing:0;">(.png or .ico)</span></label>
-                        <input class="st-input" type="file" name="app_favicon" accept="image/x-icon,image/png">
-                        @if(!empty($siteSettings['app_favicon']))
-                        <div style="margin-top:.5rem;padding:.5rem .75rem;background:var(--surface);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
-                            <img src="{{ asset('storage/' . $siteSettings['app_favicon']) }}" height="20" style="display:block;">
-                            <a href="{{ route('settings.branding.clear', 'app_favicon') }}"
-                               style="font-size:11px;color:var(--red);text-decoration:none;font-weight:700;flex-shrink:0;">✕ Remove</a>
+                        <div>
+                            <div class="st-card-title">System Branding</div>
+                            <div class="st-card-sub">Customize the application name, logo, colors, and landing page copy</div>
                         </div>
-                        @endif
+                    </div>
+                    <div class="st-card-body">
+                        <form method="POST" action="{{ route('settings.branding') }}" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="st-section-label" style="margin-bottom:1rem;">🏷️ Identity</div>
+                            <div class="st-row" style="margin-bottom:1.5rem;">
+                                <div class="st-field">
+                                    <label class="st-label">Company / App Name</label>
+                                    <input class="st-input" type="text" name="app_name"
+                                           value="{{ $siteSettings['app_name'] ?? 'ProductivityDaily' }}"
+                                           placeholder="e.g. Trello">
+                                </div>
+                            </div>
+
+                            <div class="st-section-label" style="margin-bottom:1rem;">📝 Landing Page Copy</div>
+                            <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
+                                <div class="st-field">
+                                    <label class="st-label">Eyebrow Tag <span style="font-weight:400;color:var(--soft);text-transform:none;letter-spacing:0;">(small text above headline, use - to add bullet)</span></label>
+                                    <input class="st-input" type="text" name="app_eyebrow"
+                                           value="{{ $siteSettings['app_eyebrow'] ?? 'Productivity · Simplified' }}"
+                                           placeholder="e.g. Productivity · Simplified"
+                                           maxlength="60">
+                                    <span style="font-size:11px;color:var(--soft);margin-top:2px;">Max 60 characters.</span>
+                                </div>
+                                <div class="st-field">
+                                    <label class="st-label">Headline</label>
+                                    <input class="st-input" type="text" name="app_headline"
+                                           value="{{ $siteSettings['app_headline'] ?? 'Streamline your Workflows.' }}"
+                                           placeholder="e.g. Manage your Task. Effortlessly."
+                                           maxlength="80">
+                                    <span style="font-size:11px;color:var(--soft);margin-top:2px;">Max 80 characters.</span>
+                                </div>
+                                <div class="st-field">
+                                    <label class="st-label">Short Description</label>
+                                    <textarea class="st-input" name="app_description"
+                                              rows="3" maxlength="200"
+                                              placeholder="e.g. Manage your cases, collaborate with your team..."
+                                              style="resize:vertical;line-height:1.6;">{{ $siteSettings['app_description'] ?? 'Organize your work, collaborate with your team, and hit every deadline — all from one clean, focused workspace.' }}</textarea>
+                                    <span style="font-size:11px;color:var(--soft);margin-top:2px;">Max 200 characters.</span>
+                                </div>
+                            </div>
+
+                            <div class="st-section-label" style="margin-bottom:1rem;">🖼️ Logo & Favicon</div>
+                            <div class="st-row" style="margin-bottom:1.5rem;">
+                                <div class="st-field">
+                                    <label class="st-label">Company Logo</label>
+                                    <input class="st-input" type="file" name="app_logo" accept="image/*">
+                                    @if(!empty($siteSettings['app_logo']))
+                                    <div style="margin-top:.5rem;padding:.5rem .75rem;background:var(--surface);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+                                        <img src="{{ asset('storage/' . $siteSettings['app_logo']) }}" height="24" style="display:block;">
+                                        <a href="{{ route('settings.branding.clear', 'app_logo') }}"
+                                           style="font-size:11px;color:var(--red);text-decoration:none;font-weight:700;flex-shrink:0;">✕ Remove</a>
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="st-field">
+                                    <label class="st-label">Browser Favicon <span style="font-weight:400;color:var(--soft);text-transform:none;letter-spacing:0;">(.png or .ico)</span></label>
+                                    <input class="st-input" type="file" name="app_favicon" accept="image/x-icon,image/png">
+                                    @if(!empty($siteSettings['app_favicon']))
+                                    <div style="margin-top:.5rem;padding:.5rem .75rem;background:var(--surface);border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.75rem;">
+                                        <img src="{{ asset('storage/' . $siteSettings['app_favicon']) }}" height="20" style="display:block;">
+                                        <a href="{{ route('settings.branding.clear', 'app_favicon') }}"
+                                           style="font-size:11px;color:var(--red);text-decoration:none;font-weight:700;flex-shrink:0;">✕ Remove</a>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="st-btn-row">
+                                <button type="submit" class="st-save">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                    Save Branding
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-
-                <div class="st-btn-row">
-                    <button type="submit" class="st-save">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                        Save Branding
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endif
+            </div>
+            @endif
 
         </div>{{-- /.st-panels --}}
     </div>{{-- /.st-layout --}}
@@ -789,20 +621,16 @@ select.st-input {
 
 <script>
 const eyebrowInput = document.querySelector('input[name="app_eyebrow"]');
-    
-    if (eyebrowInput) {
-        eyebrowInput.addEventListener('input', function(e) {
-            const start = this.selectionStart;
-            
-            // Replace hyphens with a pipe character '|'
-            const newValue = this.value.replace(/-/g, '|');
-            
-            if (this.value !== newValue) {
-                this.value = newValue;
-                this.setSelectionRange(start, start);
-            }
-        });
-    }
+if (eyebrowInput) {
+    eyebrowInput.addEventListener('input', function(e) {
+        const start = this.selectionStart;
+        const newValue = this.value.replace(/-/g, '|');
+        if (this.value !== newValue) {
+            this.value = newValue;
+            this.setSelectionRange(start, start);
+        }
+    });
+}
 
 function stTab(id, el) {
     document.querySelectorAll('.st-tab').forEach(t => t.classList.remove('active'));
@@ -810,6 +638,7 @@ function stTab(id, el) {
     el.classList.add('active');
     document.getElementById('panel-' + id).classList.add('active');
 }
+
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('open');
 });
@@ -817,20 +646,11 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.getElementById('deleteModal').classList.remove('open');
 });
 
-// Restore active tab from session
 @if(session('active_tab'))
 (function() {
     const tab = document.querySelector('[onclick="stTab(\'{{ session("active_tab") }}\', this)"]');
     if (tab) stTab('{{ session("active_tab") }}', tab);
 })();
 @endif
-
-// Existing stTab function remains the same
-function stTab(id, el) {
-    document.querySelectorAll('.st-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.st-panel').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('panel-' + id).classList.add('active');
-}
 </script>
 </x-app-layout>
