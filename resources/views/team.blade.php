@@ -594,6 +594,10 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
         </div>
         <div class="tm-modal-actions">
             <span class="tm-save-msg" id="saveMsg">✔ Saved!</span>
+            <button class="tm-btn" onclick="deleteMember()" 
+                style="background:var(--c-red-lt);color:var(--c-red);border:1.5px solid var(--c-red);margin-right:auto;">
+                🗑️ Delete
+            </button>
             <button class="tm-btn ghost" onclick="closeEdit()">Cancel</button>
             <button class="tm-btn primary" onclick="saveEdit()">Save Changes</button>
         </div>
@@ -713,6 +717,33 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 </div>
 
 <script>
+    async function deleteMember() {
+    const id   = document.getElementById('editId').value;
+    const name = document.getElementById('editName').value;
+
+    if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
+
+    const res = await fetch(`/team/members/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        body: JSON.stringify({ _method: 'DELETE' }),
+    });
+
+    if (res.ok) {
+        const card = document.querySelector(`.tm-card[data-id="${id}"]`);
+        if (card) card.remove();
+        closeEdit();
+        // Update member count
+        const mc = document.getElementById('memberCount');
+        if (mc) {
+            const visible = document.querySelectorAll('.tm-card').length;
+            mc.innerHTML = `Showing <strong>${visible}</strong> member${visible !== 1 ? 's' : ''}`;
+        }
+    } else {
+        const err = await res.json();
+        alert('Failed to delete: ' + (err.error ?? 'Unknown error'));
+    }
+}
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
 /* ── Search ── */

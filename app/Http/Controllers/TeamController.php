@@ -50,6 +50,25 @@ class TeamController extends Controller
         return response()->json(['success' => true]);
     }
 
+        /**
+     * Delete a team member
+     * DELETE /team/members/{user}
+     */
+    public function destroy(User $user)
+    {
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Prevent admin from deleting themselves
+        if ($user->id === auth()->id()) {
+            return response()->json(['error' => 'You cannot delete your own account.'], 403);
+        }
+
+        $user->delete();
+
+        return response()->json(['success' => true]);
+    }
     /**
      * Update a member's feature permissions (toggle on/off)
      * PATCH /team/members/{user}/permissions
