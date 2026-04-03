@@ -126,6 +126,48 @@
         </div>
     </div>
 
+    {{-- ── TIME TRACKING (EOD) WIDGET ── --}}
+    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--c-navy);">
+        <div style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h3 style="font-weight: 600; font-size: 16px; color: var(--c-navy); margin: 0 0 0.25rem 0;">Daily Time Record</h3>
+                
+                @if(!$todaysLog)
+                    <p style="margin: 0; font-size: 13px; color: var(--c-soft);">You have not clocked in for today's shift yet.</p>
+                @elseif(!$todaysLog->time_out)
+                    <p style="margin: 0; font-size: 13px; color: var(--c-soft);">
+                        Clocked in at <strong>{{ $todaysLog->time_in->format('h:i A') }}</strong>. Don't forget to submit your EOD notes when you finish!
+                    </p>
+                @else
+                    <p style="margin: 0; font-size: 13px; color: #166534;">
+                        Shift completed! Clocked in at {{ $todaysLog->time_in->format('h:i A') }} and out at {{ $todaysLog->time_out->format('h:i A') }}.
+                    </p>
+                @endif
+            </div>
+
+            <div>
+                @if(!$todaysLog)
+                    <form method="POST" action="{{ route('time-logs.in') }}">
+                        @csrf
+                        <button type="submit" style="background: #16a34a; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Time In
+                        </button>
+                    </form>
+                @elseif(!$todaysLog->time_out)
+                    <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'eod-modal')" style="background: var(--c-red); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        Time Out & Submit EOD
+                    </button>
+                @else
+                    <span style="background: #dcfce7; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 13px; border: 1px solid #bbf7d0;">
+                        EOD Submitted
+                    </span>
+                @endif
+            </div>
+        </div>
+    </div>
+
     {{-- ── STAT CARDS ──────────────────────────────────────────── --}}
     <div>
         <div class="section-eyebrow">At a Glance</div>
@@ -324,5 +366,24 @@
     </div>{{-- /.body-grid --}}
 </div>{{-- /.db-wrap --}}
 </div>{{-- /.db-page --}}
+
+{{-- ── TIME OUT / EOD MODAL ── --}}
+    <x-modal name="eod-modal" focusable>
+        <form method="post" action="{{ route('time-logs.out') }}" class="p-6">
+            @csrf
+            <h2 class="text-lg font-medium text-gray-900 mb-2" style="font-family: 'Epilogue', sans-serif;">End of Day Report</h2>
+            <p class="text-sm text-gray-500 mb-4">Please provide a brief summary of what you accomplished today before clocking out.</p>
+            
+            <div>
+                <x-input-label for="eod_notes" value="EOD Notes" />
+                <textarea id="eod_notes" name="eod_notes" rows="5" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" required placeholder="1. Completed user authentication...&#10;2. Attended sync meeting...&#10;3. Fixed bug on dashboard..."></textarea>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <x-secondary-button x-on:click="$dispatch('close')">Cancel</x-secondary-button>
+                <x-primary-button style="background: var(--c-red);">Submit & Time Out</x-primary-button>
+            </div>
+        </form>
+    </x-modal>
 
 </x-app-layout>

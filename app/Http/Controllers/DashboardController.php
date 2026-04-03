@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Models\Task;
+use App\Models\TimeLog; // <-- ADDED THIS IMPORT
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -11,6 +12,12 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $today = now()->toDateString();
+
+        // ── Fetch Today's Time Log ────────────────────────────────────────
+        $todaysLog = TimeLog::where('user_id', $user->id)
+                            ->where('log_date', $today)
+                            ->first();
 
         // ── Get task IDs relevant to this user ────────────────────────────
         // Includes: assigned tasks + collaborating tasks
@@ -24,7 +31,7 @@ class DashboardController extends Controller
         $stats = [
             'total'         => Task::count(),
             'my_tasks'      => $myTaskIds->count(),
-            'completed'     => Task::where('is_completed', true)->count(), // ← uses is_completed flag
+            'completed'     => Task::where('is_completed', true)->count(),
             'high_priority' => Task::where('priority', 'high')->count(),
         ];
 
@@ -47,7 +54,7 @@ class DashboardController extends Controller
                     str_contains($colSlug, 'done')                                        => 'pill-done',
                     str_contains($colSlug, 'review')                                      => 'pill-review',
                     str_contains($colSlug, 'doing') || str_contains($colSlug, 'progress') => 'pill-doing',
-                    default                                                                => 'pill-todo',
+                    default                                                               => 'pill-todo',
                 };
 
                 // Due date label + CSS class
@@ -67,7 +74,7 @@ class DashboardController extends Controller
                     }
                 }
 
-                // Start date label — shown under task name as "Mar 18 → Mar 23"
+                // Start date label
                 $task->start_label = $task->start_date
                     ? Carbon::parse($task->start_date)->format('M j')
                     : null;
@@ -90,11 +97,12 @@ class DashboardController extends Controller
         };
         $firstName = explode(' ', $user->name)[0];
 
-        // ── Completion % — based on is_completed flag ─────────────────────
+        // ── Completion % ──────────────────────────────────────────────────
         $pct = $stats['total'] > 0
             ? round(($stats['completed'] / $stats['total']) * 100)
             : 0;
 
+        // ── FINAL RETURN (Passes everything to the view safely!) ──────────
         return view('dashboard', compact(
             'stats',
             'myTasks',
@@ -102,6 +110,7 @@ class DashboardController extends Controller
             'greeting',
             'firstName',
             'pct',
+            'todaysLog' // <-- PASSED HERE!
         ));
     }
 }

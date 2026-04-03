@@ -93,6 +93,17 @@
             </a>
             @endif
 
+            <a href="{{ route('eod.index') }}"
+               class="tf-nav-item {{ request()->routeIs('eod.*') ? 'active' : '' }}">
+                <span class="tf-nav-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </span>
+                <span class="tf-nav-text">EOD Reports</span>
+            </a>
+
             @if(auth()->user()->can_access('can_view_team'))
             <a href="{{ Route::has('team.index') ? route('team.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('team.*') ? 'active' : '' }}">
