@@ -60,10 +60,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Admin Only User Management ─────────────────────────────────────
     Route::prefix('admin')->name('admin.')->group(function () {
-        
         Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
         Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
+
+        // System Data Management
+        Route::get('/system-data', [App\Http\Controllers\Admin\SystemDataController::class, 'index'])->name('system-data.index');
+        Route::post('/system-data/campaigns', [App\Http\Controllers\Admin\SystemDataController::class, 'storeCampaign'])->name('campaigns.store');
+        Route::delete('/system-data/campaigns/{campaign}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyCampaign'])->name('campaigns.destroy');
+        Route::post('/system-data/roles', [App\Http\Controllers\Admin\SystemDataController::class, 'storeRole'])->name('roles.store');
+        Route::delete('/system-data/roles/{role}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyRole'])->name('roles.destroy');
         
+        // New Routes for Edit/Status
+        Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::post('/users/{user}/resend-invite', [App\Http\Controllers\Admin\UserController::class, 'resendInvite'])->name('users.resend-invite');
     });
 
     // ── Mark as Complete ───────────────────────────────────────────────
