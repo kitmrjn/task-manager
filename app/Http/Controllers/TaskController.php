@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\BoardColumn;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -29,29 +31,21 @@ class TaskController extends Controller
     /**
      * Store a newly created task.
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $request->validate([
-            'board_column_id' => 'required|exists:board_columns,id',
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'assigned_to'     => 'nullable|exists:users,id',
-            'priority'        => 'required|in:low,medium,high',
-            'due_date'        => 'nullable|date',
-            'start_date'      => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
-        $highestOrder = Task::where('board_column_id', $request->board_column_id)->max('order');
+        $highestOrder = Task::where('board_column_id', $validated['board_column_id'])->max('order');
 
         $task = Task::create([
-            'board_column_id' => $request->board_column_id,
-            'title'           => $request->title,
-            'description'     => $request->description,
-            'assigned_to'     => $request->assigned_to,
-            'creator_id'      => auth()->id(),   // ← ADD THIS LINE
-            'priority'        => $request->priority,
-            'due_date'        => $request->due_date,
-            'start_date'      => $request->start_date,
+            'board_column_id' => $validated['board_column_id'],
+            'title'           => $validated['title'],
+            'description'     => $validated['description'],
+            'assigned_to'     => $validated['assigned_to'],
+            'creator_id'      => auth()->id(),
+            'priority'        => $validated['priority'],
+            'due_date'        => $validated['due_date'],
+            'start_date'      => $validated['start_date'],
             'order'           => ($highestOrder ?? 0) + 1,
             'is_completed'    => false,
         ]);
@@ -60,8 +54,8 @@ class TaskController extends Controller
             'user_id'     => auth()->id(),
             'action'      => 'created',
             'description' => $task->assigned_to && $task->assigned_to !== auth()->id()
-        ? 'assigned you this task'
-        : 'created this task',
+                ? 'assigned you this task'
+                : 'created this task',
         ]);
 
         return redirect()->back()->with('success', 'Task created successfully!');
@@ -70,44 +64,28 @@ class TaskController extends Controller
     /**
      * Update the specified task.
      */
-    public function update(Request $request, Task $task)
+    public function update(UpdateTaskRequest $request, Task $task)
     {
-        if (!auth()->user()->can_access('can_edit_tasks')) {
-        return response()->json([
-            'success' => false, 
-            'message' => 'You do not have permission to edit tasks.'
-        ], 403);
-    }
-        $request->validate([
-            'title'           => 'required|string|max:255',
-            'description'     => 'nullable|string',
-            'assigned_to'     => 'nullable',
-            'priority'        => 'required|in:low,medium,high',
-            'due_date'        => 'nullable|date',
-            'start_date'      => 'nullable|date',
-            'is_completed'    => 'nullable|boolean',
-            'collaborators'   => 'nullable|string',
-            'board_column_id' => 'nullable|exists:board_columns,id',
-        ]);
+        $validated = $request->validated();
 
         $oldPriority = $task->priority;
         $oldLeadId   = $task->assigned_to;
         $oldColumnId = $task->board_column_id;
 
         $task->update([
-            'title'           => $request->title,
-            'description'     => $request->description,
-            'assigned_to'     => $request->assigned_to ?: null,
-            'priority'        => $request->priority,
-            'due_date'        => $request->due_date,
-            'start_date'      => $request->start_date,
-            'board_column_id' => $request->board_column_id ?? $task->board_column_id,
-            'is_completed'    => $request->has('is_completed') ? (bool) $request->is_completed : $task->is_completed,
+            'title'           => $validated['title'],
+            'description'     => $validated['description'],
+            'assigned_to'     => $validated['assigned_to'] ?: null,
+            'priority'        => $validated['priority'],
+            'due_date'        => $validated['due_date'],
+            'start_date'      => $validated['start_date'],
+            'board_column_id' => $validated['board_column_id'] ?? $task->board_column_id,
+            'is_completed'    => $request->has('is_completed') ? (bool) $validated['is_completed'] : $task->is_completed,
         ]);
 
         // Sync collaborators
         if ($request->filled('collaborators')) {
-            $ids = json_decode($request->collaborators, true);
+            $ids = json_decode($validated['collaborators'], true);
             if (is_array($ids)) {
                 $oldMemberIds = $task->members()->pluck('users.id')->toArray();
                 $task->members()->sync($ids);
@@ -146,13 +124,14 @@ class TaskController extends Controller
                 'description' => "moved to $colName",
             ]);
         }
+        
         if ($oldLeadId != $task->assigned_to && $task->assigned_to) {
             $task->activities()->create([
                 'user_id'     => auth()->id(),
                 'action'      => 'lead_change',
                 'description' => 'assigned you this task',
             ]);
-}
+        }
 
         return response()->json(['success' => true]);
     }
@@ -223,8 +202,8 @@ class TaskController extends Controller
     public function move(Request $request, Task $task)
     {
         if (!auth()->user()->can_access('can_edit_tasks')) {
-        return response()->json(['success' => false], 403);
-    }
+            return response()->json(['success' => false], 403);
+        }
         $request->validate(['board_column_id' => 'required|exists:board_columns,id']);
         $task->update(['board_column_id' => $request->board_column_id]);
         return response()->json(['success' => true]);
