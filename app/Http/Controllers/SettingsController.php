@@ -12,15 +12,10 @@ class SettingsController extends Controller
 {
     public function index()
     {
-        if (auth()->user()->role !== 'super_admin') {
-            abort(403, 'Unauthorized');
-        }
+        // FIXED: Removed the role restriction so all users can access their own account settings.
         return view('settings');
     }
 
-    /**
-     * Update profile (name + email)
-     */
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
@@ -42,9 +37,6 @@ class SettingsController extends Controller
             ->with('success_profile', 'Profile updated successfully!');
     }
 
-    /**
-     * Update password
-     */
     public function updatePassword(Request $request)
     {
         $request->validate([
@@ -67,9 +59,6 @@ class SettingsController extends Controller
             ->with('active_tab', 'account');
     }
 
-    /**
-     * Delete account
-     */
     public function deleteAccount(Request $request)
     {
         $request->validate([
@@ -89,12 +78,10 @@ class SettingsController extends Controller
         return redirect('/')->with('message', 'Your account has been deleted.');
     }
 
-    /**
-     * Update branding settings (admin only)
-     */
     public function updateBranding(Request $request)
     {
-        if (auth()->user()->role !== 'super_admin') abort(403);
+        // FIXED: Standardized to hierarchy logic
+        if (!auth()->user()->isAtLeastAdmin()) abort(403, 'Unauthorized');
 
         $data = $request->validate([
             'app_name'        => 'nullable|string|max:30',
@@ -105,7 +92,6 @@ class SettingsController extends Controller
             'app_favicon'     => 'nullable|image|max:512',
         ]);
 
-        // Handle file uploads separately — don't overwrite with null if no file sent
         if ($request->hasFile('app_logo')) {
             $data['app_logo'] = $request->file('app_logo')->store('branding', 'public');
         } else {
@@ -118,12 +104,10 @@ class SettingsController extends Controller
             unset($data['app_favicon']);
         }
 
-        // Save each key to the settings table
         foreach ($data as $key => $value) {
             \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
-        // Clear cache so the new values show immediately
         \Illuminate\Support\Facades\Cache::forget('site_settings');
 
         return back()->with([
@@ -132,26 +116,19 @@ class SettingsController extends Controller
         ]);
     }
 
-    /**
-     * Clear a branding asset (logo or favicon)
-     */
     public function clearBranding($key)
     {
-        if (auth()->user()->role !== 'super_admin') abort(403);
+        // FIXED: Standardized to hierarchy logic
+        if (!auth()->user()->isAtLeastAdmin()) abort(403, 'Unauthorized');
 
-        // Only allow safe keys to be deleted
         if (!in_array($key, ['app_logo', 'app_favicon'])) abort(400);
 
-        // Delete the file from storage if it exists
         $setting = \App\Models\Setting::where('key', $key)->first();
         if ($setting && $setting->value) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($setting->value);
         }
 
-        // Remove the setting from DB
         \App\Models\Setting::where('key', $key)->delete();
-
-        // Clear cache so it takes effect immediately
         \Illuminate\Support\Facades\Cache::forget('site_settings');
 
         return back()->with([

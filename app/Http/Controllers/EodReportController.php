@@ -11,8 +11,23 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class EodReportController extends Controller
 {
+    /**
+     * Blocks access if the user is a standard Team Member with no subordinates
+     */
+    private function checkAccess()
+    {
+        $user = auth()->user();
+        $isLeader = User::where('team_leader_id', $user->id)->exists();
+        
+        if (!$user->isAtLeastAdmin() && !$user->isAtLeastManager() && !$isLeader) {
+            abort(403, 'Unauthorized. Only Admins and Team Leaders can view EOD reports.');
+        }
+    }
+
     public function index(Request $request)
     {
+        $this->checkAccess();
+
         $query = $this->buildSecureQuery($request);
         
         $logs = $query->latest('log_date')->paginate(15)->withQueryString();
@@ -28,6 +43,8 @@ class EodReportController extends Controller
 
     public function export(Request $request)
     {
+        $this->checkAccess();
+
         $query = $this->buildSecureQuery($request);
         $filename = 'EOD_Report_' . now()->format('Ymd_Hi') . '.xlsx';
         
@@ -43,21 +60,14 @@ class EodReportController extends Controller
         $query = TimeLog::with(['user.campaign', 'user.teamLeader']);
 
         // 1. Enforce Role-Based Visibility
-        if ($user->role === 'super_admin') {
-            // View All - ONLY Super Admin has no restrictions
+        if ($user->isAtLeastAdmin()) {
+            // View All - Super Admin & Admin have no restrictions
         } else {
-            // Treat Managers and Regular Users the same: Check if they are a Team Leader
-            $isLeader = User::where('team_leader_id', $user->id)->exists();
-            
-            if ($isLeader) {
-                // They are a Team Leader: Can see themselves + ONLY their assigned subordinates
-                $query->whereHas('user', function($q) use ($user) {
-                    $q->where('team_leader_id', $user->id)->orWhere('id', $user->id);
-                });
-            } else {
-                // Regular member: Can only see their own logs
-                $query->where('user_id', $user->id);
-            }
+            // Treat Managers and Team Leaders the same: 
+            // They can ONLY see their assigned subordinates + themselves
+            $query->whereHas('user', function($q) use ($user) {
+                $q->where('team_leader_id', $user->id)->orWhere('id', $user->id);
+            });
         }
 
         // 2. Apply Search & Filters

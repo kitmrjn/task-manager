@@ -17,7 +17,7 @@
                         {{ __('Tasks') }}
                     </x-nav-link>
 
-                    @if(auth()->user()->role === 'super_admin')
+                    @if(auth()->user()->isAtLeastAdmin())
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             {{ __('Users') }}
                         </x-nav-link>
@@ -74,7 +74,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            @if(auth()->user()->role === 'super_admin')
+            @if(auth()->user()->isAtLeastAdmin())
                 <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                     {{ __('Users') }}
                 </x-responsive-nav-link>

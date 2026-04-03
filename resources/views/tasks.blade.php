@@ -42,12 +42,11 @@
                         </div>
                     </div>
                     <div style="padding:.3rem 0;">
-                        @if(auth()->user()->role === 'admin')
+                        {{-- FIXED: Settings available to all roles --}}
                         <a href="{{ route('settings.index') }}" class="tk-profile-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             My Profile & Settings
                         </a>
-                        @endif
                         <div class="tk-profile-divider"></div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -503,7 +502,7 @@
             </div>
         </div>{{-- /.right panel --}}
 
-    </div>{{-- /.two-column body — only ONE closing tag here --}}
+    </div>{{-- /.two-column body --}}
 
     {{-- Footer --}}
     <div class="tk-detail-footer">

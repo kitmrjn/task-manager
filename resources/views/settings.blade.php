@@ -379,7 +379,8 @@ select.st-input {
                 Appearance
             </div>
 
-            @if(auth()->user()->role === 'admin')
+            {{-- FIXED: Use hierarchy logic --}}
+            @if(auth()->user()->isAtLeastAdmin())
             <div class="st-tab" onclick="stTab('branding', this)">
                 <div class="st-tab-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -481,7 +482,8 @@ select.st-input {
             </div>
 
             {{-- ── SYSTEM BRANDING ── --}}
-            @if(auth()->user()->role === 'admin')
+            {{-- FIXED: Use hierarchy logic --}}
+            @if(auth()->user()->isAtLeastAdmin())
             <div class="st-panel" id="panel-branding">
 
                 @if(session('success_branding'))

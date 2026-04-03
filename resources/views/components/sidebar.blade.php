@@ -93,6 +93,7 @@
             </a>
             @endif
 
+            @if(auth()->user()->isAtLeastAdmin() || auth()->user()->isAtLeastManager() || \App\Models\User::where('team_leader_id', auth()->id())->exists())
             <a href="{{ route('eod.index') }}"
                class="tf-nav-item {{ request()->routeIs('eod.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -103,6 +104,7 @@
                 </span>
                 <span class="tf-nav-text">EOD Reports</span>
             </a>
+            @endif
 
             @if(auth()->user()->can_access('can_view_team'))
             <a href="{{ Route::has('team.index') ? route('team.index') : '#' }}"
@@ -122,7 +124,8 @@
         <div class="tf-nav-section">
             <p class="tf-nav-label">General</p>
 
-            @if(auth()->user()->role === 'super_admin')
+            {{-- ADMIN EXCLUSIVE TABS --}}
+            @if(auth()->user()->isAtLeastAdmin())
             <a href="{{ route('admin.users.index') }}"
                class="tf-nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -147,7 +150,9 @@
                 </span>
                 <span class="tf-nav-text">System Data</span>
             </a>
+            @endif
 
+            {{-- UNIVERSAL TABS (Everyone Needs Settings to change Passwords) --}}
             <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
             class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -158,7 +163,6 @@
                 </span>
                 <span class="tf-nav-text">Settings</span>
             </a>
-            @endif
 
             <a href="{{ route('help.index') }}" 
                 class="tf-nav-item {{ request()->routeIs('help.index') ? 'active' : '' }}">
@@ -173,11 +177,9 @@
 
         </div>
     </nav>
-<p style="color:red;font-size:12px;padding:1rem;">
-    Role: {{ auth()->user()->role }} | 
-    Is admin: {{ auth()->user()->role === 'super_admin' ? 'YES' : 'NO' }}
-</p>
-    
+    <p style="color:var(--sb-label);font-size:11px;padding:1rem;font-weight:600;">
+        V1.0
+    </p>
 </aside>
 
 {{-- Mobile overlay --}}

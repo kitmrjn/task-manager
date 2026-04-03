@@ -11,8 +11,8 @@ class CheckPermission
     {
         $user = auth()->user();
 
-        // Updated to super_admin
-        if ($user && $user->role === 'super_admin') {
+        // Bypass all permission checks for Super Admin inherently
+        if ($user && $user->isSuperAdmin()) {
             return $next($request);
         }
 

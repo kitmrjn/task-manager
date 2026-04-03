@@ -60,7 +60,7 @@ class UserController extends Controller
         $teamLeaders = User::where('role', '!=', 'super_admin')->orderBy('name')->get();
         $roles = \App\Models\Role::orderBy('name')->get();
 
-        return view('admin.users.index', compact('users', 'campaigns', 'teamLeaders'));
+        return view('admin.users.index', compact('users', 'campaigns', 'teamLeaders', 'roles'));
     }
 
     public function store(StoreUserRequest $request)

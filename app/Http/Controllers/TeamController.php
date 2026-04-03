@@ -21,21 +21,36 @@ class TeamController extends Controller
         return view('team', compact('members', 'teamCount', 'openTasks', 'activeCount'));
     }
 
-    /**
-     * Update member name / email / role / password
-     */
     public function update(Request $request, User $user)
     {
-        if (auth()->user()->role !== 'admin') {
+        // 1. Must be an Admin or Super Admin
+        if (!auth()->user()->isAtLeastAdmin()) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // 2. Prevent modifying someone with a higher rank (Admin modifying Super Admin)
+        if (auth()->user()->roleLevel() < $user->roleLevel()) {
+            return response()->json(['error' => 'You cannot modify a user with a higher role level.'], 403);
         }
 
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email,' . $user->id,
-            'role'     => 'required|in:admin,manager,team_member',
+            'role'     => 'required|in:super_admin,admin,manager,team_member',
             'password' => 'nullable|string|min:8',
         ]);
+
+        // 3. Prevent promoting someone above your own rank
+        $newRoleLevel = match($validated['role']) {
+            'super_admin' => 4,
+            'admin' => 3,
+            'manager', 'team_leader' => 2,
+            default => 1,
+        };
+
+        if (auth()->user()->roleLevel() < $newRoleLevel) {
+            return response()->json(['error' => 'You cannot grant a role higher than your own.'], 403);
+        }
 
         $user->name  = $validated['name'];
         $user->email = $validated['email'];
@@ -50,17 +65,16 @@ class TeamController extends Controller
         return response()->json(['success' => true]);
     }
 
-        /**
-     * Delete a team member
-     * DELETE /team/members/{user}
-     */
     public function destroy(User $user)
     {
-        if (auth()->user()->role !== 'admin') {
+        if (!auth()->user()->isAtLeastAdmin()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Prevent admin from deleting themselves
+        if (auth()->user()->roleLevel() < $user->roleLevel()) {
+            return response()->json(['error' => 'You cannot delete a user with a higher role level.'], 403);
+        }
+
         if ($user->id === auth()->id()) {
             return response()->json(['error' => 'You cannot delete your own account.'], 403);
         }
@@ -69,14 +83,15 @@ class TeamController extends Controller
 
         return response()->json(['success' => true]);
     }
-    /**
-     * Update a member's feature permissions (toggle on/off)
-     * PATCH /team/members/{user}/permissions
-     */
+
     public function updatePermissions(Request $request, User $user)
     {
-        if (auth()->user()->role !== 'admin') {
+        if (!auth()->user()->isAtLeastAdmin()) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if (auth()->user()->roleLevel() < $user->roleLevel()) {
+            return response()->json(['error' => 'You cannot modify permissions of a higher-ranking user.'], 403);
         }
 
         $validated = $request->validate([
@@ -86,11 +101,10 @@ class TeamController extends Controller
             'can_view_reports'   => 'boolean',
             'can_create_tasks'   => 'boolean',
             'can_delete_tasks'   => 'boolean',
-            'can_edit_tasks'     => 'boolean', // ← add
-            'can_add_column'     => 'boolean', // ← add
+            'can_edit_tasks'     => 'boolean',
+            'can_add_column'     => 'boolean', 
         ]);
 
-        // updateOrCreate so it works even if no permissions row exists yet
         $user->permissions()->updateOrCreate(
             ['user_id' => $user->id],
             $validated
