@@ -21,7 +21,10 @@ Route::get('/tasks', [BoardController::class, 'index'])
     ->name('tasks.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-
+    
+    // ── Time Tracking (EOD) ────────────────────────────────────────────
+    Route::post('/time-in', [App\Http\Controllers\TimeLogController::class, 'timeIn'])->name('time-logs.in');
+    Route::post('/time-out', [App\Http\Controllers\TimeLogController::class, 'timeOut'])->name('time-logs.out');
 
     // ── Dashboard ──────────────────────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
