@@ -35,10 +35,11 @@ class WelcomeSetPasswordNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url(route('password.reset', [
+        // Use the route() helper directly to guarantee a perfectly formatted absolute URL
+        $url = route('password.reset', [
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        ]);
 
         return (new MailMessage)
             ->subject('Welcome to Task Manager - Set Your Password')
