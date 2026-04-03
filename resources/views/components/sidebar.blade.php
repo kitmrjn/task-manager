@@ -1,4 +1,3 @@
-{{-- resources/views/components/sidebar.blade.php --}}
 <aside class="tf-sidebar" id="tfSidebar">
 
 {{-- LOGO SECTION --}}
@@ -124,6 +123,18 @@
                     </svg>
                 </span>
                 <span class="tf-nav-text">Users</span>
+            </a>
+
+            <a href="{{ route('admin.system-data.index') }}"
+               class="tf-nav-item {{ request()->routeIs('admin.system-data.*') ? 'active' : '' }}">
+                <span class="tf-nav-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                </span>
+                <span class="tf-nav-text">System Data</span>
             </a>
 
             <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"

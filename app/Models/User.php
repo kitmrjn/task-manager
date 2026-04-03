@@ -19,6 +19,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'campaign_id',     // ← NEW
         'team_leader_id',  // ← NEW
         'last_active',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -32,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'last_active'       => 'datetime', 
+            'is_active'         => 'boolean',        
         ];
     }
 

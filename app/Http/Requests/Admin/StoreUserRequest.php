@@ -22,7 +22,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name'           => 'required|string|max:255',
             'email'          => 'required|string|email|max:255|unique:users',
-            'role'           => 'required|string|in:super_admin,team_member',
+            'role'           => 'required|string|exists:roles,slug', // <-- UPDATED
             'campaign_id'    => 'nullable|exists:campaigns,id',
             'team_leader_id' => 'nullable|exists:users,id',
         ];
