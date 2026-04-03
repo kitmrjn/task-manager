@@ -18,27 +18,30 @@ public function run(): void
     \App\Models\User::firstOrCreate(
         ['email' => 'admin@example.com'],
         [
-            'name'     => 'System Admin',
-            'password' => bcrypt('password'),
-            'role'     => 'admin',
+            'name'              => 'System Admin',
+            'password'          => bcrypt('password'),
+            'role'              => 'admin',
+            'email_verified_at' => now(), // Bypasses the verification screen
         ]
     );
 
     \App\Models\User::firstOrCreate(
         ['email' => 'member@example.com'],
         [
-            'name'     => 'Team Member One',
-            'password' => bcrypt('password'),
-            'role'     => 'team_member',
+            'name'              => 'Team Member One',
+            'password'          => bcrypt('password'),
+            'role'              => 'team_member',
+            'email_verified_at' => now(), // Bypasses the verification screen
         ]
     );
 
     \App\Models\User::firstOrCreate(
         ['email' => 'manager@example.com'],
         [
-            'name'     => 'Manager',
-            'password' => bcrypt('password'),
-            'role'     => 'manager',
+            'name'              => 'Manager',
+            'password'          => bcrypt('password'),
+            'role'              => 'manager',
+            'email_verified_at' => now(), // Bypasses the verification screen
         ]
     );
 
