@@ -13,40 +13,40 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-public function run(): void
-{
-    \App\Models\User::firstOrCreate(
-        ['email' => 'admin@example.com'],
-        [
-            'name'              => 'System Admin',
-            'password'          => bcrypt('password'),
-            'role'              => 'admin',
-            'email_verified_at' => now(), // Bypasses the verification screen
-        ]
-    );
+    public function run(): void
+    {
+        \App\Models\User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name'              => 'Super Admin',
+                'password'          => bcrypt('password'),
+                'role'              => 'super_admin', // ← UPDATED TO MATCH NEW ROLE
+                'email_verified_at' => now(), 
+            ]
+        );
 
-    \App\Models\User::firstOrCreate(
-        ['email' => 'member@example.com'],
-        [
-            'name'              => 'Team Member One',
-            'password'          => bcrypt('password'),
-            'role'              => 'team_member',
-            'email_verified_at' => now(), // Bypasses the verification screen
-        ]
-    );
+        \App\Models\User::firstOrCreate(
+            ['email' => 'member@example.com'],
+            [
+                'name'              => 'Team Member One',
+                'password'          => bcrypt('password'),
+                'role'              => 'team_member',
+                'email_verified_at' => now(), 
+            ]
+        );
 
-    \App\Models\User::firstOrCreate(
-        ['email' => 'manager@example.com'],
-        [
-            'name'              => 'Manager',
-            'password'          => bcrypt('password'),
-            'role'              => 'manager',
-            'email_verified_at' => now(), // Bypasses the verification screen
-        ]
-    );
+        \App\Models\User::firstOrCreate(
+            ['email' => 'manager@example.com'],
+            [
+                'name'              => 'Manager',
+                'password'          => bcrypt('password'),
+                'role'              => 'manager',
+                'email_verified_at' => now(), 
+            ]
+        );
 
-    $this->call([
-        BoardSeeder::class,
-    ]);
-}
+        $this->call([
+            BoardSeeder::class,
+        ]);
+    }
 }

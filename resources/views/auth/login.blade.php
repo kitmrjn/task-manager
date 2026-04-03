@@ -557,11 +557,6 @@
                     Log In
                 </button>
             </form>
-
-            <div class="register-link">
-                Don't have an account?
-                <a href="{{ route('register') }}">Create one for free</a>
-            </div>
         </div>
     </div>
 

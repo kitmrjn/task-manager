@@ -11,12 +11,11 @@ class CheckPermission
     {
         $user = auth()->user();
 
-        // Admins always pass through
-        if ($user && $user->role === 'admin') {
+        // Updated to super_admin
+        if ($user && $user->role === 'super_admin') {
             return $next($request);
         }
 
-        // Check the permission
         if ($user && !$user->can_access($permission)) {
             abort(403, 'You do not have access to this page.');
         }

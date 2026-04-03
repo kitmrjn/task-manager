@@ -12,9 +12,15 @@ class BoardSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Fetch our existing users
-        $admin = User::where('role', 'admin')->first();
+        // 1. Fetch our existing users (Updated to super_admin)
+        $admin = User::where('role', 'super_admin')->first();
         $member = User::where('role', 'team_member')->first();
+
+        // Safety check to prevent errors if users don't exist
+        if (!$admin || !$member) {
+            $this->command->error('Users not found! Make sure DatabaseSeeder runs first.');
+            return;
+        }
 
         // 2. Create the main Board owned by the Admin
         $board = Board::create([

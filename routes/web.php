@@ -58,6 +58,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Members ────────────────────────────────────────────────────────
     Route::post('/tasks/{task}/members/toggle', [BoardController::class, 'toggleMember']);
 
+    // ── Admin Only User Management ─────────────────────────────────────
+    Route::prefix('admin')->name('admin.')->group(function () {
+        
+        Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
+        
+    });
+
     // ── Mark as Complete ───────────────────────────────────────────────
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
 

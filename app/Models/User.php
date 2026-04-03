@@ -16,6 +16,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'campaign_id',     // ← NEW
+        'team_leader_id',  // ← NEW
         'last_active',
     ];
 
@@ -32,6 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_active'       => 'datetime', 
         ];
     }
+
+    // ── Existing Relationships ───────────────────────────────────────
 
     public function tasks()
     {
@@ -53,15 +57,39 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Task::class, 'assigned_to');
     }
 
-    // ← NEW
     public function permissions()
     {
         return $this->hasOne(UserPermission::class);
     }
 
+    // ── NEW Relationships ────────────────────────────────────────────
+
     /**
-     * Get permissions, creating defaults if they don't exist yet.
+     * Get the user's assigned campaign.
      */
+    public function campaign()
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    /**
+     * Get the user's assigned team leader.
+     */
+    public function teamLeader()
+    {
+        return $this->belongsTo(User::class, 'team_leader_id');
+    }
+
+    /**
+     * Get the users that this user leads (if they are a team leader).
+     */
+    public function teamMembers()
+    {
+        return $this->hasMany(User::class, 'team_leader_id');
+    }
+
+    // ── Permission Helpers ───────────────────────────────────────────
+
     public function getPermissions(): UserPermission
     {
         return $this->permissions ?? $this->permissions()->create([
@@ -74,12 +102,11 @@ class User extends Authenticatable implements MustVerifyEmail
         ]);
     }
 
-    /**
-     * Check a single permission. Admins always return true.
-     */
     public function can_access(string $permission): bool
     {
-        if ($this->role === 'admin') return true;
+        // Notice we changed 'admin' to 'super_admin' to match your new requirement
+        if ($this->role === 'super_admin') return true; 
+        
         return (bool) ($this->getPermissions()->{$permission} ?? true);
     }
 }
