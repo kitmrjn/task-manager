@@ -1,26 +1,21 @@
 {{-- resources/views/components/sidebar.blade.php --}}
 <aside class="tf-sidebar" id="tfSidebar">
 
-{{-- resources/views/components/sidebar.blade.php --}}
-
 {{-- LOGO SECTION --}}
 <div class="tf-logo">
-    {{-- Wrap everything in a link to the root '/' or a named route like 'welcome' --}}
     <a href="{{ url('/') }}" style="display: flex; align-items: center; gap: .7rem; text-decoration: none; color: inherit;">
         @if(!empty($siteSettings['app_logo']))
-            {{-- Custom Logo Mode --}}
             <div class="tf-custom-logo">
                 <img src="{{ asset('storage/' . $siteSettings['app_logo']) }}" alt="Logo">
             </div>
         @else
-            {{-- Default Mode --}}
-<div class="tf-logo-icon">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity=".9"/>
-        <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".6"/>
-        <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
-    </svg>
-</div>
+            <div class="tf-logo-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor" opacity=".9"/>
+                    <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".6"/>
+                    <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
+                </svg>
+            </div>
         @endif
         
         <span class="tf-logo-text">{{ $siteSettings['app_name'] ?? 'ProductivityDaily' }}</span>
@@ -30,9 +25,8 @@
 {{-- DYNAMIC THEME COLOR --}}
 <style>
 :root {
-    /* Pull the primary color from DB, fallback to your default blue */
-    --sb-badge: {{ $siteSettings['brand_color'] ?? '#3b6be8' }};
-    --sb-accent: {{ $siteSettings['brand_color'] ?? '#4f83ff' }};
+    var(--sb-badge): {{ $siteSettings['brand_color'] ?? '#3b6be8' }};
+    var(--sb-accent): {{ $siteSettings['brand_color'] ?? '#4f83ff' }};
 }
 </style>
 
@@ -118,7 +112,20 @@
         <div class="tf-nav-section">
             <p class="tf-nav-label">General</p>
 
-            @if(auth()->user()->role === 'admin')
+            @if(auth()->user()->role === 'super_admin')
+            <a href="{{ route('admin.users.index') }}"
+               class="tf-nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <span class="tf-nav-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <line x1="20" y1="8" x2="20" y2="14"/>
+                        <line x1="23" y1="11" x2="17" y2="11"/>
+                    </svg>
+                </span>
+                <span class="tf-nav-text">Users</span>
+            </a>
+
             <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
             class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -146,7 +153,7 @@
     </nav>
 <p style="color:red;font-size:12px;padding:1rem;">
     Role: {{ auth()->user()->role }} | 
-    Is admin: {{ auth()->user()->role === 'admin' ? 'YES' : 'NO' }}
+    Is admin: {{ auth()->user()->role === 'super_admin' ? 'YES' : 'NO' }}
 </p>
     
 </aside>
@@ -157,18 +164,9 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600&display=swap');
 
-/* Add this to your <style> block */
-.tf-logo a {
-    transition: opacity 0.2s ease;
-}
-
-.tf-logo a:hover {
-    opacity: 0.8;
-}
-
-.tf-logo a:active {
-    transform: scale(0.98); /* Slight click feedback */
-}
+.tf-logo a { transition: opacity 0.2s ease; }
+.tf-logo a:hover { opacity: 0.8; }
+.tf-logo a:active { transform: scale(0.98); }
 :root {
     --sb-w:        240px;
     --sb-bg:       #0f1729;
@@ -215,27 +213,8 @@
     letter-spacing: .14em; color: var(--sb-label);
     padding: .5rem 1.3rem .4rem; margin: 0;
 }
-/* This ensures the custom logo looks professional and clean */
-.tf-custom-logo {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    overflow: hidden; /* Clips any weird edges */
-}
-
-.tf-custom-logo img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* Keeps the logo's shape without stretching */
-}
-
-/* If you want the logo to have a rounded look like a 'Pro' app: */
-.tf-custom-logo {
-    border-radius: 8px;
-}
+.tf-custom-logo { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border-radius: 8px; }
+.tf-custom-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .tf-nav-item {
     display: flex; align-items: center; gap: .75rem;
     padding: .6rem 1rem .6rem 1.1rem;
@@ -252,14 +231,7 @@
     box-shadow: inset 3px 0 0 var(--sb-accent);
 }
 .tf-nav-item.active .tf-nav-icon { color: var(--sb-accent); }
-.tf-nav-item--btn {
-    width: calc(100% - 1.2rem); border: none;
-    background: transparent; font-family: 'Epilogue', sans-serif; text-align: left;
-}
-.tf-nav-icon {
-    width: 20px; display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; opacity: .85; transition: opacity .16s;
-}
+.tf-nav-icon { width: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: .85; transition: opacity .16s; }
 .tf-nav-item:hover .tf-nav-icon { opacity: 1; }
 .tf-nav-text { flex: 1; }
 .tf-badge {
@@ -273,35 +245,13 @@
     from { transform: scale(0); opacity: 0; }
     to   { transform: scale(1); opacity: 1; }
 }
-.tf-user {
-    display: flex; align-items: center; gap: .75rem;
-    padding: 1rem 1.1rem;
-    border-top: 1px solid var(--sb-border); flex-shrink: 0;
-}
-.tf-user-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--sb-badge); color: #fff;
-    font-size: 12px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; letter-spacing: .03em;
-}
+.tf-user { display: flex; align-items: center; gap: .75rem; padding: 1rem 1.1rem; border-top: 1px solid var(--sb-border); flex-shrink: 0; }
+.tf-user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--sb-badge); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: .03em; }
 .tf-user-name { font-size: 13px; font-weight: 600; color: var(--sb-text-hi); line-height: 1.2; margin: 0; }
 .tf-user-role { font-size: 11px; color: var(--sb-label); margin: 0; }
-.tf-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 199;
-}
-.tf-toggle {
-    display: none; position: fixed; top: 1rem; left: 1rem;
-    z-index: 300; width: 38px; height: 38px;
-    background: var(--sb-bg); border: 1px solid var(--sb-border);
-    border-radius: 8px; color: var(--sb-text-hi);
-    align-items: center; justify-content: center; cursor: pointer;
-}
-.tf-page-wrap {
-    margin-left: var(--sb-w); min-height: 100vh;
-    transition: margin-left .28s cubic-bezier(.4,0,.2,1);
-}
+.tf-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 199; }
+.tf-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 300; width: 38px; height: 38px; background: var(--sb-bg); border: 1px solid var(--sb-border); border-radius: 8px; color: var(--sb-text-hi); align-items: center; justify-content: center; cursor: pointer; }
+.tf-page-wrap { margin-left: var(--sb-w); min-height: 100vh; transition: margin-left .28s cubic-bezier(.4,0,.2,1); }
 @media (max-width: 768px) {
     .tf-sidebar { transform: translateX(calc(-1 * var(--sb-w))); }
     .tf-sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.4); }

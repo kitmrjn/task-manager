@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
-public function index()
+    public function index()
     {
-        if (auth()->user()->role !== 'admin') {
-        abort(403, 'Unauthorized');
+        if (auth()->user()->role !== 'super_admin') {
+            abort(403, 'Unauthorized');
         }
-         return view('settings');
+        return view('settings');
     }
 
     /**
@@ -89,74 +89,74 @@ public function index()
         return redirect('/')->with('message', 'Your account has been deleted.');
     }
 
-/**
- * Update branding settings (admin only)
- */
-public function updateBranding(Request $request)
-{
-    if (auth()->user()->role !== 'admin') abort(403);
+    /**
+     * Update branding settings (admin only)
+     */
+    public function updateBranding(Request $request)
+    {
+        if (auth()->user()->role !== 'super_admin') abort(403);
 
-    $data = $request->validate([
-        'app_name'        => 'nullable|string|max:30',
-        'app_eyebrow'     => 'nullable|string|max:60',
-        'app_headline'    => 'nullable|string|max:80',
-        'app_description' => 'nullable|string|max:200',
-        'app_logo'        => 'nullable|image|max:2048',
-        'app_favicon'     => 'nullable|image|max:512',
-    ]);
+        $data = $request->validate([
+            'app_name'        => 'nullable|string|max:30',
+            'app_eyebrow'     => 'nullable|string|max:60',
+            'app_headline'    => 'nullable|string|max:80',
+            'app_description' => 'nullable|string|max:200',
+            'app_logo'        => 'nullable|image|max:2048',
+            'app_favicon'     => 'nullable|image|max:512',
+        ]);
 
-    // Handle file uploads separately — don't overwrite with null if no file sent
-    if ($request->hasFile('app_logo')) {
-        $data['app_logo'] = $request->file('app_logo')->store('branding', 'public');
-    } else {
-        unset($data['app_logo']);
-    }
+        // Handle file uploads separately — don't overwrite with null if no file sent
+        if ($request->hasFile('app_logo')) {
+            $data['app_logo'] = $request->file('app_logo')->store('branding', 'public');
+        } else {
+            unset($data['app_logo']);
+        }
 
-    if ($request->hasFile('app_favicon')) {
-        $data['app_favicon'] = $request->file('app_favicon')->store('branding', 'public');
-    } else {
-        unset($data['app_favicon']);
-    }
+        if ($request->hasFile('app_favicon')) {
+            $data['app_favicon'] = $request->file('app_favicon')->store('branding', 'public');
+        } else {
+            unset($data['app_favicon']);
+        }
 
-    // Save each key to the settings table
-    foreach ($data as $key => $value) {
-        \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $value]);
-    }
+        // Save each key to the settings table
+        foreach ($data as $key => $value) {
+            \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
 
-    // Clear cache so the new values show immediately
-    \Illuminate\Support\Facades\Cache::forget('site_settings');
+        // Clear cache so the new values show immediately
+        \Illuminate\Support\Facades\Cache::forget('site_settings');
 
-    return back()->with([
-        'success_branding' => 'Branding updated successfully!',
-        'active_tab'       => 'branding',
-    ]);
+        return back()->with([
+            'success_branding' => 'Branding updated successfully!',
+            'active_tab'       => 'branding',
+        ]);
     }
 
     /**
- * Clear a branding asset (logo or favicon)
- */
-public function clearBranding($key)
-{
-    if (auth()->user()->role !== 'admin') abort(403);
+     * Clear a branding asset (logo or favicon)
+     */
+    public function clearBranding($key)
+    {
+        if (auth()->user()->role !== 'super_admin') abort(403);
 
-    // Only allow safe keys to be deleted
-    if (!in_array($key, ['app_logo', 'app_favicon'])) abort(400);
+        // Only allow safe keys to be deleted
+        if (!in_array($key, ['app_logo', 'app_favicon'])) abort(400);
 
-    // Delete the file from storage if it exists
-    $setting = \App\Models\Setting::where('key', $key)->first();
-    if ($setting && $setting->value) {
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($setting->value);
+        // Delete the file from storage if it exists
+        $setting = \App\Models\Setting::where('key', $key)->first();
+        if ($setting && $setting->value) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($setting->value);
+        }
+
+        // Remove the setting from DB
+        \App\Models\Setting::where('key', $key)->delete();
+
+        // Clear cache so it takes effect immediately
+        \Illuminate\Support\Facades\Cache::forget('site_settings');
+
+        return back()->with([
+            'success_branding' => 'Removed successfully.',
+            'active_tab'       => 'branding',
+        ]);
     }
-
-    // Remove the setting from DB
-    \App\Models\Setting::where('key', $key)->delete();
-
-    // Clear cache so it takes effect immediately
-    \Illuminate\Support\Facades\Cache::forget('site_settings');
-
-    return back()->with([
-        'success_branding' => 'Removed successfully.',
-        'active_tab'       => 'branding',
-    ]);
-}
 }
