@@ -38,12 +38,27 @@ class EmailController extends Controller
         $folder = $this->getRealFolderName($client, $currentFolder);
         $currentFolder = $folder->name;
 
+        // 1. Grab Search and Pagination variables from the URL
         $filter = $request->query('filter', 'all');
-        if ($filter === 'unread') {
-            $rawMessages = $folder->query()->unseen()->limit(30, 0)->get();
-        } else {
-            $rawMessages = $folder->messages()->all()->limit(30, 0)->get();
+        $search = $request->query('search', '');
+        $page = max(1, (int)$request->query('page', 1));
+
+        $query = $folder->query();
+
+        // 2. Apply Search if a keyword is entered
+        if (!empty($search)) {
+            $query->whereText($search);
         }
+
+        // 3. Apply Filters
+        if ($filter === 'unread') {
+            $query->unseen();
+        } else {
+            $query->all();
+        }
+
+        // 4. Paginate the query (Fetch 30 to account for ghost messages)
+        $rawMessages = $query->limit(30, $page)->get();
 
         $messages = $rawMessages->filter(function($msg) {
             return !$msg->hasFlag('Deleted') && !$msg->hasFlag('\Deleted') && !$msg->hasFlag('DELETED');
@@ -59,10 +74,8 @@ class EmailController extends Controller
                     $selectedMessage->setFlag('Seen'); 
                 }
 
-                // 1. Get the raw HTML body
                 $emailBody = $selectedMessage->hasHTMLBody() ? $selectedMessage->getHTMLBody() : nl2br(e((string) $selectedMessage->getTextBody()));
 
-                // 2. Bulletproof Inline Image Fix (Base64 Injection)
                 if ($selectedMessage->hasAttachments()) {
                     foreach ($selectedMessage->getAttachments() as $attachment) {
                         $cid = $attachment->id ? trim($attachment->id, '<>') : null;
@@ -70,13 +83,10 @@ class EmailController extends Controller
                             $cid = trim($attachment->content_id, '<>');
                         }
                         
-                        // If it has a Content-ID, it's an inline image
                         if ($cid) {
                             $base64 = base64_encode($attachment->content);
                             $mime = $attachment->mime ?? 'image/png';
                             $dataUri = "data:{$mime};base64,{$base64}";
-                            
-                            // Replace the broken CID link with the raw image data
                             $emailBody = str_replace("cid:$cid", $dataUri, $emailBody);
                         }
                     }
@@ -87,7 +97,8 @@ class EmailController extends Controller
         try { $inboxUnreadCount = $client->getFolder('INBOX')->query()->unseen()->count(); } 
         catch (\Exception $e) { $inboxUnreadCount = 0; }
 
-        return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount', 'emailBody'));
+        // Pass $search and $page back to the view
+        return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount', 'emailBody', 'search', 'page'));
     }
 
     public function compose()

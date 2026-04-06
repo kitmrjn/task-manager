@@ -7,7 +7,6 @@
         .email-body a { color: #3b82f6; text-decoration: underline; }
         .email-body ul { list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
         .email-body ol { list-style-type: decimal; margin-left: 1.5rem; }
-        /* Add a constraint so signatures/images don't break the layout */
         .email-body img { max-width: 100%; height: auto; border-radius: 4px; }
     </style>
 
@@ -68,20 +67,27 @@
                 </div>
             </div>
 
-            {{-- PANE 2: LIST --}}
-            <div class="w-full md:w-[340px] lg:w-[360px] flex flex-col border-r flex-shrink-0" style="border-color: #2d2d2d; background-color: #1e1e1e;">
-                <div class="p-5 border-b" style="border-color: #2d2d2d;">
+            {{-- PANE 2: LIST WITH SEARCH & PAGINATION --}}
+            <div class="w-full md:w-[340px] lg:w-[360px] flex flex-col border-r flex-shrink-0 relative" style="border-color: #2d2d2d; background-color: #1e1e1e;">
+                <div class="p-5 border-b shrink-0" style="border-color: #2d2d2d;">
                     <h2 class="text-xl font-bold text-white mb-5 capitalize">{{ str_replace('INBOX.', '', $currentFolder) }}</h2>
-                    <div class="relative mb-5">
+                    
+                    {{-- REAL SEARCH FORM --}}
+                    <form method="GET" action="{{ route('email.index') }}" class="relative mb-5">
+                        <input type="hidden" name="folder" value="{{ $currentFolder }}">
+                        <input type="hidden" name="filter" value="{{ $filter }}">
+                        
                         <svg class="absolute left-3 top-2.5 text-gray-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" placeholder="Search emails..." class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-700 text-sm transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500" style="background-color: #141414; color: #e5e5e5; outline: none;">
-                    </div>
+                        <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Search emails..." class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-700 text-sm transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500" style="background-color: #141414; color: #e5e5e5; outline: none;">
+                    </form>
+
                     <div class="flex gap-2 text-sm font-medium">
-                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'filter' => 'all']) }}" class="px-4 py-1.5 rounded-md transition {{ $filter !== 'unread' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white border border-gray-700' }}">All</a>
-                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'filter' => 'unread']) }}" class="px-4 py-1.5 rounded-md transition {{ $filter === 'unread' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white border border-gray-700' }}">Unread</a>
+                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'filter' => 'all', 'search' => $search]) }}" class="px-4 py-1.5 rounded-md transition {{ $filter !== 'unread' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white border border-gray-700' }}">All</a>
+                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'filter' => 'unread', 'search' => $search]) }}" class="px-4 py-1.5 rounded-md transition {{ $filter === 'unread' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white border border-gray-700' }}">Unread</a>
                     </div>
                 </div>
 
+                {{-- SCROLLABLE EMAIL LIST --}}
                 <div class="flex-1 overflow-y-auto custom-scrollbar">
                     @forelse($messages as $message)
                         @php 
@@ -91,7 +97,7 @@
                             $isActive = request('uid') == $message->getUid();
                         @endphp
 
-                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'uid' => $message->getUid(), 'filter' => $filter]) }}" 
+                        <a href="{{ route('email.index', ['folder' => $currentFolder, 'uid' => $message->getUid(), 'filter' => $filter, 'search' => $search, 'page' => $page]) }}" 
                            class="block p-4 border-b cursor-pointer transition relative" 
                            style="border-color: #2d2d2d; {{ $isActive ? 'background-color: #2a2a2a;' : 'hover:background-color: #242424;' }}">
                             @if($isActive) <div class="absolute left-0 top-0 bottom-0 w-1 rounded-r-md bg-blue-500"></div> @endif
@@ -111,8 +117,28 @@
                             <p class="text-xs truncate text-gray-500 mb-2">{{ Str::limit(strip_tags((string) $message->getTextBody()), 55) }}</p>
                         </a>
                     @empty
-                        <div class="p-8 text-center text-sm text-gray-500">No emails found.</div>
+                        <div class="p-8 text-center text-sm text-gray-500">
+                            @if(!empty($search)) No emails found matching "{{ $search }}".
+                            @else No emails found.
+                            @endif
+                        </div>
                     @endforelse
+                </div>
+
+                {{-- PAGINATION BAR --}}
+                <div class="p-4 border-t flex justify-between items-center shrink-0" style="border-color: #2d2d2d; background-color: #1a1a1a;">
+                    <a href="{{ $page > 1 ? route('email.index', ['folder' => $currentFolder, 'filter' => $filter, 'search' => $search, 'page' => $page - 1]) : '#' }}" 
+                       class="text-xs font-medium {{ $page > 1 ? 'text-blue-400 hover:text-blue-300' : 'text-gray-600 cursor-not-allowed' }} flex items-center gap-1 transition">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg> Newer
+                    </a>
+                    
+                    <span class="text-xs text-gray-500">Page {{ $page }}</span>
+                    
+                    {{-- If we fetched 15 valid messages, there are likely more to load --}}
+                    <a href="{{ count($messages) >= 15 ? route('email.index', ['folder' => $currentFolder, 'filter' => $filter, 'search' => $search, 'page' => $page + 1]) : '#' }}" 
+                       class="text-xs font-medium {{ count($messages) >= 15 ? 'text-blue-400 hover:text-blue-300' : 'text-gray-600 cursor-not-allowed' }} flex items-center gap-1 transition">
+                        Older <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
                 </div>
             </div>
 
@@ -171,7 +197,6 @@
                                 </div>
                             </div>
 
-                            {{-- USE THE PROCESSED BASE64 HTML STRING --}}
                             <div class="email-body text-gray-300 text-sm md:text-base leading-relaxed mb-12">
                                 {!! $emailBody !!}
                             </div>
