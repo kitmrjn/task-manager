@@ -8,71 +8,147 @@ use Illuminate\Support\Facades\Mail;
 
 class EmailController extends Controller
 {
-    /**
-     * Display a listing of the emails (Inbox).
-     */
-    public function index()
+    private function getRealFolderName($client, $requestedFolder)
     {
-        // Connect to the IMAP server defined in config
-        $client = Client::account('default');
-        $client->connect();
-
-        // Get the Inbox folder
-        $folder = $client->getFolder('INBOX');
-
-        // Fetch the latest 15 emails for performance
-        $messages = $folder->messages()->all()->limit(15, 0)->get();
-
-        return view('email.index', compact('messages'));
+        if (strtoupper($requestedFolder) === 'INBOX') return $client->getFolder('INBOX');
+        $possiblePaths = [$requestedFolder, 'INBOX.' . $requestedFolder, $requestedFolder . 's', 'INBOX.' . $requestedFolder . 's'];
+        foreach ($possiblePaths as $path) {
+            try { return $client->getFolder($path); } catch (\Exception $e) { continue; }
+        }
+        return $client->getFolder('INBOX');
     }
 
-    /**
-     * Show the form for creating a new email.
-     */
+    private function getExactFolderPath($client, $targetName)
+    {
+        try {
+            $folders = $client->getFolders(false);
+            foreach ($folders as $folder) {
+                if (stripos($folder->path, $targetName) !== false) return $folder->path;
+            }
+        } catch (\Exception $e) {}
+        return 'INBOX.' . $targetName;
+    }
+
+    public function index(Request $request)
+    {
+        $client = Client::account('default');
+        $client->connect();
+        
+        $currentFolder = $request->query('folder', 'INBOX');
+        $folder = $this->getRealFolderName($client, $currentFolder);
+        $currentFolder = $folder->name;
+
+        $filter = $request->query('filter', 'all');
+        if ($filter === 'unread') {
+            $rawMessages = $folder->query()->unseen()->limit(30, 0)->get();
+        } else {
+            $rawMessages = $folder->messages()->all()->limit(30, 0)->get();
+        }
+
+        $messages = $rawMessages->filter(function($msg) {
+            return !$msg->hasFlag('Deleted') && !$msg->hasFlag('\Deleted') && !$msg->hasFlag('DELETED');
+        })->take(15);
+
+        $selectedMessage = null;
+        if ($request->has('uid')) {
+            $selectedMessage = $folder->query()->getMessageByUid($request->uid);
+            if ($selectedMessage && str_contains(strtoupper($currentFolder), 'INBOX')) {
+                $selectedMessage->setFlag('Seen'); 
+            }
+        }
+
+        try { $inboxUnreadCount = $client->getFolder('INBOX')->query()->unseen()->count(); } 
+        catch (\Exception $e) { $inboxUnreadCount = 0; }
+
+        return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount'));
+    }
+
     public function compose()
     {
         return view('email.compose');
     }
 
-    /**
-     * Send the newly composed email via SMTP.
-     */
     public function send(Request $request)
     {
+        // 1. Validate the incoming request, including an optional attachments array
         $request->validate([
             'to' => 'required|email',
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
+            'attachments.*' => 'nullable|file|max:10240', // Limit to 10MB per file
         ]);
 
-        // Use Laravel's built in Mail facade (SMTP)
+        // 2. Send the email with the attachments attached
         Mail::html($request->body, function ($message) use ($request) {
-            $message->to($request->to)
-                    ->subject($request->subject);
+            $message->to($request->to)->subject($request->subject);
+
+            // Loop through and attach each file if they exist
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $message->attach($file->getRealPath(), [
+                        'as' => $file->getClientOriginalName(),
+                        'mime' => $file->getClientMimeType(),
+                    ]);
+                }
+            }
         });
 
-        return redirect()->route('email.index')->with('success', 'Email sent successfully!');
+        return redirect()->route('email.index', ['folder' => 'Sent'])->with('success', 'Email sent successfully!');
     }
 
-    /**
-     * Display the specified email.
-     */
-    public function show($uid)
+    public function destroy(Request $request, $uid)
     {
         $client = Client::account('default');
         $client->connect();
         
-        $folder = $client->getFolder('INBOX');
-        // Fetch the specific message by its UID
+        $currentFolder = $request->input('current_folder', 'INBOX');
+        $folder = $this->getRealFolderName($client, $currentFolder);
         $message = $folder->query()->getMessageByUid($uid);
-
-        if (!$message) {
-            abort(404, 'Email not found.');
+        
+        if ($message) {
+            try {
+                $trashPath = $this->getExactFolderPath($client, 'Trash');
+                if ($message->copy($trashPath)) {
+                    $message->setFlag('Deleted');
+                } else { throw new \Exception("Server refused to copy the message."); }
+            } catch (\Exception $e) {
+                return redirect()->route('email.index', ['folder' => $currentFolder])->with('error', "Could not delete: " . $e->getMessage());
+            }
         }
-
-        // Mark as read
-        $message->setFlag('Seen');
-
-        return view('email.show', compact('message'));
+        return redirect()->route('email.index', ['folder' => $currentFolder])->with('success', 'Email moved to Trash.');
     }
+
+    public function archive(Request $request, $uid)
+    {
+        $client = Client::account('default');
+        $client->connect();
+        
+        $currentFolder = $request->input('current_folder', 'INBOX');
+        $folder = $this->getRealFolderName($client, $currentFolder);
+        $message = $folder->query()->getMessageByUid($uid);
+        
+        if ($message) {
+            try {
+                $archivePath = $this->getExactFolderPath($client, 'Archive');
+                if ($message->copy($archivePath)) {
+                    $message->setFlag('Deleted');
+                } else { throw new \Exception("Server refused to copy the message."); }
+            } catch (\Exception $e) {
+                return redirect()->route('email.index', ['folder' => $currentFolder])->with('error', "Could not archive: " . $e->getMessage());
+            }
+        }
+        return redirect()->route('email.index', ['folder' => $currentFolder])->with('success', 'Email Archived.');
+    }
+
+    public function unreadCount()
+    {
+        try {
+            $client = Client::account('default');
+            $client->connect();
+            $count = $client->getFolder('INBOX')->query()->unseen()->count();
+            return response()->json(['count' => $count]);
+        } catch (\Exception $e) { return response()->json(['count' => 0]); }
+    }
+
+    public function show($uid) { return redirect()->route('email.index', ['uid' => $uid]); }
 }

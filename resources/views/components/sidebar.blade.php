@@ -67,7 +67,7 @@
                 @endif
             </a>
 
-            {{-- EMAIL LINK --}}
+            {{-- MODERN EMAIL LINK --}}
             <a href="{{ Route::has('email.index') ? route('email.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('email.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -77,6 +77,9 @@
                     </svg>
                 </span>
                 <span class="tf-nav-text">Email</span>
+                
+                {{-- Invisible until populated by JS to prevent UI hanging --}}
+                <span class="tf-badge" id="email-unread-badge" style="background-color: #ef4444; color: #ffffff; display: none;">0</span>
             </a>
 
             @if(auth()->user()->can_access('can_view_calendar'))
@@ -312,4 +315,20 @@ function tfToggle() {
     document.getElementById('tfSidebar').classList.toggle('open');
     document.getElementById('tfOverlay').classList.toggle('open');
 }
+
+// MODERN UX: Asynchronously fetch unread email count so it never blocks page loading!
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('{{ route("email.unread") }}', {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.count && data.count > 0) {
+            const badge = document.getElementById('email-unread-badge');
+            badge.innerText = data.count;
+            badge.style.display = 'inline-block';
+        }
+    })
+    .catch(error => console.warn('Could not load unread emails:', error));
+});
 </script>

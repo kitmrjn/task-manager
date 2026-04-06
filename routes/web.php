@@ -37,6 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/email', [App\Http\Controllers\EmailController::class, 'index'])->name('email.index');
     Route::get('/email/compose', [App\Http\Controllers\EmailController::class, 'compose'])->name('email.compose');
     Route::post('/email/send', [App\Http\Controllers\EmailController::class, 'send'])->name('email.send');
+    Route::get('/email/unread', [App\Http\Controllers\EmailController::class, 'unreadCount'])->name('email.unread');
+    
+    // New Action Routes
+    Route::post('/email/{uid}/archive', [App\Http\Controllers\EmailController::class, 'archive'])->name('email.archive');
+    Route::delete('/email/{uid}', [App\Http\Controllers\EmailController::class, 'destroy'])->name('email.destroy');
+    
     Route::get('/email/{uid}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
 
     // ── Task Actions ───────────────────────────────────────────────────
@@ -76,14 +82,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
         Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
 
-        // System Data Management
         Route::get('/system-data', [App\Http\Controllers\Admin\SystemDataController::class, 'index'])->name('system-data.index');
         Route::post('/system-data/campaigns', [App\Http\Controllers\Admin\SystemDataController::class, 'storeCampaign'])->name('campaigns.store');
         Route::delete('/system-data/campaigns/{campaign}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyCampaign'])->name('campaigns.destroy');
         Route::post('/system-data/roles', [App\Http\Controllers\Admin\SystemDataController::class, 'storeRole'])->name('roles.store');
         Route::delete('/system-data/roles/{role}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyRole'])->name('roles.destroy');
         
-        // New Routes for Edit/Status
         Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::post('/users/{user}/resend-invite', [App\Http\Controllers\Admin\UserController::class, 'resendInvite'])->name('users.resend-invite');
@@ -109,7 +113,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
     Route::delete('/calendar/events', [CalendarController::class, 'deleteEvent'])->name('calendar.events.delete');
     Route::get('/holidays/{year}', [CalendarController::class, 'getHolidays'])->where('year', '[0-9]{4}');
-
     Route::get('/holidays/us/{year}', [CalendarController::class, 'getUSHolidays']);
         
     // ── Comments ───────────────────────────────────────────────────────
@@ -120,23 +123,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/team/{user}/role', [TeamController::class, 'updateRole'])->name('team.role');
     Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
     Route::patch('/team/members/{user}/permissions', [TeamController::class, 'updatePermissions'])->name('team.permissions');
-    Route::put('/team/members/{user}', [TeamController::class, 'update'])->name('team.member.update');
     Route::delete('/team/members/{user}', [TeamController::class, 'destroy'])->name('team.member.destroy');
+    
     // ── Settings ───────────────────────────────────────────────────────
     Route::patch('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password');
     Route::delete('/settings/account', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
+    Route::post('/settings/branding', [App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding');
+    Route::get('/settings/branding/clear/{key}', [SettingsController::class, 'clearBranding'])->name('settings.branding.clear');
 
     // ── Attachments ────────────────────────────────────────────────────
     Route::post('/tasks/{task}/attachments', [TaskAttachmentController::class, 'store']);
     Route::delete('/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
 
-    Route::post('/settings/branding', [App\Http\Controllers\SettingsController::class, 'updateBranding'])->name('settings.branding');
-    Route::get('/settings/branding/clear/{key}', [SettingsController::class, 'clearBranding'])->name('settings.branding.clear');
-
-    //── Verification Email ──────────────────────────────────────────────────
-   Route::get('verify-email', \App\Http\Controllers\Auth\EmailVerificationPromptController::class)
-    ->name('verification.notice');
+    //── Verification Email ──────────────────────────────────────────────
+    Route::get('verify-email', \App\Http\Controllers\Auth\EmailVerificationPromptController::class)
+        ->name('verification.notice');
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', function () {
@@ -145,7 +147,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $q->where('assigned_to', auth()->id())
                 ->orWhereHas('members', fn ($q) => $q->where('users.id', auth()->id()));
             })
-            ->where('user_id', '!=', auth()->id()) // ← don't notify yourself
+            ->where('user_id', '!=', auth()->id())
             ->latest()
             ->take(10)
             ->get();
