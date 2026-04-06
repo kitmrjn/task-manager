@@ -17,6 +17,10 @@
                         {{ __('Tasks') }}
                     </x-nav-link>
 
+                    <x-nav-link :href="route('email.index')" :active="request()->routeIs('email.*')">
+                        {{ __('Email') }}
+                    </x-nav-link>
+
                     @if(auth()->user()->isAtLeastAdmin())
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                             {{ __('Users') }}
@@ -74,8 +78,12 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
+            <x-responsive-nav-link :href="route('email.index')" :active="request()->routeIs('email.*')">
+                {{ __('Email') }}
+            </x-responsive-nav-link>
+
             @if(auth()->user()->isAtLeastAdmin())
-                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->requestIs('admin.users.*')">
                     {{ __('Users') }}
                 </x-responsive-nav-link>
             @endif

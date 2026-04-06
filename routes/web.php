@@ -33,6 +33,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Dashboard ──────────────────────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // ── Email Integration ──────────────────────────────────────────────
+    Route::get('/email', [App\Http\Controllers\EmailController::class, 'index'])->name('email.index');
+    Route::get('/email/compose', [App\Http\Controllers\EmailController::class, 'compose'])->name('email.compose');
+    Route::post('/email/send', [App\Http\Controllers\EmailController::class, 'send'])->name('email.send');
+    Route::get('/email/{uid}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
+
     // ── Task Actions ───────────────────────────────────────────────────
     Route::post('/tasks', [TaskController::class, 'store'])
         ->middleware('permission:can_create_tasks');

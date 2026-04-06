@@ -67,6 +67,18 @@
                 @endif
             </a>
 
+            {{-- EMAIL LINK --}}
+            <a href="{{ Route::has('email.index') ? route('email.index') : '#' }}"
+               class="tf-nav-item {{ request()->routeIs('email.*') ? 'active' : '' }}">
+                <span class="tf-nav-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </span>
+                <span class="tf-nav-text">Email</span>
+            </a>
+
             @if(auth()->user()->can_access('can_view_calendar'))
             <a href="{{ Route::has('calendar.index') ? route('calendar.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
