@@ -7,6 +7,8 @@
         .email-body a { color: #3b82f6; text-decoration: underline; }
         .email-body ul { list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
         .email-body ol { list-style-type: decimal; margin-left: 1.5rem; }
+        /* Add a constraint so signatures/images don't break the layout */
+        .email-body img { max-width: 100%; height: auto; border-radius: 4px; }
     </style>
 
     <div x-data="{ composeOpen: {{ $errors->any() ? 'true' : 'false' }} }" class="relative">
@@ -100,7 +102,12 @@
                                 </div>
                                 <span class="text-xs text-gray-500 whitespace-nowrap">{{ \Carbon\Carbon::parse((string) $message->getDate())->format('M d, g:i A') }}</span>
                             </div>
-                            <h5 class="text-sm font-semibold mb-1 truncate {{ $isUnread || $isActive ? 'text-gray-100' : 'text-gray-400' }}">{{ (string) $message->getSubject() }}</h5>
+                            
+                            <h5 class="text-sm font-semibold mb-1 truncate {{ $isUnread || $isActive ? 'text-gray-100' : 'text-gray-400' }}">
+                                @if($message->hasAttachments()) <svg class="inline-block w-3 h-3 text-gray-500 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>@endif
+                                {{ (string) $message->getSubject() }}
+                            </h5>
+                            
                             <p class="text-xs truncate text-gray-500 mb-2">{{ Str::limit(strip_tags((string) $message->getTextBody()), 55) }}</p>
                         </a>
                     @empty
@@ -118,6 +125,15 @@
                         $subject = (string) $selectedMessage->getSubject();
                         $words = explode(' ', $senderName);
                         $initials = count($words) > 1 ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1)) : strtoupper(substr($senderName, 0, 2));
+                        
+                        $realAttachments = collect();
+                        if($selectedMessage->hasAttachments()) {
+                            $realAttachments = collect($selectedMessage->getAttachments())->filter(function ($attachment) {
+                                $isInline = strtolower($attachment->disposition ?? '') === 'inline';
+                                $hasCid = !empty($attachment->id) || !empty($attachment->content_id);
+                                return !$isInline && !$hasCid;
+                            });
+                        }
                     @endphp
 
                     <div class="flex-1 flex flex-col h-full">
@@ -155,35 +171,46 @@
                                 </div>
                             </div>
 
+                            {{-- USE THE PROCESSED BASE64 HTML STRING --}}
                             <div class="email-body text-gray-300 text-sm md:text-base leading-relaxed mb-12">
-                                {!! $selectedMessage->hasHTMLBody() ? $selectedMessage->getHTMLBody() : nl2br(e((string) $selectedMessage->getTextBody())) !!}
+                                {!! $emailBody !!}
                             </div>
+                            
+                            @if($realAttachments->count() > 0)
+                                <div class="mb-8">
+                                    <h4 class="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                        Attachments ({{ $realAttachments->count() }})
+                                    </h4>
+                                    <div class="flex flex-wrap gap-3">
+                                        @foreach($realAttachments as $attachment)
+                                            <a href="{{ route('email.attachment.download', ['folder' => $currentFolder, 'uid' => $selectedMessage->getUid(), 'filename' => base64_encode($attachment->name)]) }}" 
+                                               class="flex items-center gap-3 p-3 rounded-lg border transition hover:bg-white/5" style="border-color: #333; background-color: #1a1a1a;">
+                                                <div class="w-10 h-10 rounded flex items-center justify-center text-blue-400" style="background-color: #1e3a8a;">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                                </div>
+                                                <div class="max-w-[150px]">
+                                                    <p class="text-sm font-medium text-gray-200 truncate">{{ $attachment->name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ number_format(strlen($attachment->content) / 1024, 1) }} KB</p>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <hr style="border-color: #2d2d2d;" class="my-8">
 
-                            {{-- INLINE REPLY WITH ATTACHMENTS --}}
                             <form method="POST" action="{{ route('email.send') }}" enctype="multipart/form-data" class="rounded-xl border p-4 transition-all focus-within:border-blue-500 flex flex-col" style="border-color: #333; background-color: #1a1a1a;">
                                 @csrf
                                 <input type="hidden" name="to" value="{{ $senderStr }}">
                                 <input type="hidden" name="subject" value="Re: {{ str_starts_with(strtolower($subject), 're:') ? substr($subject, 4) : $subject }}">
-                                
                                 <textarea id="reply-textarea" name="body" class="w-full bg-transparent border-none text-white focus:ring-0 resize-none text-sm p-0 placeholder-gray-500" rows="5" placeholder="Write your reply to {{ $senderName }}..." required></textarea>
-                                
-                                {{-- Area to display selected filenames --}}
                                 <div id="inline-file-list" class="mt-3 space-y-1 text-xs text-blue-400 font-medium empty:hidden"></div>
-
                                 <div class="flex justify-between items-center mt-4 pt-4 border-t" style="border-color: #2d2d2d;">
-                                    
-                                    {{-- Hidden file input triggered by the button --}}
                                     <input type="file" id="inline-attachments" name="attachments[]" multiple class="hidden" onchange="updateFileList('inline-file-list', this)">
-                                    
-                                    <button type="button" onclick="document.getElementById('inline-attachments').click()" class="flex items-center gap-2 text-gray-400 hover:text-white px-3 py-1.5 rounded transition text-sm font-medium">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                                        Attach files
-                                    </button>
-                                    
-                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition flex items-center gap-2">
-                                        Send Reply <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                                    </button>
+                                    <button type="button" onclick="document.getElementById('inline-attachments').click()" class="flex items-center gap-2 text-gray-400 hover:text-white px-3 py-1.5 rounded transition text-sm font-medium"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> Attach files</button>
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition flex items-center gap-2">Send Reply <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
                                 </div>
                             </form>
                         </div>
@@ -205,7 +232,6 @@
                     <button @click="composeOpen = false" class="text-gray-400 hover:text-white transition p-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                 </div>
                 
-                {{-- Make sure enctype is set to multipart/form-data here too! --}}
                 <form method="POST" action="{{ route('email.send') }}" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
                     @csrf
                     <div class="px-6 py-3 border-b flex items-center" style="border-color: #2d2d2d;">
@@ -220,18 +246,13 @@
                         <textarea name="body" rows="12" placeholder="Write your message..." required class="w-full h-full bg-transparent border-none text-white focus:ring-0 placeholder-gray-600 text-sm p-0 resize-none">{{ old('body') }}</textarea>
                     </div>
 
-                    {{-- Area to display selected filenames in compose modal --}}
                     <div id="compose-file-list" class="px-6 pb-4 space-y-1 text-xs text-blue-400 font-medium empty:hidden"></div>
 
                     <div class="px-6 py-4 border-t bg-[#141414] rounded-b-xl flex justify-between items-center" style="border-color: #333;">
-                        
-                        {{-- Hidden file input --}}
                         <input type="file" id="compose-attachments" name="attachments[]" multiple class="hidden" onchange="updateFileList('compose-file-list', this)">
-                        
                         <button type="button" onclick="document.getElementById('compose-attachments').click()" class="text-gray-400 hover:text-white transition p-2 rounded hover:bg-white/5 flex items-center gap-2">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                         </button>
-                        
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-md text-sm font-medium transition flex items-center gap-2 shadow-lg">
                             Send Email <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
@@ -241,12 +262,10 @@
         </div>
     </div>
 
-    {{-- Simple Script to display selected files before sending --}}
     <script>
         function updateFileList(containerId, inputElement) {
             const container = document.getElementById(containerId);
-            container.innerHTML = ''; // Clear existing
-            
+            container.innerHTML = '';
             if (inputElement.files.length > 0) {
                 Array.from(inputElement.files).forEach(file => {
                     const item = document.createElement('div');

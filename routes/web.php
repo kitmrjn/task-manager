@@ -39,9 +39,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/email/send', [App\Http\Controllers\EmailController::class, 'send'])->name('email.send');
     Route::get('/email/unread', [App\Http\Controllers\EmailController::class, 'unreadCount'])->name('email.unread');
     
-    // New Action Routes
     Route::post('/email/{uid}/archive', [App\Http\Controllers\EmailController::class, 'archive'])->name('email.archive');
     Route::delete('/email/{uid}', [App\Http\Controllers\EmailController::class, 'destroy'])->name('email.destroy');
+    
+    // NEW: Download attachment route
+    Route::get('/email/attachment/{folder}/{uid}/{filename}', [App\Http\Controllers\EmailController::class, 'downloadAttachment'])->name('email.attachment.download');
     
     Route::get('/email/{uid}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
 

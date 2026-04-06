@@ -50,17 +50,44 @@ class EmailController extends Controller
         })->take(15);
 
         $selectedMessage = null;
+        $emailBody = '';
+        
         if ($request->has('uid')) {
             $selectedMessage = $folder->query()->getMessageByUid($request->uid);
-            if ($selectedMessage && str_contains(strtoupper($currentFolder), 'INBOX')) {
-                $selectedMessage->setFlag('Seen'); 
+            if ($selectedMessage) {
+                if (str_contains(strtoupper($currentFolder), 'INBOX')) {
+                    $selectedMessage->setFlag('Seen'); 
+                }
+
+                // 1. Get the raw HTML body
+                $emailBody = $selectedMessage->hasHTMLBody() ? $selectedMessage->getHTMLBody() : nl2br(e((string) $selectedMessage->getTextBody()));
+
+                // 2. Bulletproof Inline Image Fix (Base64 Injection)
+                if ($selectedMessage->hasAttachments()) {
+                    foreach ($selectedMessage->getAttachments() as $attachment) {
+                        $cid = $attachment->id ? trim($attachment->id, '<>') : null;
+                        if (!$cid && $attachment->content_id) {
+                            $cid = trim($attachment->content_id, '<>');
+                        }
+                        
+                        // If it has a Content-ID, it's an inline image
+                        if ($cid) {
+                            $base64 = base64_encode($attachment->content);
+                            $mime = $attachment->mime ?? 'image/png';
+                            $dataUri = "data:{$mime};base64,{$base64}";
+                            
+                            // Replace the broken CID link with the raw image data
+                            $emailBody = str_replace("cid:$cid", $dataUri, $emailBody);
+                        }
+                    }
+                }
             }
         }
 
         try { $inboxUnreadCount = $client->getFolder('INBOX')->query()->unseen()->count(); } 
         catch (\Exception $e) { $inboxUnreadCount = 0; }
 
-        return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount'));
+        return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount', 'emailBody'));
     }
 
     public function compose()
@@ -70,19 +97,15 @@ class EmailController extends Controller
 
     public function send(Request $request)
     {
-        // 1. Validate the incoming request, including an optional attachments array
         $request->validate([
             'to' => 'required|email',
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
-            'attachments.*' => 'nullable|file|max:10240', // Limit to 10MB per file
+            'attachments.*' => 'nullable|file|max:10240', 
         ]);
 
-        // 2. Send the email with the attachments attached
         Mail::html($request->body, function ($message) use ($request) {
             $message->to($request->to)->subject($request->subject);
-
-            // Loop through and attach each file if they exist
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $message->attach($file->getRealPath(), [
@@ -151,4 +174,25 @@ class EmailController extends Controller
     }
 
     public function show($uid) { return redirect()->route('email.index', ['uid' => $uid]); }
+
+    public function downloadAttachment($folder, $uid, $filename)
+    {
+        $client = Client::account('default');
+        $client->connect();
+        
+        $imapFolder = $this->getRealFolderName($client, $folder);
+        $message = $imapFolder->query()->getMessageByUid($uid);
+        
+        if ($message) {
+            $attachments = $message->getAttachments();
+            foreach ($attachments as $attachment) {
+                if ($attachment->name === base64_decode($filename)) {
+                    return response($attachment->content)
+                        ->header('Content-Type', $attachment->mime)
+                        ->header('Content-Disposition', 'attachment; filename="' . $attachment->name . '"');
+                }
+            }
+        }
+        abort(404, 'Attachment not found.');
+    }
 }
