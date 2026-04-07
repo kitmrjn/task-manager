@@ -35,16 +35,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Email Integration ──────────────────────────────────────────────
     Route::get('/email', [App\Http\Controllers\EmailController::class, 'index'])->name('email.index');
+    Route::post('/email/setup', [App\Http\Controllers\EmailController::class, 'storeSettings'])->name('email.setup.store');
     Route::get('/email/compose', [App\Http\Controllers\EmailController::class, 'compose'])->name('email.compose');
     Route::post('/email/send', [App\Http\Controllers\EmailController::class, 'send'])->name('email.send');
     Route::get('/email/unread', [App\Http\Controllers\EmailController::class, 'unreadCount'])->name('email.unread');
     
     Route::post('/email/{uid}/archive', [App\Http\Controllers\EmailController::class, 'archive'])->name('email.archive');
     Route::delete('/email/{uid}', [App\Http\Controllers\EmailController::class, 'destroy'])->name('email.destroy');
-    
-    // NEW: Download attachment route
     Route::get('/email/attachment/{folder}/{uid}/{filename}', [App\Http\Controllers\EmailController::class, 'downloadAttachment'])->name('email.attachment.download');
-    
     Route::get('/email/{uid}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
 
     // ── Task Actions ───────────────────────────────────────────────────

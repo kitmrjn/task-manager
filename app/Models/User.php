@@ -20,11 +20,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'team_leader_id',
         'last_active',
         'is_active',
+        'email_imap_host',
+        'email_imap_port',
+        'email_smtp_host',
+        'email_smtp_port',
+        'email_username',
+        'email_password',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'email_password',
     ];
 
     protected function casts(): array

@@ -7,7 +7,7 @@
 * Updated:  -
 *
 * Description:
-*  -
+* -
 */
 
 return [
@@ -151,7 +151,7 @@ return [
         // 'fallback_date' => "01.01.1970 00:00:00",
         'boundary' => '/boundary=(.*?(?=;)|(.*))/i',
         'message_key' => 'list',
-        'fetch_order' => 'asc',
+        'fetch_order' => 'desc', // CRITICAL FIX: Changed from 'asc' to 'desc'
         'dispositions' => ['attachment', 'inline'],
         'common_folders' => [
             "root" => "INBOX",
