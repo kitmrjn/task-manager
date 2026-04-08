@@ -46,34 +46,33 @@ class BoardService
 
     /**
      * Get aggregated data for the user dashboard.
+     * OPTIMIZED: Replaced 3 separate memory-heavy queries with a single database-level query.
      */
     public function getDashboardData(User $user): array
     {
-        $assignedIds      = Task::where('assigned_to', $user->id)->pluck('id');
-        $createdIds       = Task::where('creator_id', $user->id)->pluck('id');
-        $collaboratingIds = DB::table('task_user')
-                                ->where('user_id', $user->id)
-                                ->pluck('task_id');
+        // 1. Build a single base query for all tasks relevant to this user
+        $myTasksQuery = Task::where(function ($query) use ($user) {
+            $query->where('assigned_to', $user->id)
+                  ->orWhere('creator_id', $user->id)
+                  ->orWhereHas('members', fn($q) => $q->where('users.id', $user->id));
+        });
 
-        $myTaskIds = $assignedIds
-            ->merge($createdIds)
-            ->merge($collaboratingIds)
-            ->unique()
-            ->values();
-
+        // 2. Aggregate stats efficiently
         $stats = [
             'total'         => Task::count(),
-            'my_tasks'      => $myTaskIds->count(),
+            'my_tasks'      => (clone $myTasksQuery)->count(),
             'completed'     => Task::where('is_completed', true)->count(),
             'high_priority' => Task::where('priority', 'high')->count(),
         ];
 
-        $myTasks = Task::whereIn('id', $myTaskIds)
+        // 3. Fetch the 5 most recent relevant tasks in one query
+        $myTasks = (clone $myTasksQuery)
             ->with('column')
             ->latest()
             ->take(5)
             ->get();
 
+        // 4. Fetch recent activity (Optimized with Eager Loading to prevent N+1 on the User model)
         $recentActivity = TaskActivity::with('user')
             ->latest()
             ->take(8)

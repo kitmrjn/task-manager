@@ -11,6 +11,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskAttachmentController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -141,25 +142,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('verification.notice');
 
     // ── Notifications ──────────────────────────────────────────────────
-    Route::get('/notifications', function () {
-        $notifications = \App\Models\TaskActivity::with(['user', 'task'])
-            ->whereHas('task', function ($q) {
-                $q->where('assigned_to', auth()->id())
-                ->orWhereHas('members', fn ($q) => $q->where('users.id', auth()->id()));
-            })
-            ->where('user_id', '!=', auth()->id())
-            ->latest()
-            ->take(10)
-            ->get();
-
-        return response()->json($notifications->map(fn ($a) => [
-            'description' => $a->description,
-            'user'        => $a->user?->name,
-            'task'        => $a->task?->title,
-            'time'        => \Carbon\Carbon::parse($a->created_at)->diffForHumans(),
-            'action'      => $a->action,
-        ])->values());
-    })->name('notifications');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 });
 
 require __DIR__.'/auth.php';
