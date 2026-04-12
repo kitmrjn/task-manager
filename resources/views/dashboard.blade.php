@@ -91,6 +91,37 @@
     </div>
 </x-slot>
 
+@push('styles')
+    @vite('resources/css/tasks.css')
+    @vite('resources/css/dashboard.css')
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @vite('resources/js/tasks.js')
+    @vite('resources/js/dashboard.js')
+@endpush
+
+{{-- Stat Task List Modal --}}
+<div id="statTaskModal" style="display:none;position:fixed;inset:0;background:rgba(16,24,40,.5);backdrop-filter:blur(4px);z-index:400;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:620px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(16,24,40,.18);">
+        <div style="padding:1.4rem 1.6rem;border-bottom:1px solid #e4e7ec;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <div>
+                <div id="statModal-title" style="font-size:18px;font-weight:800;color:#0d1117;letter-spacing:-.02em;"></div>
+                <div id="statModal-sub" style="font-size:13px;color:#6b7280;margin-top:2px;font-weight:500;"></div>
+            </div>
+            <button onclick="closeStatModal()" style="width:34px;height:34px;border:1.5px solid #e4e7ec;border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4b5563;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div id="statModal-list" style="flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.5rem;"></div>
+    </div>
+</div>
+
+@include('tasks.partials.detail-modal')
+
+
+
 {{-- ── Inject dashboard-specific CSS & JS via Vite ── --}}
 @push('styles')
     @vite('resources/css/dashboard.css')
@@ -162,66 +193,67 @@
         </div>
     </div>
 
-    {{-- ── STAT CARDS ──────────────────────────────────────────── --}}
-    <div>
-        <div class="section-eyebrow">At a Glance</div>
-        <div class="stat-grid">
-
-            <div class="stat-card s-blue">
-                <div class="stat-icon-wrap">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <line x1="8" y1="9" x2="16" y2="9"/>
-                        <line x1="8" y1="13" x2="16" y2="13"/>
-                        <line x1="8" y1="17" x2="13" y2="17"/>
-                    </svg>
-                </div>
-                <div class="stat-label">Total Tasks</div>
-                <div class="stat-value" data-count="{{ $stats['total'] }}">0</div>
-                <div class="stat-sub">across all boards</div>
+{{-- ── STAT CARDS ── --}}
+<div>
+    <div class="section-eyebrow">At a Glance</div>
+    <div class="stat-grid">
+        <div class="stat-card s-blue" onclick="toggleStatPanel('total', this)">
+            <div class="stat-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
             </div>
-
-            <div class="stat-card s-teal">
-                <div class="stat-icon-wrap">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="8" r="4"/>
-                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                    </svg>
-                </div>
-                <div class="stat-label">Assigned to Me</div>
-                <div class="stat-value" data-count="{{ $stats['my_tasks'] }}">0</div>
-                <div class="stat-sub">active tasks</div>
+            <div class="stat-label">Total Tasks</div>
+            <div class="stat-value" data-count="{{ $stats['total'] }}">0</div>
+            <div class="stat-sub">across all boards</div>
+        </div>
+        <div class="stat-card s-teal" onclick="toggleStatPanel('mine', this)">
+            <div class="stat-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             </div>
-
-            <div class="stat-card s-amber">
-                <div class="stat-icon-wrap">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                </div>
-                <div class="stat-label">Completed</div>
-                <div class="stat-value" data-count="{{ $stats['completed'] }}">0</div>
-                <div class="stat-sub">tasks closed</div>
+            <div class="stat-label">Assigned to Me</div>
+            <div class="stat-value" data-count="{{ $stats['my_tasks'] }}">0</div>
+            <div class="stat-sub">active tasks</div>
+        </div>
+        <div class="stat-card s-amber" onclick="toggleStatPanel('completed', this)">
+            <div class="stat-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10"/></svg>
             </div>
-
-            <div class="stat-card s-red">
-                <div class="stat-icon-wrap">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div class="stat-label">High Priority</div>
-                <div class="stat-value" data-count="{{ $stats['high_priority'] }}">0</div>
-                <div class="stat-sub">require attention</div>
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" data-count="{{ $stats['completed'] }}">0</div>
+            <div class="stat-sub">tasks closed</div>
+        </div>
+        <div class="stat-card s-red" onclick="toggleStatPanel('high', this)">
+            <div class="stat-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-
+            <div class="stat-label">High Priority</div>
+            <div class="stat-value" data-count="{{ $stats['high_priority'] }}">0</div>
+            <div class="stat-sub">require attention</div>
         </div>
     </div>
 
-    {{-- ── PROGRESS BAR ────────────────────────────────────────── --}}
+    {{-- ── EXPAND PANEL ── --}}
+    <div id="statPanel" style="display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease,margin .35s ease;margin-top:0;">
+        <div style="overflow:hidden;">
+            <div style="margin-top:.5rem;border-radius:14px;background:#fff;box-shadow:0 4px 20px rgba(16,24,40,.08);border:1.5px solid #e4e7ec;">
+                <div id="statPanel-inner" style="border-top:3px solid #e4e7ec;border-radius:14px 14px 0 0;">
+                    <div style="padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <div id="statPanel-title" style="font-size:15px;font-weight:800;color:#0d1117;letter-spacing:-.02em;"></div>
+                            <div id="statPanel-sub" style="font-size:12px;color:#6b7280;margin-top:1px;font-weight:500;"></div>
+                        </div>
+                        <button onclick="closeStatPanel()" style="width:30px;height:30px;border:1.5px solid #e4e7ec;border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4b5563;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div style="height:1px;background:#e4e7ec;"></div>
+                </div>
+                <div id="statPanel-list" style="padding:.75rem;display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── PROGRESS BAR ── --}}
     <div class="prog-card">
         <div class="prog-header">
             <div class="prog-title">Project Completion</div>
@@ -246,6 +278,16 @@
         </div>
     </div>
 
+    {{-- ── COMPLETION CHART ── --}}
+    <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+            <div class="card-title">Tasks Completed Over Time</div>
+            <div style="font-size:12px;color:#6b7280;font-weight:500;">Last 30 days</div>
+        </div>
+        <div style="padding:1rem 1.5rem 1.4rem;">
+            <canvas id="dashLineChart" style="width:100%!important;height:180px!important;display:block;"></canvas>
+        </div>
+    </div>
     {{-- ── TASKS + ACTIVITY ────────────────────────────────────── --}}
     <div class="body-grid">
 
@@ -379,5 +421,152 @@
             </div>
         </form>
     </x-modal>
+
+{{-- ── Stat Modal Script (must be AFTER tasks.js loads) ── --}}
+@push('scripts')
+<script>
+let activeStatType = null;
+let activeStatCard = null;
+
+const statColors = {
+    total:     { border: '#3b82f6', bg: '#eff6ff' },
+    mine:      { border: '#14b8a6', bg: '#f0fdfa' },
+    completed: { border: '#f59e0b', bg: '#fffbeb' },
+    high:      { border: '#ef4444', bg: '#fef2f2' },
+};
+
+async function toggleStatPanel(type, card) {
+    const panel = document.getElementById('statPanel');
+
+    if (activeStatType === type && panel.style.gridTemplateRows === '1fr') {
+        closeStatPanel();
+        return;
+    }
+
+    document.querySelectorAll('.stat-card').forEach(c => {
+        c.style.outline = 'none';
+        c.style.transform = 'none';
+    });
+
+    const color = statColors[type];
+    card.style.outline = `2.5px solid ${color.border}`;
+    card.style.transform = 'translateY(-3px)';
+    activeStatCard = card;
+    activeStatType = type;
+
+    // ← Apply background color to the whole panel body
+    document.getElementById('statPanel-inner').style.borderTop  = `3px solid ${color.border}`;
+    document.getElementById('statPanel-inner').style.background = color.bg;
+    document.getElementById('statPanel-list').style.background  = color.bg;
+
+    const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+    const titles = {
+        total:     { title: 'All Tasks',          sub: 'Every task across all boards' },
+        mine:      { title: 'Assigned to Me',      sub: 'Tasks currently assigned to you' },
+        completed: { title: 'Completed Tasks',     sub: 'Tasks that have been closed' },
+        high:      { title: 'High Priority Tasks', sub: 'Tasks that require urgent attention' },
+    };
+
+    document.getElementById('statPanel-title').textContent = titles[type].title;
+    document.getElementById('statPanel-sub').textContent   = titles[type].sub;
+    document.getElementById('statPanel-list').innerHTML    = '<div style="padding:1.5rem;text-align:center;color:#6b7280;font-size:14px;">Loading…</div>';
+
+    panel.style.gridTemplateRows = '1fr';
+    panel.style.marginTop        = '0';
+
+    try {
+        const res   = await fetch(`/dashboard/tasks?type=${type}`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
+        });
+        const tasks = await res.json();
+
+        if (!tasks.length) {
+            document.getElementById('statPanel-list').innerHTML = '<div style="padding:1.5rem;text-align:center;color:#6b7280;font-size:14px;">No tasks found.</div>';
+            return;
+        }
+
+        const priorityColor = { high: '#dc2626', medium: '#d97706', low: '#16a34a' };
+        const priorityBg    = { high: '#fef2f2', medium: '#fffbeb', low: '#f0fdf4' };
+
+        document.getElementById('statPanel-list').innerHTML = tasks.map(task => `
+            <div onclick="openDetail(${task.id})"
+                 style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;border:1.5px solid ${color.border}30;border-radius:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;background:#fff;"
+                 onmouseover="this.style.borderColor='${color.border}';this.style.boxShadow='0 4px 12px ${color.border}22';this.style.transform='translateY(-1px)'"
+                 onmouseout="this.style.borderColor='${color.border}30';this.style.boxShadow='none';this.style.transform='none'">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:700;color:#0d1117;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${task.title}</div>
+                    <div style="font-size:12px;color:#6b7280;font-weight:500;">${task.column ?? 'No column'}${task.assignee ? ' · ' + task.assignee : ''}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;margin-left:.75rem;">
+                    ${task.due_date ? `<span style="font-size:12px;color:#6b7280;font-weight:600;">${task.due_date}</span>` : ''}
+                    <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:5px;text-transform:uppercase;background:${priorityBg[task.priority]};color:${priorityColor[task.priority]};">${task.priority}</span>
+                </div>
+            </div>`).join('');
+
+    } catch(e) {
+        document.getElementById('statPanel-list').innerHTML = '<div style="padding:1.5rem;text-align:center;color:#dc2626;font-size:14px;">Failed to load tasks.</div>';
+    }
+}
+
+function closeStatPanel() {
+    const panel = document.getElementById('statPanel');
+    panel.style.gridTemplateRows = '0fr';
+    activeStatType = null;
+    if (activeStatCard) {
+        activeStatCard.style.outline   = 'none';
+        activeStatCard.style.transform = 'none';
+        activeStatCard = null;
+    }
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('dashLineChart');
+    if (!ctx) return;
+
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.color = '#8b94b3';
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($chartData->pluck('date')) !!},
+            datasets: [{
+                label: 'Completed',
+                data: {!! json_encode($chartData->pluck('count')) !!},
+                borderColor: '#2d52c4',
+                backgroundColor: (ctx) => {
+                    const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 160);
+                    g.addColorStop(0, 'rgba(45,82,196,.12)');
+                    g.addColorStop(1, 'rgba(45,82,196,0)');
+                    return g;
+                },
+                borderWidth: 2.5, tension: .4, fill: true,
+                pointRadius: 3, pointBackgroundColor: '#2d52c4',
+                pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 5.5,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index', intersect: false,
+                    backgroundColor: '#0d1424', titleColor: '#fff', bodyColor: '#8b94b3',
+                    padding: 11, cornerRadius: 9,
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10.5 } } },
+                y: { grid: { color: '#f0f2f5' }, border: { display: false }, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10.5 }, padding: 6 } }
+            }
+        }
+    });
+});
+</script>
+
+@endpush
 
 </x-app-layout>

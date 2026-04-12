@@ -1,8 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Connect Your Mailbox') }}
-        </h2>
+
     </x-slot>
 
     <div class="py-12">
@@ -43,7 +41,7 @@
                                 <div class="space-y-4">
                                     <div>
                                         <x-input-label for="email_imap_host" value="IMAP Server Host" />
-                                        <x-text-input id="email_imap_host" name="email_imap_host" type="text" class="mt-1 block w-full" placeholder="mail.yourdomain.com" required />
+                                        <x-text-input id="email_imap_host" name="email_imap_host" type="text" class="mt-1 block w-full" value="mail.staffcallture.com" required />
                                         <x-input-error class="mt-2" :messages="$errors->get('email_imap_host')" />
                                     </div>
                                     <div>
@@ -61,7 +59,7 @@
                                 <div class="space-y-4">
                                     <div>
                                         <x-input-label for="email_smtp_host" value="SMTP Server Host" />
-                                        <x-text-input id="email_smtp_host" name="email_smtp_host" type="text" class="mt-1 block w-full" placeholder="mail.yourdomain.com" required />
+                                        <x-text-input id="email_smtp_host" name="email_smtp_host" type="text" class="mt-1 block w-full" value="mail.staffcallture.com" required />
                                         <x-input-error class="mt-2" :messages="$errors->get('email_smtp_host')" />
                                     </div>
                                     <div>

@@ -55,6 +55,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('permission:can_delete_tasks');
     Route::get('/tasks/{task}/detail', [TaskController::class, 'detail'])->name('tasks.detail');
 
+    Route::get('/dashboard/tasks', [App\Http\Controllers\DashboardController::class, 'getTasks']);
+    
     // ── Profile ────────────────────────────────────────────────────────
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
