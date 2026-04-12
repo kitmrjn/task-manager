@@ -17,6 +17,7 @@ class Task extends Model
         'start_date',
         'order',
         'is_completed',
+        'completed_at',
     ];
 
     public function column()

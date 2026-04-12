@@ -71,7 +71,7 @@
 </x-slot>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Epilogue:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 :root{
     --c-bg:#f4f5f7;--c-white:#fff;--c-surface:#fafbfc;--c-border:#e2e5eb;--c-border-2:#d0d4dd;
     --c-text:#1a1e2e;--c-muted:#6b7491;--c-soft:#9ba3be;
@@ -83,7 +83,7 @@
     --shadow-sm:0 1px 4px rgba(27,43,94,0.07),0 1px 2px rgba(0,0,0,0.04);
     --shadow-md:0 4px 16px rgba(27,43,94,0.10);
 }
-body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-serif;}
+body{background:var(--c-bg);color:var(--c-text);font-family:'Plus Jakarta Sans',sans-serif;}
 .db-header-left{display:flex;align-items:center;gap:.9rem;}
 .db-avatar{width:44px;height:44px;border-radius:10px;background:var(--c-navy);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;}
 .db-greeting{font-size:11px;color:var(--c-soft);letter-spacing:.05em;text-transform:uppercase;font-weight:500;}
@@ -116,7 +116,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tk-nav-name{font-size:14px;font-weight:700;color:var(--c-text);line-height:1.25;}
 .tk-nav-email{font-size:12px;color:var(--c-soft);font-weight:500;}
 .tk-nav-chevron{color:var(--c-soft);flex-shrink:0;transition:transform .22s;}
-.tk-profile-item{display:flex;align-items:center;gap:.7rem;padding:.75rem 1.25rem;font-size:14px;font-weight:600;color:var(--c-muted);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;font-family:'Epilogue',sans-serif;transition:background .14s,color .14s;text-align:left;}
+.tk-profile-item{display:flex;align-items:center;gap:.7rem;padding:.75rem 1.25rem;font-size:14px;font-weight:600;color:var(--c-muted);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;font-family:'Plus Jakarta Sans',sans-serif;transition:background .14s,color .14s;text-align:left;}
 .tk-profile-item:hover{background:var(--c-surface);color:var(--c-text);}
 .tk-profile-item--danger{color:var(--c-red);}
 .tk-profile-item--danger:hover{background:var(--c-red-lt);color:var(--c-red);}
@@ -127,13 +127,13 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .hp-hero{background:var(--c-navy);border-radius:var(--radius);padding:2.8rem 2rem 2.5rem;text-align:center;animation:fadeUp .4s ease both;position:relative;overflow:hidden;}
 .hp-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 0%,rgba(45,82,196,.55) 0%,transparent 65%),radial-gradient(ellipse at 20% 100%,rgba(14,159,142,.3) 0%,transparent 55%);pointer-events:none;}
 .hp-hero-eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.6rem;}
-.hp-hero-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:.5rem;position:relative;}
+.hp-hero-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:.5rem;position:relative;}
 .hp-hero-sub{font-size:13.5px;color:rgba(255,255,255,.5);margin-bottom:1.8rem;position:relative;}
 .hp-search-wrap{max-width:500px;margin:0 auto;position:relative;}
-.hp-search-wrap input{width:100%;padding:.8rem 1rem .8rem 3rem;border:none;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:13.5px;color:var(--c-text);outline:none;box-shadow:0 4px 24px rgba(0,0,0,.22);background:#fff;box-sizing:border-box;}
+.hp-search-wrap input{width:100%;padding:.8rem 1rem .8rem 3rem;border:none;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;color:var(--c-text);outline:none;box-shadow:0 4px 24px rgba(0,0,0,.22);background:#fff;box-sizing:border-box;}
 .hp-search-wrap input::placeholder{color:var(--c-soft);}
 .hp-search-ico{position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
-.hp-search-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);background:var(--c-blue);color:#fff;border:none;border-radius:7px;padding:.5rem 1rem;font-family:'Epilogue',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s;}
+.hp-search-btn{position:absolute;right:5px;top:50%;transform:translateY(-50%);background:var(--c-blue);color:#fff;border:none;border-radius:7px;padding:.5rem 1rem;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s;}
 .hp-search-btn:hover{background:#1e3fa8;}
 .hp-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
 @media(max-width:620px){.hp-quick{grid-template-columns:1fr;}}
@@ -146,7 +146,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .hp-quick-sub{font-size:11.5px;color:var(--c-soft);margin-top:3px;line-height:1.4;}
 .hp-card{background:var(--c-white);border:1px solid var(--c-border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;animation:fadeUp .4s .15s ease both;}
 .hp-card-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--c-rule);display:flex;align-items:center;justify-content:space-between;}
-.hp-card-title{font-family:'Playfair Display',serif;font-size:15.5px;font-weight:700;color:var(--c-navy);}
+.hp-card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15.5px;font-weight:700;color:var(--c-navy);}
 .hp-faq-count{font-size:11.5px;color:var(--c-soft);font-weight:500;}
 .faq-item{border-bottom:1px solid var(--c-rule);}
 .faq-item:last-child{border-bottom:none;}
@@ -183,15 +183,15 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 
     <div class="hp-quick">
         <div class="hp-quick-card">
-            <div class="hp-quick-icon blue">🚀</div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d52c4" stroke-width="1.9" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             <div><div class="hp-quick-title">Getting Started</div><div class="hp-quick-sub">Set up your workspace in minutes</div></div>
         </div>
         <div class="hp-quick-card">
-            <div class="hp-quick-icon teal">📋</div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0e9f8e" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
             <div><div class="hp-quick-title">Managing Tasks</div><div class="hp-quick-sub">Create, assign, and track tasks</div></div>
         </div>
         <div class="hp-quick-card">
-            <div class="hp-quick-icon amber">👥</div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c47c0e" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <div><div class="hp-quick-title">Team Collaboration</div><div class="hp-quick-sub">Invite members and set roles</div></div>
         </div>
     </div>
@@ -222,7 +222,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
     </div>
 
     <div class="hp-contact-card">
-        <div class="hp-contact-icon">📧</div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d52c4" stroke-width="1.9" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         <div>
             <div class="hp-contact-title">Email Support</div>
             <div class="hp-contact-sub">We reply within 24 hours on business days</div>

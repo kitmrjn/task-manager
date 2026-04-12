@@ -51,8 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
+    if (document.getElementById('boardContainer')) {
     initSortable();
     startBoardSync();
+    }
 
     /* ================================================================
        CARD CLICK
@@ -731,14 +733,19 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ================================================================
        MODAL CLOSE BEHAVIOURS
     ================================================================ */
-    document.getElementById('detailModal').addEventListener('click', e => {
-        if (e.target === document.getElementById('detailModal')) closeDetail();
+    const detailModal = document.getElementById('detailModal');
+    if (detailModal) detailModal.addEventListener('click', e => {
+        if (e.target === detailModal) closeDetail();
     });
-    document.getElementById('createTaskModal').addEventListener('click', e => {
-        if (e.target === document.getElementById('createTaskModal')) document.getElementById('createTaskModal').style.display = 'none';
+
+    const createTaskModal = document.getElementById('createTaskModal');
+    if (createTaskModal) createTaskModal.addEventListener('click', e => {
+        if (e.target === createTaskModal) createTaskModal.style.display = 'none';
     });
-    document.getElementById('addColumnModal').addEventListener('click', e => {
-        if (e.target === document.getElementById('addColumnModal')) document.getElementById('addColumnModal').style.display = 'none';
+
+    const addColumnModal = document.getElementById('addColumnModal');
+    if (addColumnModal) addColumnModal.addEventListener('click', e => {
+        if (e.target === addColumnModal) addColumnModal.style.display = 'none';
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {

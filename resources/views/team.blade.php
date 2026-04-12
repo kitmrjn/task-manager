@@ -93,7 +93,7 @@
     </div>
 </x-slot>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Epilogue:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* Topnav sits outside .db-page so scope it explicitly */
 .tk-topnav, .tk-topnav *, .tk-topnav *::before, .tk-topnav *::after {
@@ -260,7 +260,7 @@
 .tk-nav-name  { font-size: 14px; font-weight: 700; color: var(--c-text); line-height: 1.25; }
 .tk-nav-email { font-size: 12px; color: var(--c-soft); font-weight: 500; }
 .tk-nav-chevron { color: var(--c-soft); flex-shrink: 0; transition: transform .22s; }
-.tk-profile-item { display: flex; align-items: center; gap: .7rem; padding: .75rem 1.25rem; font-size: 14px; font-weight: 600; color: var(--c-muted); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; font-family: 'Epilogue', sans-serif; transition: background .14s, color .14s; text-align: left; }
+.tk-profile-item { display: flex; align-items: center; gap: .7rem; padding: .75rem 1.25rem; font-size: 14px; font-weight: 600; color: var(--c-muted); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; font-family:'Plus Jakarta Sans',sans-serif; transition: background .14s, color .14s; text-align: left; }
 .tk-profile-item:hover { background: var(--c-surface); color: var(--c-text); }
 .tk-profile-item--danger { color: var(--c-red); }
 .tk-profile-item--danger:hover { background: var(--c-red-lt); color: var(--c-red); }
@@ -308,7 +308,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-sum-icon.blue{background:var(--c-blue-lt);}
 .tm-sum-icon.teal{background:var(--c-teal-lt);}
 .tm-sum-icon.amber{background:var(--c-amber-lt);}
-.tm-sum-val{font-family:'Playfair Display',serif;font-size:2.1rem;font-weight:700;color:var(--c-navy);line-height:1;}
+.tm-sum-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:2.1rem;font-weight:700;color:var(--c-navy);line-height:1;}
 .tm-sum-label{font-size:12px;color:var(--c-soft);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-top:.3rem;}
 
 /* ── Toolbar ── */
@@ -387,7 +387,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-card-action-btn{
     width:100%;padding:.55rem .8rem;border-radius:8px;
     border:1.5px solid #c4b5fd;background:var(--c-purple-lt);
-    font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;
     color:var(--c-purple);cursor:pointer;transition:all .15s;
     display:flex;align-items:center;justify-content:center;gap:.45rem;
 }
@@ -463,21 +463,21 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
     {{-- Summary --}}
     <div class="tm-summary">
         <div class="tm-sum-card">
-            <div class="tm-sum-icon blue">👥</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d52c4" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $teamCount }}</div>
                 <div class="tm-sum-label">Team Members</div>
             </div>
         </div>
         <div class="tm-sum-card">
-            <div class="tm-sum-icon teal">🟢</div>
+             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0e9f8e" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $activeCount }}</div>
                 <div class="tm-sum-label">Active Today</div>
             </div>
         </div>
         <div class="tm-sum-card">
-            <div class="tm-sum-icon amber">📋</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c47c0e" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $openTasks }}</div>
                 <div class="tm-sum-label">Open Tasks</div>
@@ -527,7 +527,9 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                     data-name="{{ $member->name }}"
                     data-email="{{ $member->email }}"
                     data-role="{{ $member->role ?? 'team_member' }}"
-                    title="Edit member">✏️</button>
+                    title="Edit member">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+</button>
                 @endif
             </div>{{-- end .tm-card-top --}}
 
@@ -556,7 +558,8 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                     {{ $perms->can_edit_tasks     ? 'true' : 'false' }}, 
                     {{ $perms->can_add_column     ? 'true' : 'false' }}
                 )">
-                    🔐 Manage Permissions
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Manage Permissions
                 </button>
             </div>
             @endif
@@ -601,7 +604,8 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
             <span class="tm-save-msg" id="saveMsg">✔ Saved!</span>
             <button class="tm-btn" onclick="deleteMember()" 
                 style="background:var(--c-red-lt);color:var(--c-red);border:1.5px solid var(--c-red);margin-right:auto;">
-                🗑️ Delete
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                Delete
             </button>
             <button class="tm-btn ghost" onclick="closeEdit()">Cancel</button>
             <button class="tm-btn primary" onclick="saveEdit()">Save Changes</button>

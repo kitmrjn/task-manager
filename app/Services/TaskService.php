@@ -13,17 +13,23 @@ class TaskService
     {
         $highestOrder = Task::where('board_column_id', $data['board_column_id'])->max('order');
 
-        $task = Task::create([
-            'board_column_id' => $data['board_column_id'],
+        $newColumnId   = $data['board_column_id'] ?? $task->board_column_id;
+        $newColumn     = \App\Models\BoardColumn::find($newColumnId);
+        $movingToDone  = $newColumn && $newColumn->title === 'Done' && $oldColumnId != $newColumnId;
+        $movingOutDone = $newColumn && $newColumn->title !== 'Done' && $oldColumnId != $newColumnId;
+
+        $task->update([
             'title'           => $data['title'],
             'description'     => $data['description'] ?? null,
-            'assigned_to'     => $data['assigned_to'] ?? null,
-            'creator_id'      => $userId,
+            'assigned_to'     => $data['assigned_to'] ?: null,
             'priority'        => $data['priority'],
             'due_date'        => $data['due_date'] ?? null,
             'start_date'      => $data['start_date'] ?? null,
-            'order'           => ($highestOrder ?? 0) + 1,
-            'is_completed'    => false,
+            'board_column_id' => $newColumnId,
+            'is_completed'    => array_key_exists('is_completed', $data) ? (bool) $data['is_completed'] : $task->is_completed,
+            'completed_at'    => $movingToDone  ? now()
+                            : ($movingOutDone ? null
+                            : $task->completed_at),
         ]);
 
         $task->activities()->create([
@@ -114,10 +120,15 @@ class TaskService
      */
     public function toggleCompletion(Task $task, int $userId): Task
     {
-        $task->update(['is_completed' => !$task->is_completed]);
-        
-        $status = $task->is_completed ? 'completed' : 'reopened';
-        
+        $isNowComplete = !$task->is_completed;
+
+        $task->update([
+            'is_completed' => $isNowComplete,
+            'completed_at' => $isNowComplete ? now() : null,
+        ]);
+
+        $status = $isNowComplete ? 'completed' : 'reopened';
+
         $task->activities()->create([
             'user_id'     => $userId,
             'action'      => $status,

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Task;
 use App\Models\TimeLog; // <-- ADDED THIS IMPORT
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -102,6 +103,28 @@ class DashboardController extends Controller
             ? round(($stats['completed'] / $stats['total']) * 100)
             : 0;
 
+        // ── Chart Data (Last 30 days) ─────────────────────────────────
+        $from = Carbon::now()->subDays(29)->startOfDay();
+        $to   = Carbon::now()->endOfDay();
+
+        $last30Raw = Task::whereNotNull('completed_at')
+            ->whereBetween('completed_at', [$from, $to])
+            ->selectRaw('DATE(completed_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $chartData = collect();
+        for ($i = 29; $i >= 0; $i--) {
+            $date  = Carbon::now()->subDays($i)->format('Y-m-d');
+            $found = $last30Raw->firstWhere('date', $date);
+            $chartData->push([
+                'date'  => Carbon::parse($date)->format('M d'),
+                'count' => $found ? (int) $found['count'] : 0,
+            ]);
+        }
+        $users = \App\Models\User::orderBy('name')->get();
+        $board = \App\Models\Board::with('columns')->first(); 
         // ── FINAL RETURN (Passes everything to the view safely!) ──────────
         return view('dashboard', compact(
             'stats',
@@ -110,7 +133,35 @@ class DashboardController extends Controller
             'greeting',
             'firstName',
             'pct',
-            'todaysLog' // <-- PASSED HERE!
+            'todaysLog', // <-- PASSED HERE!
+            'users',
+            'board',
+            'chartData'
         ));
+    }
+
+    public function getTasks(Request $request)
+    {
+        $type = $request->query('type', 'total');
+        $user = auth()->user();
+
+        $query = \App\Models\Task::with(['column', 'assignee']);
+
+        if ($type === 'mine')      $query->where('assigned_to', $user->id);
+        if ($type === 'completed') $query->where('is_completed', true);
+        if ($type === 'high')      $query->where('priority', 'high');
+
+        return response()->json(
+            $query->get()->map(fn($t) => [
+                'id'       => $t->id,
+                'title'    => $t->title,
+                'priority' => $t->priority,
+                'column'   => $t->column?->title,
+                'assignee' => $t->assignee?->name,
+                'due_date' => $t->due_date
+                    ? \Carbon\Carbon::parse($t->due_date)->format('M d')
+                    : null,
+            ])
+        );
     }
 }
