@@ -2,9 +2,7 @@
     @section('title', 'Calendar')
 <x-slot name="header">
     <div class="tk-topnav">
-
         <div class="tk-topnav-right">
-
             {{-- Notifications --}}
             <div class="tk-dropdown-wrap">
                 <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
@@ -20,9 +18,7 @@
                     </div>
                 </div>
             </div>
-
             <div class="tk-nav-divider"></div>
-
             {{-- Profile --}}
             <div class="tk-dropdown-wrap">
                 <div class="tk-nav-profile" id="profile-btn" role="button" tabindex="0">
@@ -42,7 +38,6 @@
                         </div>
                     </div>
                     <div class="tk-dropdown-body">
-                        {{-- FIXED: Settings available to all roles --}}
                         <a href="{{ route('settings.index') }}" class="tk-profile-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             My Profile & Settings
@@ -58,7 +53,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </x-slot>
@@ -72,21 +66,56 @@
         window.CAL_TASKS  = {!! json_encode($tasksByDate  ?? []) !!};
         window.CAL_EVENTS = {!! json_encode($eventsByDate ?? []) !!};
     </script>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite('resources/js/calendar.js')
 @endpush
 
 <div class="cal-page">
 
-    <div class="cal-page-header">
-        <h1 class="cal-page-title">Calendar</h1>
-        <p class="cal-page-sub">Stay on top of your schedule and deadlines.</p>
+<div class="cal-page-header">
+    <div class="cal-page-header-row">
+        <div>
+            <h1 class="cal-page-title">Calendar</h1>
+            <p class="cal-page-sub">Stay on top of your schedule and deadlines.</p>
+            {{-- Active calendar indicator --}}
+            <div class="cal-active-indicator" id="calActiveIndicator">
+                <span class="cal-active-indicator-dot" id="calActiveDot"></span>
+                <span id="calActiveLabel">All Calendars</span>
+            </div>
+        </div>
+
+        <div class="cal-subcal-bar">
+            <span class="cal-subcal-label">My Calendars</span>
+            <div class="cal-subcal-toggles">
+                <button class="cal-subcal-btn active" data-cal="personal" onclick="toggleSubCal('personal', this)">
+                    <span class="cal-subcal-dot" style="background:#7c3aed;"></span>
+                    Personal
+                    <span class="cal-subcal-check" style="background:#7c3aed;">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                </button>
+                <button class="cal-subcal-btn active" data-cal="team" onclick="toggleSubCal('team', this)">
+                    <span class="cal-subcal-dot" style="background:#1a8a5a;"></span>
+                    Team
+                    <span class="cal-subcal-check" style="background:#1a8a5a;">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                </button>
+                <button class="cal-subcal-btn active" data-cal="general" onclick="toggleSubCal('general', this)">
+                    <span class="cal-subcal-dot" style="background:#2d52c4;"></span>
+                    General
+                    <span class="cal-subcal-check" style="background:#2d52c4;">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                </button>
+            </div>
+        </div>
     </div>
+</div>
 
     <div class="cal-wrap">
 
-        {{-- ── CALENDAR GRID ──────────────────────────────── --}}
+        {{-- ── CALENDAR GRID ── --}}
         <div class="cal-card">
             <div class="cal-nav">
                 <button class="cal-btn" onclick="calPrev()">
@@ -116,12 +145,24 @@
             <div class="cal-grid" id="calCells"></div>
         </div>
 
-        {{-- ── UPCOMING EVENTS SIDEBAR ────────────────────── --}}
-        <div class="upcoming-card">
-            <div class="card-header">
-                <div class="card-title">Upcoming Events</div>
-            </div>
-            <div class="upcoming-list">
+        {{-- ── UPCOMING EVENTS SIDEBAR ── --}}
+{{-- ── TABBED SIDEBAR (Upcoming Events + Memos) ── --}}
+<div class="upcoming-card">
+
+    {{-- Tab Header --}}
+    <div class="sidebar-tabs">
+        <button class="sidebar-tab active" id="tab-upcoming" onclick="switchSidebarTab('upcoming')">
+            Upcoming
+        </button>
+        <button class="sidebar-tab" id="tab-memos" onclick="switchSidebarTab('memos')">
+            Memos
+            <span class="memo-unread-badge" id="memoUnreadBadge" style="display:none;"></span>
+        </button>
+    </div>
+
+    {{-- Upcoming Events Panel --}}
+    <div id="panel-upcoming" class="sidebar-panel">
+        <div class="upcoming-list">
 @php
     $upcomingAll = collect();
 
@@ -137,16 +178,11 @@
             'subLabel' => $isTaskOverdue
                 ? 'OVERDUE'
                 : ($diff == 0 ? 'Today' : ($diff == 1 ? 'Tomorrow' : $due->format('M j'))),
+            'calType'  => null,
         ]);
     }
 
-    $dotMap = [
-        'blue'   => 'var(--blue)',
-        'green'  => 'var(--green)',
-        'red'    => 'var(--red)',
-        'amber'  => 'var(--amber)',
-        'purple' => 'var(--purple)',
-    ];
+    $dotMap = ['blue'=>'var(--blue)','green'=>'var(--green)','red'=>'var(--red)','amber'=>'var(--amber)','purple'=>'var(--purple)'];
     $seenEventIds = [];
 
     foreach (($eventsByDate ?? []) as $dateStr => $evs) {
@@ -163,18 +199,22 @@
                     ? \Carbon\Carbon::createFromFormat('H:i', substr($ev['time'], 0, 5))->format('g:i A')
                     : 'All Day';
 
-                if (!empty($ev['recurrence_until'])) {
-                    $endDate = \Carbon\Carbon::parse($ev['recurrence_until']);
-                    $dateStrFormatted = $due->format('M j') . ' - ' . $endDate->format('M j');
-                } else {
-                    $dateStrFormatted = $due->format('M j');
-                }
+                $dateStrFormatted = !empty($ev['recurrence_until'])
+                    ? $due->format('M j') . ' - ' . \Carbon\Carbon::parse($ev['recurrence_until'])->format('M j')
+                    : $due->format('M j');
+
+                $calBadge = match($ev['calendar_type'] ?? 'general') {
+                    'personal' => '🔵 Personal',
+                    'team'     => '🟢 Team',
+                    default    => '🟣 General',
+                };
 
                 $upcomingAll->push([
                     'title'    => $ev['title'],
                     'diff'     => $diff,
                     'dotColor' => $dot,
                     'subLabel' => $dateStrFormatted . ' · ' . $timeLbl,
+                    'calType'  => $calBadge,
                 ]);
             }
         }
@@ -183,24 +223,114 @@
     $upcomingAll = $upcomingAll->sortBy('diff')->values();
 @endphp
 
-                @forelse($upcomingAll as $item)
-                    <div class="upcoming-item">
-                        <div class="up-dot" style="background:{{ $item['dotColor'] }};"></div>
-                        <div class="up-body">
-                            <div class="up-title">{{ $item['title'] }}</div>
-                            <div class="up-sub">{{ $item['subLabel'] }}</div>
-                        </div>
+            @forelse($upcomingAll as $item)
+                <div class="upcoming-item">
+                    <div class="up-dot" style="background:{{ $item['dotColor'] }};"></div>
+                    <div class="up-body">
+                        <div class="up-title">{{ $item['title'] }}</div>
+                        <div class="up-sub">{{ $item['subLabel'] }}</div>
+                        @if($item['calType'])
+                            <div class="up-cal-badge">{{ $item['calType'] }}</div>
+                        @endif
                     </div>
-                @empty
-                    <div style="padding:2rem 1.4rem;text-align:center;color:var(--soft);font-size:14px;font-weight:500;">
-                        No upcoming events 🎉
-                    </div>
-                @endforelse
+                </div>
+            @empty
+                <div style="padding:2rem 1.4rem;text-align:center;color:var(--soft);font-size:14px;font-weight:500;">
+                    No upcoming events 🎉
+                </div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Memos Panel --}}
+    <div id="panel-memos" class="sidebar-panel" style="display:none;">
+
+        {{-- Create Memo button (manager/super_admin only) --}}
+        @if(auth()->user()->isAtLeastManager())
+        <div class="memo-create-wrap">
+            <button class="memo-create-btn" onclick="openMemoModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Memo
+            </button>
+        </div>
+        @endif
+
+        <div class="memo-list" id="memoList">
+            <div style="padding:2rem 1.4rem;text-align:center;color:var(--soft);font-size:14px;">
+                Loading memos…
+            </div>
+        </div>
+    </div>
+
+</div>{{-- /.upcoming-card --}}
+
+
+{{-- ================================================================
+     CREATE MEMO MODAL (manager/super_admin only)
+================================================================ --}}
+@if(auth()->user()->isAtLeastManager())
+<div id="memoModal" class="cal-modal-overlay" style="z-index:700;">
+<div class="cal-modal" style="max-width:480px;">
+    <div class="cal-modal-head">
+        <div class="cal-modal-title">New Memo</div>
+        <button class="cal-modal-close" onclick="closeMemoModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div class="cal-modal-body">
+
+        {{-- Title --}}
+        <div>
+            <div class="cal-field-label">Title</div>
+            <input type="text" id="memo-title" class="cal-field-input" placeholder="e.g. Reminder: Submit EOD Reports">
+        </div>
+
+        {{-- Content --}}
+        <div>
+            <div class="cal-field-label">Message</div>
+            <textarea id="memo-content" class="cal-field-textarea" style="min-height:110px;" placeholder="Write your announcement or note here…"></textarea>
+        </div>
+
+        {{-- Audience --}}
+        <div>
+            <div class="cal-field-label">Send To</div>
+            <div class="memo-audience-tabs">
+                <button type="button" class="memo-aud-btn active" data-aud="all" onclick="selectAudience('all', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Everyone
+                </button>
+                <button type="button" class="memo-aud-btn" data-aud="campaign" onclick="selectAudience('campaign', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Campaign
+                </button>
+                <button type="button" class="memo-aud-btn" data-aud="user" onclick="selectAudience('user', this)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Person
+                </button>
+            </div>
+
+            {{-- Campaign picker --}}
+            <div id="memo-campaign-wrap" style="display:none;margin-top:.75rem;">
+                <select id="memo-campaign-id" class="cal-field-input">
+                    <option value="">Select campaign…</option>
+                </select>
+            </div>
+
+            {{-- User picker --}}
+            <div id="memo-user-wrap" style="display:none;margin-top:.75rem;">
+                <input type="text" id="memo-user-search" class="cal-field-input" placeholder="Search name…" oninput="filterMemoUsers(this.value)">
+                <div id="memo-user-list" class="memo-user-list"></div>
             </div>
         </div>
 
-    </div>{{-- /.cal-wrap --}}
-</div>{{-- /.cal-page --}}
+    </div>
+    <div class="cal-modal-footer">
+        <button class="cal-btn-ghost" onclick="closeMemoModal()">Cancel</button>
+        <button class="cal-btn-primary" onclick="saveMemo()">Send Memo</button>
+    </div>
+</div>
+</div>
+@endif
 
 {{-- ================================================================
      ADD EVENT MODAL
@@ -231,6 +361,28 @@
             <div>
                 <div class="cal-field-label">Time <span class="optional">(optional)</span></div>
                 <input type="time" id="ev-time" class="cal-field-input">
+            </div>
+        </div>
+
+        {{-- Calendar Type --}}
+        <div>
+            <div class="cal-field-label">Calendar</div>
+            <div class="cal-subcal-picker">
+                <button type="button" class="cal-subcal-pick-btn active" data-type="personal" onclick="selectCalType('personal', this)">
+                    <span class="cal-subcal-dot" style="background:#7c3aed;"></span>
+                    Personal
+                    <span class="cal-subcal-pick-hint">Only you</span>
+                </button>
+                <button type="button" class="cal-subcal-pick-btn" data-type="team" onclick="selectCalType('team', this)">
+                    <span class="cal-subcal-dot" style="background:#1a8a5a;"></span>
+                    Team
+                    <span class="cal-subcal-pick-hint">Same campaign</span>
+                </button>
+                <button type="button" class="cal-subcal-pick-btn" data-type="general" onclick="selectCalType('general', this)">
+                    <span class="cal-subcal-dot" style="background:#2d52c4;"></span>
+                    General
+                    <span class="cal-subcal-pick-hint">Everyone</span>
+                </button>
             </div>
         </div>
 

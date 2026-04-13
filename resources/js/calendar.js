@@ -9,23 +9,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const tasksByDate  = window.CAL_TASKS  || {};
     const eventsByDate = window.CAL_EVENTS || {};
 
-    window.cur                  = new Date();
-    let selectedEventColor   = 'blue';
-    let selectedEventType    = 'meeting';
-    let currentViewEventId   = null;
-    let currentViewEventDate = null;
-    let currentView          = 'month';
+    window.cur                = new Date();
+    let selectedEventColor    = 'blue';
+    let selectedEventType     = 'meeting';
+    let selectedCalType       = 'personal';   // ← NEW
+    let currentViewEventId    = null;
+    let currentViewEventDate  = null;
+    let currentView           = 'month';
+
+    // Which sub-calendars are toggled ON
+    const activeSubCals = { personal: true, team: true, general: true }; // ← NEW
+
+    /* ============================================================
+       SUB-CALENDAR TOGGLE
+    ============================================================ */
+window.toggleSubCal = function(type, btn) {
+    activeSubCals[type] = !activeSubCals[type];
+    btn.classList.toggle('active', activeSubCals[type]);
+    updateActiveIndicator();
+    renderCal();
+};
+
+function updateActiveIndicator() {
+    const dot   = document.getElementById('calActiveDot');
+    const label = document.getElementById('calActiveLabel');
+    if (!dot || !label) return;
+
+    const active = Object.entries(activeSubCals).filter(([, v]) => v).map(([k]) => k);
+    const colors = { personal: '#7c3aed', team: '#1a8a5a', general: '#2d52c4' };
+    const names  = { personal: 'Personal', team: 'Team', general: 'General' };
+
+    if (active.length === 3 || active.length === 0) {
+        dot.style.background = 'var(--soft)';
+        label.textContent = active.length === 0 ? 'No calendars shown' : 'All Calendars';
+    } else if (active.length === 1) {
+        dot.style.background = colors[active[0]];
+        label.textContent = names[active[0]] + ' Calendar';
+    } else {
+        dot.style.background = colors[active[0]];
+        label.textContent = active.map(k => names[k]).join(' & ');
+    }
+}
+
+    /* ============================================================
+       CALENDAR TYPE PICKER (in Add Event modal)
+    ============================================================ */
+    window.selectCalType = function(type, btn) {
+        selectedCalType = type;
+        document.querySelectorAll('.cal-subcal-pick-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    /* ============================================================
+       FILTER HELPER — should we show this event?
+    ============================================================ */
+    function shouldShowEvent(ev) {
+        if (ev.type === 'holiday') return true; // always show holidays
+        const calType = ev.calendar_type || 'general';
+        return activeSubCals[calType] !== false;
+    }
 
     /* ============================================================
        HOLIDAY COLOR CONFIG
-       These map holidayType → CSS class used in cal-event pills.
-       The actual colors are defined in calendar.css.
     ============================================================ */
     const HOLIDAY_COLOR_CLASS = {
-        'ph-regular':         'ph-regular',         // coral/rose
-        'ph-special-nonwork': 'ph-special-nonwork', // deep orange
-        'ph-special-work':    'ph-special-work',     // slate teal
-        'us-holiday':         'us-holiday',          // neon yellow
+        'ph-regular':         'ph-regular',
+        'ph-special-nonwork': 'ph-special-nonwork',
+        'ph-special-work':    'ph-special-work',
+        'us-holiday':         'us-holiday',
     };
 
     const HOLIDAY_TYPE_LABEL = {
@@ -33,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
         'ph-special-nonwork': '🇵🇭 Special Non-Working',
         'ph-special-work':    '🇵🇭 Special Working',
         'us-holiday':         '🇺🇸 US Holiday',
+    };
+
+    const CAL_TYPE_LABEL = {
+        personal: '🔵 Personal',
+        team:     '🟢 Team',
+        general:  '🟣 General',
     };
 
     /* ============================================================
@@ -96,6 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
 
+    // Get the left-border class for a sub-calendar type
+    function calTypeClass(ev) {
+        if (ev.type === 'holiday' || ev.holidayType) return '';
+        return `cal-${ev.calendar_type || 'general'}`;
+    }
+
     /* ============================================================
        LIST VIEW
     ============================================================ */
@@ -111,18 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         allDates.forEach(date => {
+            const filteredEvents = (window.CAL_EVENTS[date] || []).filter(shouldShowEvent);
+            const tasks = window.CAL_TASKS[date] || [];
+            if (!filteredEvents.length && !tasks.length) return;
+
             html += `<div class="list-date-group">
                         <div class="list-date-heading">${new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday:'long', month:'long', day:'numeric', year:'numeric' })}</div>`;
 
-            (window.CAL_EVENTS[date] || []).forEach(ev => {
+            filteredEvents.forEach(ev => {
                 const colorClass = ev.holidayType ? HOLIDAY_COLOR_CLASS[ev.holidayType] : (ev.color || 'blue');
-                html += `<div class="cal-event ${colorClass}" style="margin-bottom:5px;cursor:pointer;"
-                              onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date,holidayType:ev.holidayType}).replace(/"/g,'&quot;')})">
+                const ctClass    = calTypeClass(ev);
+                html += `<div class="cal-event ${colorClass} ${ctClass}" style="margin-bottom:5px;cursor:pointer;"
+                              onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date,holidayType:ev.holidayType,calendarType:ev.calendar_type,isMine:ev.is_mine}).replace(/"/g,'&quot;')})">
                             <small>${ev.time ? formatTime(ev.time) : 'All Day'}</small> — ${ev.title}
                          </div>`;
             });
 
-            (window.CAL_TASKS[date] || []).forEach(t => {
+            tasks.forEach(t => {
                 html += `<div class="cal-event ${getPriorityColor(t.priority)}" style="margin-bottom:5px;opacity:.8;">
                             <small>Task</small> — ${t.title} ${t.is_completed ? '✓' : ''}
                          </div>`;
@@ -146,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const d   = cur.getDate();
         const key = isoDate(y, m, d);
 
-        const events = window.CAL_EVENTS[key] || [];
+        const events = (window.CAL_EVENTS[key] || []).filter(shouldShowEvent);
         const tasks  = window.CAL_TASKS[key]  || [];
 
         const HOUR_H = 56;
@@ -168,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const colorClass = ev.holidayType ? HOLIDAY_COLOR_CLASS[ev.holidayType] : (ev.color || 'blue');
             eventBlocks += `<div class="day-event-block ${colorClass}"
                                  style="top:${top}px;"
-                                 onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date:key,holidayType:ev.holidayType}).replace(/"/g,'&quot;')})">
+                                 onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date:key,holidayType:ev.holidayType,calendarType:ev.calendar_type,isMine:ev.is_mine}).replace(/"/g,'&quot;')})">
                                 <span class="day-event-time">${formatTime(ev.time)}</span>
                                 <span class="day-event-title">${ev.title}</span>
                             </div>`;
@@ -179,8 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let allDayHtml = '';
         allDayEvents.forEach(ev => {
             const colorClass = ev.holidayType ? HOLIDAY_COLOR_CLASS[ev.holidayType] : (ev.color || 'blue');
-            allDayHtml += `<div class="cal-event ${colorClass}" style="cursor:pointer;margin-bottom:3px;"
-                                onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date:key,holidayType:ev.holidayType}).replace(/"/g,'&quot;')})">${ev.title}</div>`;
+            const ctClass    = calTypeClass(ev);
+            allDayHtml += `<div class="cal-event ${colorClass} ${ctClass}" style="cursor:pointer;margin-bottom:3px;"
+                                onclick="viewItem(${JSON.stringify({label:ev.title,color:colorClass,type:'event',id:ev.id,time:ev.time,desc:ev.description,etype:ev.type,date:key,holidayType:ev.holidayType,calendarType:ev.calendar_type,isMine:ev.is_mine}).replace(/"/g,'&quot;')})">${ev.title}</div>`;
         });
         allDayTasks.forEach(t => {
             const c = getPriorityColor(t.priority);
@@ -223,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < firstDay; i++) miniCells += '<div class="mini-cell"></div>';
             for (let d = 1; d <= daysInMonth; d++) {
                 const key      = isoDate(y, mo, d);
-                const hasItems = (window.CAL_EVENTS[key] && window.CAL_EVENTS[key].length) ||
+                const hasItems = ((window.CAL_EVENTS[key] || []).filter(shouldShowEvent).length) ||
                                  (window.CAL_TASKS[key]  && window.CAL_TASKS[key].length);
                 const isToday  = y === today.getFullYear() && mo === today.getMonth() && d === today.getDate();
                 miniCells += `<div class="mini-cell${isToday ? ' mini-today' : ''}${hasItems ? ' mini-has-event' : ''}"
@@ -275,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const key     = isoDate(y, m, d);
 
             const tasks  = window.CAL_TASKS[key]  || [];
-            const events = window.CAL_EVENTS[key] || [];
+            const events = (window.CAL_EVENTS[key] || []).filter(shouldShowEvent);
 
             const allItems = [
                 ...tasks.map(t => {
@@ -283,9 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return { label:t.title, color:isOverdue?'red':getPriorityColor(t.priority), done:t.is_completed, type:'task', id:t.id, column:t.column, date:key, isOverdue };
                 }),
                 ...events.map(e => {
-                    // Holiday events get their special color class
                     const colorClass = e.holidayType ? HOLIDAY_COLOR_CLASS[e.holidayType] : (e.color || 'blue');
-                    return { label:e.title, color:colorClass, done:false, type:'event', id:e.id, time:e.time, desc:e.description, etype:e.type, date:key, isOverdue:false, holidayType:e.holidayType };
+                    return { label:e.title, color:colorClass, done:false, type:'event', id:e.id, time:e.time, desc:e.description, etype:e.type, date:key, isOverdue:false, holidayType:e.holidayType, calendarType:e.calendar_type, isMine:e.is_mine };
                 })
             ];
 
@@ -293,7 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let evtHtml = allItems.slice(0, showMax).map(item => {
                 const strike       = item.done ? 'text-decoration:line-through;opacity:.55;' : '';
                 const overdueClass = item.isOverdue ? 'overdue' : '';
-                return `<div class="cal-event ${item.color} ${overdueClass}"
+                const ctClass      = item.type === 'event' ? `cal-${item.calendarType || 'general'}` : '';
+                return `<div class="cal-event ${item.color} ${overdueClass} ${ctClass}"
                              style="${strike}"
                              title="${item.label}${item.isOverdue ? ' (Overdue)' : ''}"
                              onclick="event.stopPropagation();viewItem(${JSON.stringify(item).replace(/"/g,'&quot;')})"
@@ -318,23 +387,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let i = 1; i <= rem; i++) {
                 const key    = isoDate(nextYear, nextMonth, i);
-                const events = window.CAL_EVENTS[key] || [];
+                const events = (window.CAL_EVENTS[key] || []).filter(shouldShowEvent);
                 const tasks  = window.CAL_TASKS[key]  || [];
 
                 const allItems = [
                     ...tasks.map(t => ({ label: t.title, color: getPriorityColor(t.priority), type: 'task', id: t.id, column: t.column, date: key })),
                     ...events.map(e => {
                         const colorClass = e.holidayType ? HOLIDAY_COLOR_CLASS[e.holidayType] : (e.color || 'blue');
-                        return { label: e.title, color: colorClass, type: 'event', id: e.id, time: e.time, desc: e.description, etype: e.type, date: key, holidayType: e.holidayType };
+                        return { label: e.title, color: colorClass, type: 'event', id: e.id, time: e.time, desc: e.description, etype: e.type, date: key, holidayType: e.holidayType, calendarType: e.calendar_type, isMine: e.is_mine };
                     })
                 ];
 
-                let evtHtml = allItems.slice(0, 2).map(item =>
-                    `<div class="cal-event ${item.color}"
-                          style="opacity:.7;"
-                          onclick="event.stopPropagation();viewItem(${JSON.stringify(item).replace(/"/g,'&quot;')})"
-                    >${item.label}</div>`
-                ).join('');
+                let evtHtml = allItems.slice(0, 2).map(item => {
+                    const ctClass = item.type === 'event' ? `cal-${item.calendarType || 'general'}` : '';
+                    return `<div class="cal-event ${item.color} ${ctClass}"
+                                  style="opacity:.7;"
+                                  onclick="event.stopPropagation();viewItem(${JSON.stringify(item).replace(/"/g,'&quot;')})"
+                            >${item.label}</div>`;
+                }).join('');
 
                 html += `<div class="cal-cell other" onclick="openAddEvent('${key}')">
                             ${evtHtml}
@@ -395,9 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let bodyHtml = '';
 
         if (item.type === 'task') {
-            deleteBtn.style.display  = 'none';
-            currentViewEventId       = null;
-            currentViewEventDate     = null;
+            deleteBtn.style.display = 'none';
+            currentViewEventId      = null;
+            currentViewEventDate    = null;
             bodyHtml = `
                 <div class="cal-ev-row">
                     <div class="cal-ev-row-label">Type</div>
@@ -410,19 +480,24 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             currentViewEventId   = item.id;
             currentViewEventDate = item.date;
-            // Hide delete for holidays (either type=holiday or has a holidayType)
             const isHoliday = item.etype === 'holiday' || !!item.holidayType;
-            deleteBtn.style.display = isHoliday ? 'none' : 'flex';
+            // Only show delete if it's the creator or super admin (is_mine from server)
+            deleteBtn.style.display = (isHoliday || !item.isMine) ? 'none' : 'flex';
 
             const typeLabel = item.holidayType
                 ? HOLIDAY_TYPE_LABEL[item.holidayType] || 'Holiday'
                 : (item.etype === 'meeting' ? 'Meeting' : item.etype === 'reminder' ? 'Reminder' : 'Note');
+
+            const calLabel = !isHoliday && item.calendarType
+                ? CAL_TYPE_LABEL[item.calendarType] || ''
+                : '';
 
             bodyHtml = `
                 <div class="cal-ev-row">
                     <div class="cal-ev-row-label">Type</div>
                     <div class="cal-ev-row-value">${typeLabel}</div>
                 </div>
+                ${calLabel ? `<div class="cal-ev-row"><div class="cal-ev-row-label">Calendar</div><div class="cal-ev-row-value">${calLabel}</div></div>` : ''}
                 ${item.time ? `<div class="cal-ev-row"><div class="cal-ev-row-label">Time</div><div class="cal-ev-row-value">${formatTime(item.time)}</div></div>` : ''}
                 ${item.desc ? `<div class="cal-ev-row"><div class="cal-ev-row-label">Notes</div><div class="cal-ev-row-value" style="font-weight:500;color:var(--muted);">${item.desc}</div></div>` : ''}`;
         }
@@ -482,6 +557,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRecurrenceOptions();
         selectEventType('meeting');
         selectEventColor('blue');
+        // Reset calendar type to personal
+        selectedCalType = 'personal';
+        document.querySelectorAll('.cal-subcal-pick-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.type === 'personal');
+        });
         document.getElementById('addEventModal').classList.add('open');
     };
 
@@ -525,7 +605,8 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({
                 title, date, time: time || null, description: desc || null,
                 type: selectedEventType, color: selectedEventColor,
-                recurrence, recurrence_until: until || null
+                recurrence, recurrence_until: until || null,
+                calendar_type: selectedCalType,   // ← NEW
             })
         })
         .then(r => r.json())
@@ -556,11 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const year     = cur.getFullYear();
         const nextYear = year + 1;
 
-        /**
-         * Fetch from a given endpoint and merge into window.CAL_EVENTS.
-         * Each holiday entry will have a `holidayType` field so the
-         * renderer knows which CSS class to apply.
-         */
         async function fetchAndMerge(endpoint, year) {
             try {
                 const res = await fetch(`${endpoint}/${year}`);
@@ -569,21 +645,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 holidays.forEach(h => {
                     if (!window.CAL_EVENTS[h.date]) window.CAL_EVENTS[h.date] = [];
-
-                    // Deduplicate: use holidayType+date as a composite key
                     const uid = `holiday-${h.holidayType}-${h.date}`;
                     const alreadyAdded = window.CAL_EVENTS[h.date].some(e => e.id === uid);
                     if (alreadyAdded) return;
 
                     window.CAL_EVENTS[h.date].push({
-                        id:          uid,
-                        title:       h.localName || h.name,
-                        color:       HOLIDAY_COLOR_CLASS[h.holidayType] || 'green',
-                        holidayType: h.holidayType,
-                        type:        'holiday',
-                        time:        null,
-                        description: h.name + (h.country === 'US' ? ' (US Federal Holiday)' : ''),
-                        country:     h.country,
+                        id:            uid,
+                        title:         h.localName || h.name,
+                        color:         HOLIDAY_COLOR_CLASS[h.holidayType] || 'green',
+                        holidayType:   h.holidayType,
+                        type:          'holiday',
+                        time:          null,
+                        description:   h.name + (h.country === 'US' ? ' (US Federal Holiday)' : ''),
+                        country:       h.country,
+                        calendar_type: null, // holidays bypass sub-cal filtering
                     });
                 });
             } catch (e) {
@@ -591,11 +666,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Philippine holidays (current + next year)
         await fetchAndMerge('/holidays', year);
         await fetchAndMerge('/holidays', nextYear);
-
-        // US holidays (current + next year)
         await fetchAndMerge('/holidays/us', year);
         await fetchAndMerge('/holidays/us', nextYear);
 
@@ -720,3 +792,333 @@ function startCalendarSync() {
         }
     }, 10000);
 }
+
+/**
+ * memo.js — Memo sidebar tab functionality
+ * Include this after calendar.js in calendar.blade.php:
+ * @vite('resources/js/memo.js')
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+
+    let memoAudienceType   = 'all';
+    let selectedUserId     = null;
+    let allUsers           = [];
+    let allCampaigns       = [];
+    const isManager        = window.IS_MANAGER ?? false;
+
+    /* ============================================================
+       SIDEBAR TAB SWITCHING
+    ============================================================ */
+    window.switchSidebarTab = function(tab) {
+        document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.sidebar-panel').forEach(p => p.style.display = 'none');
+
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        document.getElementById(`panel-${tab}`).style.display = 'flex';
+        document.getElementById(`panel-${tab}`).style.flexDirection = 'column';
+
+        if (tab === 'memos') loadMemos();
+    };
+
+    /* ============================================================
+       LOAD MEMOS
+    ============================================================ */
+    async function loadMemos() {
+        const list = document.getElementById('memoList');
+        if (!list) return;
+
+        try {
+            const res   = await fetch('/memos', { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } });
+            const memos = await res.json();
+
+            updateUnreadBadge(memos);
+
+            if (!memos.length) {
+                list.innerHTML = `<div style="padding:2rem 1.4rem;text-align:center;color:var(--soft);font-size:14px;font-weight:500;">No memos yet 📋</div>`;
+                return;
+            }
+
+            list.innerHTML = memos.map(m => renderMemoItem(m)).join('');
+
+        } catch (e) {
+            list.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--red);font-size:13px;">Failed to load memos.</div>`;
+        }
+    }
+
+    function renderMemoItem(m) {
+        const readBtn = !m.is_read
+            ? `<button class="memo-read-btn" onclick="markMemoRead(${m.id}, this)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Mark as read
+               </button>`
+            : `<span style="font-size:11px;color:var(--soft);font-weight:600;display:flex;align-items:center;gap:.3rem;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                Read
+               </span>`;
+
+        const deleteBtn = m.can_delete
+            ? `<button class="memo-delete-btn" onclick="deleteMemo(${m.id}, this)" title="Delete">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+               </button>`
+            : '';
+
+        return `
+            <div class="memo-item ${m.is_read ? 'is-read' : ''}" id="memo-item-${m.id}">
+                <div class="memo-item-header">
+                    <div class="memo-item-title">${escHtml(m.title)}</div>
+                    ${!m.is_read ? '<div class="memo-unread-dot"></div>' : ''}
+                </div>
+                <div class="memo-item-content">${escHtml(m.content)}</div>
+                <div class="memo-item-meta">
+                    <span class="memo-item-info">By ${escHtml(m.creator)} · ${m.created_at}</span>
+                    <span class="memo-item-audience">${escHtml(m.audience)}</span>
+                </div>
+                <div class="memo-item-actions">
+                    ${readBtn}
+                    ${deleteBtn}
+                </div>
+            </div>`;
+    }
+
+    function updateUnreadBadge(memos) {
+        const badge = document.getElementById('memoUnreadBadge');
+        if (!badge) return;
+        const unread = memos.filter(m => !m.is_read).length;
+        if (unread > 0) {
+            badge.textContent = unread;
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    /* ============================================================
+       MARK AS READ
+    ============================================================ */
+    window.markMemoRead = async function(memoId, btn) {
+        btn.disabled = true;
+        try {
+            await fetch(`/memos/${memoId}/read`, {
+                method: 'PATCH',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+            });
+
+            const item = document.getElementById(`memo-item-${memoId}`);
+            if (item) {
+                item.classList.add('is-read');
+                // Replace the button with "Read" label
+                const actionsDiv = item.querySelector('.memo-item-actions');
+                if (actionsDiv) {
+                    const readSpan = document.createElement('span');
+                    readSpan.style.cssText = 'font-size:11px;color:var(--soft);font-weight:600;display:flex;align-items:center;gap:.3rem;';
+                    readSpan.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Read`;
+                    btn.replaceWith(readSpan);
+                }
+                // Remove unread dot
+                const dot = item.querySelector('.memo-unread-dot');
+                if (dot) dot.remove();
+            }
+
+            // Update badge count
+            const badge = document.getElementById('memoUnreadBadge');
+            if (badge) {
+                const current = parseInt(badge.textContent) || 0;
+                const newCount = current - 1;
+                if (newCount <= 0) {
+                    badge.style.display = 'none';
+                } else {
+                    badge.textContent = newCount;
+                }
+            }
+        } catch (e) {
+            btn.disabled = false;
+        }
+    };
+
+    /* ============================================================
+       DELETE MEMO
+    ============================================================ */
+    window.deleteMemo = async function(memoId, btn) {
+        if (!confirm('Delete this memo?')) return;
+        btn.disabled = true;
+        try {
+            await fetch(`/memos/${memoId}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+            });
+
+            const item = document.getElementById(`memo-item-${memoId}`);
+            if (item) {
+                item.style.transition = 'opacity .25s, transform .25s';
+                item.style.opacity    = '0';
+                item.style.transform  = 'translateX(20px)';
+                setTimeout(() => item.remove(), 260);
+            }
+        } catch (e) {
+            btn.disabled = false;
+        }
+    };
+
+    /* ============================================================
+       CREATE MEMO MODAL
+    ============================================================ */
+    window.openMemoModal = async function() {
+        // Reset form
+        document.getElementById('memo-title').value   = '';
+        document.getElementById('memo-content').value = '';
+        selectedUserId   = null;
+        memoAudienceType = 'all';
+        document.querySelectorAll('.memo-aud-btn').forEach(b => b.classList.toggle('active', b.dataset.aud === 'all'));
+        document.getElementById('memo-campaign-wrap').style.display = 'none';
+        document.getElementById('memo-user-wrap').style.display     = 'none';
+
+        // Load audience options if not loaded yet
+        if (!allCampaigns.length) {
+            try {
+                const res  = await fetch('/memos/audience-options', { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                allCampaigns = data.campaigns || [];
+                allUsers     = data.users     || [];
+
+                // Populate campaign select
+                const sel = document.getElementById('memo-campaign-id');
+                sel.innerHTML = '<option value="">Select campaign…</option>';
+                allCampaigns.forEach(c => {
+                    sel.innerHTML += `<option value="${c.id}">${escHtml(c.name)}</option>`;
+                });
+            } catch (e) {
+                console.error('Failed to load audience options', e);
+            }
+        }
+
+        document.getElementById('memoModal').classList.add('open');
+    };
+
+    window.closeMemoModal = function() {
+        document.getElementById('memoModal').classList.remove('open');
+    };
+
+    window.selectAudience = function(type, btn) {
+        memoAudienceType = type;
+        document.querySelectorAll('.memo-aud-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.getElementById('memo-campaign-wrap').style.display = type === 'campaign' ? 'block' : 'none';
+        document.getElementById('memo-user-wrap').style.display     = type === 'user'     ? 'block' : 'none';
+
+        if (type === 'user') renderUserList('');
+    };
+
+    function renderUserList(filter) {
+        const list = document.getElementById('memo-user-list');
+        if (!list) return;
+
+        const filtered = filter
+            ? allUsers.filter(u => u.name.toLowerCase().includes(filter.toLowerCase()))
+            : allUsers;
+
+        if (!filtered.length) {
+            list.innerHTML = `<div style="padding:.75rem 1rem;font-size:13px;color:var(--soft);">No users found</div>`;
+            return;
+        }
+
+        // Group by campaign
+        const campaignMap = {};
+        filtered.forEach(u => {
+            const campName = allCampaigns.find(c => c.id === u.campaign_id)?.name || 'No Campaign';
+            if (!campaignMap[campName]) campaignMap[campName] = [];
+            campaignMap[campName].push(u);
+        });
+
+        let html = '';
+        Object.entries(campaignMap).sort().forEach(([campName, users]) => {
+            html += `<div style="padding:.3rem .85rem .1rem;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);background:var(--surface);border-bottom:1px solid var(--rule);">${escHtml(campName)}</div>`;
+            users.forEach(u => {
+                const initials = u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                html += `<div class="memo-user-option ${selectedUserId === u.id ? 'selected' : ''}" onclick="selectMemoUser(${u.id}, this)">
+                    <div class="memo-user-avatar">${initials}</div>
+                    ${escHtml(u.name)}
+                </div>`;
+            });
+        });
+
+        list.innerHTML = html;
+    }
+
+    window.filterMemoUsers = function(val) {
+        renderUserList(val);
+    };
+
+    window.selectMemoUser = function(userId, el) {
+        selectedUserId = userId;
+        document.querySelectorAll('.memo-user-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+    };
+
+    window.saveMemo = async function() {
+        const title   = document.getElementById('memo-title').value.trim();
+        const content = document.getElementById('memo-content').value.trim();
+
+        if (!title || !content) { alert('Title and message are required!'); return; }
+
+        let targetId = null;
+        if (memoAudienceType === 'campaign') {
+            targetId = document.getElementById('memo-campaign-id').value;
+            if (!targetId) { alert('Please select a campaign.'); return; }
+        } else if (memoAudienceType === 'user') {
+            if (!selectedUserId) { alert('Please select a person.'); return; }
+            targetId = selectedUserId;
+        }
+
+        const saveBtn = document.querySelector('#memoModal .cal-btn-primary');
+        saveBtn.textContent = 'Sending…';
+        saveBtn.disabled    = true;
+
+        try {
+            const res = await fetch('/memos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: JSON.stringify({ title, content, target_type: memoAudienceType, target_id: targetId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeMemoModal();
+                loadMemos();
+            } else {
+                throw new Error('Failed');
+            }
+        } catch (e) {
+            saveBtn.textContent = 'Send Memo';
+            saveBtn.disabled    = false;
+        }
+    };
+
+    /* ============================================================
+       HELPERS
+    ============================================================ */
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Close memo modal on backdrop click
+    const memoModal = document.getElementById('memoModal');
+    if (memoModal) {
+        memoModal.addEventListener('click', e => {
+            if (e.target === memoModal) closeMemoModal();
+        });
+    }
+
+    // Load unread count on page load to show badge even before tab is opened
+    (async function initMemoBadge() {
+        try {
+            const res   = await fetch('/memos', { headers: { 'Accept': 'application/json' } });
+            const memos = await res.json();
+            updateUnreadBadge(memos);
+        } catch (e) {}
+    })();
+
+});

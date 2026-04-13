@@ -62,6 +62,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // ── Memos ──────────────────────────────────────────────────────────
+    Route::get('/memos', [App\Http\Controllers\MemoController::class, 'index'])->name('memos.index');
+    Route::post('/memos', [App\Http\Controllers\MemoController::class, 'store'])->name('memos.store');
+    Route::patch('/memos/{memo}/read', [App\Http\Controllers\MemoController::class, 'markRead'])->name('memos.read');
+    Route::delete('/memos/{memo}', [App\Http\Controllers\MemoController::class, 'destroy'])->name('memos.destroy');
+    Route::get('/memos/audience-options', [App\Http\Controllers\MemoController::class, 'audienceOptions'])->name('memos.audience');
+
     // ── Columns ────────────────────────────────────────────────────────
     Route::post('/columns', [BoardController::class, 'storeColumn'])
         ->middleware('permission:can_create_tasks')
@@ -80,6 +87,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Members ────────────────────────────────────────────────────────
     Route::post('/tasks/{task}/members/toggle', [BoardController::class, 'toggleMember']);
 
+    Route::delete('/admin/users/{user}/valid-ids', [UserController::class, 'deleteValidId'])
+     ->name('admin.users.valid-ids.destroy');
     // ── Admin Only User Management ─────────────────────────────────────
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
@@ -95,6 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/users/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::post('/users/{user}/resend-invite', [App\Http\Controllers\Admin\UserController::class, 'resendInvite'])->name('users.resend-invite');
     });
+
 
     // ── Mark as Complete ───────────────────────────────────────────────
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);

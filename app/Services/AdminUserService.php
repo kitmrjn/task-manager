@@ -19,12 +19,21 @@ class AdminUserService
         $placeholderPassword = Str::random(16);
 
         $user = User::create([
-            'name'           => $data['name'],
-            'email'          => $data['email'],
-            'password'       => Hash::make($placeholderPassword),
-            'role'           => $data['role'],
-            'campaign_id'    => $data['campaign_id'] ?? null,
-            'team_leader_id' => $data['team_leader_id'] ?? null,
+            'name'              => trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? '')),
+            'email'             => $data['email'],
+            'password'          => Hash::make($placeholderPassword),
+            'role'              => $data['role'],
+            'campaign_id'       => $data['campaign_id'] ?? null,
+            'team_leader_id'    => $data['team_leader_id'] ?? null,
+            'phone'             => $data['phone'] ?? null,
+            'city'              => $data['city'] ?? null,
+            'address'           => $data['address'] ?? null,
+            'country'           => $data['country'] ?? 'Philippines',
+            'photo'             => $data['photo'] ?? null,
+            'sss_number'        => $data['sss_number'] ?? null,
+            'philhealth_number' => $data['philhealth_number'] ?? null,
+            'tin_number'        => $data['tin_number'] ?? null,
+            'pag_ibig_number'   => $data['pag_ibig_number'] ?? null,
         ]);
 
         // Initialize default permissions for the new user

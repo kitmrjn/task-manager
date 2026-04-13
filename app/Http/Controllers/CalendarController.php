@@ -6,17 +6,16 @@ use App\Models\Task;
 use App\Models\CalendarEvent;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-
 
 class CalendarController extends Controller
 {
     public function index(Request $request)
     {
-        $tasksByDate = [];
+        $user        = auth()->user();
+        $tasksByDate  = [];
         $eventsByDate = [];
 
-        // 1. Fetch Tasks
+        // 1. Fetch Tasks (unchanged)
         $allTasks = Task::with(['assignee', 'column'])->whereNotNull('due_date')->get();
 
         foreach ($allTasks as $task) {
@@ -37,7 +36,7 @@ class CalendarController extends Controller
             ];
         }
 
-        // 2. Fetch Upcoming tasks for sidebar
+        // 2. Fetch Upcoming tasks for sidebar (unchanged)
         $upcomingTasks = Task::with(['assignee'])
             ->whereNotNull('due_date')
             ->where('due_date', '>=', now()->startOfDay())
@@ -46,11 +45,30 @@ class CalendarController extends Controller
             ->take(10)
             ->get();
 
-        // 3. Fetch Calendar Events (with FIXED Monthly Recurrence Logic)
-        $rawEvents = CalendarEvent::with('user')->get();
-        
+        // 3. Fetch Calendar Events filtered by sub-calendar visibility
+        $rawEvents = CalendarEvent::with('user')
+            ->where(function ($q) use ($user) {
+                // Personal: only your own
+                $q->where(function ($q2) use ($user) {
+                    $q2->where('calendar_type', 'personal')
+                       ->where('user_id', $user->id);
+                })
+                // Team: same campaign_id
+                ->orWhere(function ($q2) use ($user) {
+                    $q2->where('calendar_type', 'team');
+                    if ($user->campaign_id) {
+                        $q2->whereHas('user', fn($q3) => $q3->where('campaign_id', $user->campaign_id));
+                    } else {
+                        // If user has no campaign, only see their own team events
+                        $q2->where('user_id', $user->id);
+                    }
+                })
+                // General: everyone sees these
+                ->orWhere('calendar_type', 'general');
+            })
+            ->get();
+
         foreach ($rawEvents as $event) {
-            // Add the initial event date
             $eventsByDate[$event->date][] = [
                 'id'               => $event->id,
                 'title'            => $event->title,
@@ -62,26 +80,21 @@ class CalendarController extends Controller
                 'date'             => $event->date,
                 'original_date'    => $event->date,
                 'recurrence_until' => $event->recurrence_until,
+                'calendar_type'    => $event->calendar_type,
+                'is_mine'          => $event->user_id === $user->id,
             ];
 
-            // Calculate recurring dates if applicable
             if ($event->recurrence && $event->recurrence !== 'none' && $event->recurrence_until) {
                 $startDate = Carbon::parse($event->date);
                 $untilDate = Carbon::parse($event->recurrence_until);
-                
-                $tempDate = $startDate->copy();
-                $limit = 0; 
+                $tempDate  = $startDate->copy();
+                $limit     = 0;
 
                 while ($limit < 365) {
-                    if ($event->recurrence === 'daily') {
-                        $tempDate->addDay();
-                    } elseif ($event->recurrence === 'weekly') {
-                        $tempDate->addWeek();
-                    } elseif ($event->recurrence === 'monthly') {
-                        $tempDate->addMonth();
-                    } elseif ($event->recurrence === 'yearly') {
-                        $tempDate->addYear();
-                    }
+                    if ($event->recurrence === 'daily')        $tempDate->addDay();
+                    elseif ($event->recurrence === 'weekly')   $tempDate->addWeek();
+                    elseif ($event->recurrence === 'monthly')  $tempDate->addMonth();
+                    elseif ($event->recurrence === 'yearly')   $tempDate->addYear();
 
                     if ($tempDate->gt($untilDate)) break;
 
@@ -97,6 +110,8 @@ class CalendarController extends Controller
                         'date'             => $dateKey,
                         'original_date'    => $event->date,
                         'recurrence_until' => $event->recurrence_until,
+                        'calendar_type'    => $event->calendar_type,
+                        'is_mine'          => $event->user_id === $user->id,
                     ];
                     $limit++;
                 }
@@ -121,6 +136,7 @@ class CalendarController extends Controller
             'description'      => 'nullable|string',
             'recurrence'       => 'nullable|string|in:none,daily,weekly,monthly,yearly',
             'recurrence_until' => 'nullable|date|after_or_equal:date',
+            'calendar_type'    => 'nullable|string|in:personal,team,general',
         ]);
 
         CalendarEvent::create([
@@ -132,6 +148,7 @@ class CalendarController extends Controller
             'description'      => $request->description,
             'recurrence'       => $request->recurrence ?? 'none',
             'recurrence_until' => $request->recurrence_until,
+            'calendar_type'    => $request->calendar_type ?? 'personal',
             'user_id'          => auth()->id(),
         ]);
 
@@ -142,8 +159,12 @@ class CalendarController extends Controller
     {
         $request->validate(['id' => 'required']);
         $event = CalendarEvent::find($request->id);
-        
+
         if ($event) {
+            // Only the creator can delete their event
+            if ($event->user_id !== auth()->id() && !auth()->user()->isSuperAdmin()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
             $event->delete();
             return response()->json(['success' => true]);
         }
@@ -151,100 +172,60 @@ class CalendarController extends Controller
         return response()->json(['success' => false, 'message' => 'Event not found'], 404);
     }
 
- /**
-     * PH holidays from Nager.Date — ALL return type "Public".
-     * We classify them by name since the API doesn't distinguish
-     * Regular vs Special Non-Working vs Special Working.
-     *
-     * holidayType values used by the frontend:
-     *   'ph-regular'         → coral/rose
-     *   'ph-special-nonwork' → deep orange
-     *   'ph-special-work'    → slate teal
+    /**
+     * PH holidays from Nager.Date
      */
     public function getHolidays($year)
     {
-        // ── Known Special Non-Working holidays (by English name keywords) ──
         $specialNonWorking = [
-            'chinese new year',
-            'black saturday',
-            'all saints',
-            'all souls',          // Nov 2 sometimes declared
-            'last day of the year',
-            'feast of the immaculate conception',
-            'additional special',
-            'special non-working',
-            'people power',
-            'ninoy aquino',       // Aug 21 - was formerly regular, now special non-working
+            'chinese new year','black saturday','all saints','all souls',
+            'last day of the year','feast of the immaculate conception',
+            'additional special','special non-working','people power','ninoy aquino',
         ];
 
-        // ── Known Special Working holidays (rare, usually proclaimed ad-hoc) ──
-        $specialWorking = [
-            'special working',
-            'special public holiday', // sometimes used
-        ];
+        $specialWorking = ['special working','special public holiday'];
 
         try {
             $url = "https://date.nager.at/api/v3/PublicHolidays/{$year}/PH";
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-
+            $ch  = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+                CURLOPT_USERAGENT      => 'Mozilla/5.0',
+            ]);
             $response = curl_exec($ch);
             $error    = curl_error($ch);
             curl_close($ch);
 
-            if ($error || !$response) {
-                \Log::error('PH Holiday cURL error: ' . $error);
-                return response()->json([]);
-            }
+            if ($error || !$response) return response()->json([]);
 
             $holidays = json_decode($response, true) ?? [];
 
             foreach ($holidays as &$holiday) {
-                $nameLower = strtolower($holiday['name'] ?? '');
-                $localLower = strtolower($holiday['localName'] ?? '');
-                $combined  = $nameLower . ' ' . $localLower;
+                $combined = strtolower(($holiday['name'] ?? '') . ' ' . ($holiday['localName'] ?? ''));
 
-                // Check special working first (least common)
                 $isSpecialWork = false;
-                foreach ($specialWorking as $keyword) {
-                    if (str_contains($combined, $keyword)) {
-                        $isSpecialWork = true;
-                        break;
-                    }
+                foreach ($specialWorking as $k) {
+                    if (str_contains($combined, $k)) { $isSpecialWork = true; break; }
                 }
 
-                // Check special non-working
                 $isSpecialNonWork = false;
                 if (!$isSpecialWork) {
-                    foreach ($specialNonWorking as $keyword) {
-                        if (str_contains($combined, $keyword)) {
-                            $isSpecialNonWork = true;
-                            break;
-                        }
+                    foreach ($specialNonWorking as $k) {
+                        if (str_contains($combined, $k)) { $isSpecialNonWork = true; break; }
                     }
                 }
 
-                if ($isSpecialWork) {
-                    $holiday['holidayType'] = 'ph-special-work';
-                } elseif ($isSpecialNonWork) {
-                    $holiday['holidayType'] = 'ph-special-nonwork';
-                } else {
-                    // Default: Regular Holiday (New Year, Labor Day, Independence Day, etc.)
-                    $holiday['holidayType'] = 'ph-regular';
-                }
-
+                $holiday['holidayType'] = $isSpecialWork ? 'ph-special-work'
+                    : ($isSpecialNonWork ? 'ph-special-nonwork' : 'ph-regular');
                 $holiday['country'] = 'PH';
             }
             unset($holiday);
 
             return response()->json($holidays);
-
         } catch (\Exception $e) {
             \Log::error('PH Holiday fetch exception: ' . $e->getMessage());
             return response()->json([]);
@@ -252,32 +233,28 @@ class CalendarController extends Controller
     }
 
     /**
-     * US holidays — all tagged as 'us-holiday' (neon yellow).
+     * US holidays
      */
     public function getUSHolidays($year)
     {
         try {
             $url = "https://date.nager.at/api/v3/PublicHolidays/{$year}/US";
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-
+            $ch  = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+                CURLOPT_USERAGENT      => 'Mozilla/5.0',
+            ]);
             $response = curl_exec($ch);
             $error    = curl_error($ch);
             curl_close($ch);
 
-            if ($error || !$response) {
-                \Log::error('US Holiday cURL error: ' . $error);
-                return response()->json([]);
-            }
+            if ($error || !$response) return response()->json([]);
 
             $holidays = json_decode($response, true) ?? [];
-
             foreach ($holidays as &$holiday) {
                 $holiday['holidayType'] = 'us-holiday';
                 $holiday['country']     = 'US';
@@ -285,7 +262,6 @@ class CalendarController extends Controller
             unset($holiday);
 
             return response()->json($holidays);
-
         } catch (\Exception $e) {
             \Log::error('US Holiday fetch exception: ' . $e->getMessage());
             return response()->json([]);
