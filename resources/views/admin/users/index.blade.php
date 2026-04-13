@@ -64,6 +64,121 @@
 
     @push('styles') @vite('resources/css/dashboard.css') @endpush
     @push('scripts') @vite('resources/js/dashboard.js') @endpush
+    @push('scripts')
+<script>
+const ID_TYPES = {
+    sss_card:         'SSS Card',
+    philhealth_card:  'PhilHealth Card',
+    tin_card:         'TIN Card',
+    pagibig_card:     'Pag-IBIG Card',
+    passport:         'Passport',
+    drivers_license:  "Driver's License",
+};
+
+// Track which types are already attached (for edit modal)
+function getAttachedTypes() {
+    const existing = document.querySelectorAll('#edit-existing-ids input[name="id_type"]');
+    return [...existing].map(i => i.value);
+}
+
+function getUsedSlotTypes(prefix) {
+    const selects = document.querySelectorAll(`#${prefix}-id-slots select`);
+    return [...selects].map(s => s.value).filter(Boolean);
+}
+
+function buildIdTypeOptions(prefix, excludeTypes = [], selectedType = '') {
+    return Object.entries(ID_TYPES).map(([val, label]) => {
+        if (excludeTypes.includes(val) && val !== selectedType) return '';
+        return `<option value="${val}" ${val === selectedType ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+}
+
+function addIdSlot(prefix) {
+    const container = document.getElementById(`${prefix}-id-slots`);
+    const attached  = prefix === 'edit' ? getAttachedTypes() : [];
+    const used      = getUsedSlotTypes(prefix);
+    const excluded  = [...attached, ...used];
+
+    // Check if all types are already used
+    const remaining = Object.keys(ID_TYPES).filter(t => !excluded.includes(t));
+    if (!remaining.length) {
+        alert('All ID types have already been attached.');
+        return;
+    }
+
+    const slotId = `slot-${prefix}-${Date.now()}`;
+    const div    = document.createElement('div');
+    div.id       = slotId;
+    div.style.cssText = 'display:flex;align-items:center;gap:.5rem;background:#f8fafc;border:1px solid var(--c-border);border-radius:6px;padding:.5rem .75rem;';
+    div.innerHTML = `
+        <select onchange="refreshSlotOptions('${prefix}')"
+                style="border:1px solid var(--c-border);border-radius:6px;padding:.35rem .6rem;font-size:13px;font-family:inherit;flex:0 0 180px;">
+            <option value="">Select ID type…</option>
+            ${buildIdTypeOptions(prefix, excluded)}
+        </select>
+        <input type="file" name="_pending_id_file" accept="image/jpg,image/jpeg,image/png"
+               style="flex:1;font-size:13px;" />
+        <button type="button" onclick="removeIdSlot('${slotId}', '${prefix}')"
+                style="color:var(--c-red);background:none;border:none;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+    `;
+    container.appendChild(div);
+}
+
+function removeIdSlot(slotId, prefix) {
+    document.getElementById(slotId)?.remove();
+    refreshSlotOptions(prefix);
+}
+
+// Refresh all slot dropdowns so selected types in one slot are excluded from others
+function refreshSlotOptions(prefix) {
+    const container = document.getElementById(`${prefix}-id-slots`);
+    const slots     = container.querySelectorAll('div[id^="slot-"]');
+    const attached  = prefix === 'edit' ? getAttachedTypes() : [];
+
+    slots.forEach(slot => {
+        const select  = slot.querySelector('select');
+        const current = select.value;
+        const used    = [...container.querySelectorAll('select')]
+                          .filter(s => s !== select)
+                          .map(s => s.value)
+                          .filter(Boolean);
+        const excluded = [...attached, ...used];
+
+        select.innerHTML = `<option value="">Select ID type…</option>${buildIdTypeOptions(prefix, excluded, current)}`;
+        select.value = current;
+    });
+
+    // Wire up the correct file input name based on selected type
+    wirePendingInputs(prefix);
+}
+
+function wirePendingInputs(prefix) {
+    const container = document.getElementById(`${prefix}-id-slots`);
+    container.querySelectorAll('div[id^="slot-"]').forEach(slot => {
+        const select = slot.querySelector('select');
+        const input  = slot.querySelector('input[type="file"]');
+        if (select.value) {
+            input.name = `valid_id_${select.value}`;
+        } else {
+            input.name = '_pending_id_file';
+        }
+    });
+}
+
+// Wire names on select change too
+document.addEventListener('change', e => {
+    if (e.target.matches('#create-id-slots select, #edit-id-slots select')) {
+        const prefix = e.target.closest('[id$="-id-slots"]').id.includes('create') ? 'create' : 'edit';
+        refreshSlotOptions(prefix);
+    }
+});
+
+// formatIdType used in Alpine template
+window.formatIdType = function(type) {
+    return ID_TYPES[type] || type;
+};
+</script>
+@endpush
 
     <div class="py-10" style="font-family: 'Epilogue', sans-serif;">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
@@ -123,15 +238,15 @@
                 </form>
             </div>
 
-            <div class="card" style="overflow: visible;">
-                <table class="task-table" style="width: 100%;">
+            <div class="card" style="overflow: visible; contain: none;">
+                <table class="task-table" style="width: 100%; overflow: visible;">
                     <thead>
                         <tr>
                             <th>User Profile</th>
                             <th>Role</th>
                             <th>Assignment</th>
                             <th>Status</th>
-                            <th style="text-align: right;">Actions</th>
+                            <td style="text-align: right; overflow: visible; position: relative;">
                         </tr>
                     </thead>
                     <tbody x-data="{ userToEdit: null }">
@@ -212,87 +327,206 @@
         </div>
     </div>
 
-    <x-modal name="create-user-modal" focusable>
-        <form method="post" action="{{ route('admin.users.store') }}" class="p-6">
-            @csrf
-            <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family: 'Epilogue', sans-serif;">Add New User</h2>
-            <div class="grid grid-cols-1 gap-4">
-                <div>
-                    <x-input-label for="name" value="Full Name" />
-                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" required />
+ {{-- ============================================================
+     CREATE USER MODAL
+============================================================ --}}
+<x-modal name="create-user-modal" focusable>
+    <form method="post" action="{{ route('admin.users.store') }}" enctype="multipart/form-data" class="p-6">
+        @csrf
+        <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family:'Epilogue',sans-serif;">Add New User</h2>
+
+        {{-- Basic Info --}}
+        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+                <x-input-label value="Full Name" />
+                <x-text-input name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
+            </div>
+            <div class="col-span-2">
+                <x-input-label value="Email Address" /><x-text-input name="email" type="email" class="mt-1 block w-full" required />
+            </div>
+            <div>
+                <x-input-label value="Phone" /><x-text-input name="phone" type="text" class="mt-1 block w-full" placeholder="+63 9xx xxx xxxx" />
+            </div>
+            <div>
+                <x-input-label value="City" /><x-text-input name="city" type="text" class="mt-1 block w-full" />
+            </div>
+            <div class="col-span-2">
+                <x-input-label value="Address" /><x-text-input name="address" type="text" class="mt-1 block w-full" />
+            </div>
+            <div>
+                <x-input-label value="Country" />
+                <select name="country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                    <option value="Philippines" selected>Philippines</option>
+                    <option value="United States">United States</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div>
+                <x-input-label value="Profile Photo" />
+                <input type="file" name="photo" accept="image/jpg,image/jpeg,image/png" class="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-slate-100 file:text-sm file:font-medium" />
+            </div>
+        </div></div>
+
+        {{-- Role & Assignment --}}
+        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <x-input-label value="Role" />
+                <select name="role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
+                    @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
+                </select>
+            </div>
+            <div>
+                <x-input-label value="Campaign (Optional)" />
+                <select name="campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                    <option value="">-- None --</option>
+                    @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
+                </select>
+            </div>
+            <div>
+                <x-input-label value="Team Leader (Optional)" />
+                <select name="team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                    <option value="">-- None --</option>
+                    @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
+                </select>
+            </div>
+        </div></div>
+
+        {{-- Government Numbers --}}
+        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Government Numbers</div>
+        <div class="grid grid-cols-2 gap-4">
+            <div><x-input-label value="SSS Number" /><x-text-input name="sss_number" type="text" class="mt-1 block w-full" placeholder="xx-xxxxxxx-x" /></div>
+            <div><x-input-label value="PhilHealth Number" /><x-text-input name="philhealth_number" type="text" class="mt-1 block w-full" placeholder="xx-xxxxxxxxx-x" /></div>
+            <div><x-input-label value="TIN Number" /><x-text-input name="tin_number" type="text" class="mt-1 block w-full" placeholder="xxx-xxx-xxx" /></div>
+            <div><x-input-label value="Pag-IBIG Number" /><x-text-input name="pag_ibig_number" type="text" class="mt-1 block w-full" placeholder="xxxx-xxxx-xxxx" /></div>
+        </div></div>
+
+        {{-- Valid ID Attachments --}}
+        <div class="mb-4">
+            <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Valid ID Attachments</div>
+            <div id="create-id-slots" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+            <button type="button" onclick="addIdSlot('create')" style="margin-top:.5rem;font-size:13px;color:var(--c-blue);background:none;border:1px dashed var(--c-blue);border-radius:6px;padding:.4rem 1rem;cursor:pointer;width:100%;">
+                + Attach an ID
+            </button>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <x-secondary-button x-on:click="$dispatch('close')">Cancel</x-secondary-button>
+            <x-primary-button style="background:var(--c-navy);">Send Invitation</x-primary-button>
+        </div>
+    </form>
+</x-modal>
+
+{{-- ============================================================
+     EDIT USER MODAL
+============================================================ --}}
+<x-modal name="edit-user-modal" focusable>
+    <div x-data="{ user: {} }" @set-edit-user.window="user = $event.detail">
+        <form method="POST" x-bind:action="`/admin/users/${user.id}`" enctype="multipart/form-data" class="p-6">
+            @csrf @method('PUT')
+            <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family:'Epilogue',sans-serif;">Edit User Profile</h2>
+
+            {{-- Basic Info --}}
+            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
+            <div class="grid grid-cols-2 gap-4">
+                <<div class="col-span-2">
+                    <x-input-label value="Full Name" />
+                    <x-text-input name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
                 </div>
+                <div class="col-span-2"><x-input-label value="Email" /><x-text-input name="email" type="email" x-model="user.email" class="mt-1 block w-full" required /></div>
+                <div><x-input-label value="Phone" /><x-text-input name="phone" type="text" x-model="user.phone" class="mt-1 block w-full" /></div>
+                <div><x-input-label value="City" /><x-text-input name="city" type="text" x-model="user.city" class="mt-1 block w-full" /></div>
+                <div class="col-span-2"><x-input-label value="Address" /><x-text-input name="address" type="text" x-model="user.address" class="mt-1 block w-full" /></div>
                 <div>
-                    <x-input-label for="email" value="Email Address" />
-                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" required />
-                </div>
-                <div>
-                    <x-input-label for="role" value="Role" />
-                    <select name="role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
-                        @if(isset($roles)) @foreach($roles as $roleOption) <option value="{{ $roleOption->slug }}">{{ $roleOption->name }}</option> @endforeach @endif
+                    <x-input-label value="Country" />
+                    <select name="country" x-model="user.country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                        <option value="Philippines">Philippines</option>
+                        <option value="United States">United States</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div>
-                    <x-input-label for="campaign_id" value="Campaign (Optional)" />
-                    <select name="campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                    <x-input-label value="Profile Photo" />
+                    <input type="file" name="photo" accept="image/jpg,image/jpeg,image/png" class="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-slate-100 file:text-sm file:font-medium" />
+                    <template x-if="user.photo">
+                        <img :src="`/storage/${user.photo}`" style="margin-top:.5rem;height:48px;width:48px;object-fit:cover;border-radius:50%;border:2px solid var(--c-border);" />
+                    </template>
+                </div>
+            </div></div>
+
+            {{-- Role & Assignment --}}
+            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <x-input-label value="Role" />
+                    <select name="role" x-model="user.role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
+                        @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
+                    </select>
+                </div>
+                <div>
+                    <x-input-label value="Campaign (Optional)" />
+                    <select name="campaign_id" x-model="user.campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
                         <option value="">-- None --</option>
                         @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
                     </select>
                 </div>
                 <div>
-                    <x-input-label for="team_leader_id" value="Team Leader (Optional)" />
-                    <select name="team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                    <x-input-label value="Team Leader (Optional)" />
+                    <select name="team_leader_id" x-model="user.team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
                         <option value="">-- None --</option>
                         @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
                     </select>
                 </div>
+            </div></div>
+
+            {{-- Government Numbers --}}
+            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Government Numbers</div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><x-input-label value="SSS Number" /><x-text-input name="sss_number" type="text" x-model="user.sss_number" class="mt-1 block w-full" /></div>
+                <div><x-input-label value="PhilHealth Number" /><x-text-input name="philhealth_number" type="text" x-model="user.philhealth_number" class="mt-1 block w-full" /></div>
+                <div><x-input-label value="TIN Number" /><x-text-input name="tin_number" type="text" x-model="user.tin_number" class="mt-1 block w-full" /></div>
+                <div><x-input-label value="Pag-IBIG Number" /><x-text-input name="pag_ibig_number" type="text" x-model="user.pag_ibig_number" class="mt-1 block w-full" /></div>
+            </div></div>
+
+            {{-- Valid ID Attachments --}}
+            <div class="mb-4">
+                <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Valid ID Attachments</div>
+
+                {{-- Existing IDs --}}
+                <div id="edit-existing-ids" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem;">
+                    <template x-if="user.valid_ids && user.valid_ids.length">
+                        <template x-for="vid in user.valid_ids" :key="vid.id">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#f8fafc;border:1px solid var(--c-border);border-radius:6px;font-size:13px;">
+                                <div style="display:flex;align-items:center;gap:.5rem;">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                                    <span x-text="formatIdType(vid.id_type)" style="font-weight:600;color:var(--c-navy);"></span>
+                                    <span x-text="vid.original_filename" style="color:var(--c-soft);"></span>
+                                </div>
+                                <div style="display:flex;gap:.5rem;">
+                                    <a :href="`/storage/${vid.file_path}`" target="_blank" style="font-size:12px;color:var(--c-blue);text-decoration:none;font-weight:600;">View</a>
+                                    <form method="POST" :action="`/admin/users/${user.id}/valid-ids`" style="display:inline;">
+                                        @csrf @method('DELETE')
+                                        <input type="hidden" name="id_type" :value="vid.id_type">
+                                        <button type="submit" style="font-size:12px;color:var(--c-red);background:none;border:none;cursor:pointer;font-weight:600;" onclick="return confirm('Remove this ID?')">Remove</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+
+                <div id="edit-id-slots" style="display:flex;flex-direction:column;gap:.75rem;"></div>
+                <button type="button" onclick="addIdSlot('edit')" style="margin-top:.5rem;font-size:13px;color:var(--c-blue);background:none;border:1px dashed var(--c-blue);border-radius:6px;padding:.4rem 1rem;cursor:pointer;width:100%;">
+                    + Attach another ID
+                </button>
             </div>
+
             <div class="mt-6 flex justify-end gap-3">
                 <x-secondary-button x-on:click="$dispatch('close')">Cancel</x-secondary-button>
-                <x-primary-button style="background: var(--c-navy);">Send Invitation</x-primary-button>
+                <x-primary-button style="background:var(--c-navy);">Save Changes</x-primary-button>
             </div>
         </form>
-    </x-modal>
-
-    <x-modal name="edit-user-modal" focusable>
-        <div x-data="{ user: {} }" @set-edit-user.window="user = $event.detail">
-            <form method="POST" x-bind:action="`/admin/users/${user.id}`" class="p-6">
-                @csrf @method('PUT')
-                <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family: 'Epilogue', sans-serif;">Edit User Profile</h2>
-                <div class="grid grid-cols-1 gap-4">
-                    <div>
-                        <x-input-label for="edit_name" value="Full Name" />
-                        <x-text-input id="edit_name" name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
-                    </div>
-                    <div>
-                        <x-input-label for="edit_email" value="Email Address" />
-                        <x-text-input id="edit_email" name="email" type="email" x-model="user.email" class="mt-1 block w-full" required />
-                    </div>
-                    <div>
-                        <x-input-label for="edit_role" value="Role" />
-                        <select name="role" x-model="user.role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
-                            @if(isset($roles)) @foreach($roles as $roleOption) <option value="{{ $roleOption->slug }}">{{ $roleOption->name }}</option> @endforeach @endif
-                        </select>
-                    </div>
-                    <div>
-                        <x-input-label for="edit_campaign" value="Campaign (Optional)" />
-                        <select name="campaign_id" x-model="user.campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                            <option value="">-- None --</option>
-                            @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <x-input-label for="edit_leader" value="Team Leader (Optional)" />
-                        <select name="team_leader_id" x-model="user.team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                            <option value="">-- None --</option>
-                            @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <x-secondary-button x-on:click="$dispatch('close')">Cancel</x-secondary-button>
-                    <x-primary-button style="background: var(--c-navy);">Save Changes</x-primary-button>
-                </div>
-            </form>
-        </div>
-    </x-modal>
+    </div>
+</x-modal>
 </x-app-layout>

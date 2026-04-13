@@ -26,11 +26,11 @@ class BoardService
                 $query = $column->tasks()
                     ->with(['assignee', 'checklistItems', 'members', 'attachments']);
 
-                if ($user->role !== 'admin') {
+                if (!in_array($user->role, ['admin', 'super_admin'])) {
                     $query->where(function ($q) use ($user) {
                         $q->where('assigned_to', $user->id)
-                          ->orWhere('creator_id', $user->id)
-                          ->orWhereHas('members', fn($q2) => $q2->where('users.id', $user->id));
+                        ->orWhere('creator_id', $user->id)
+                        ->orWhereHas('members', fn($q2) => $q2->where('users.id', $user->id));
                     });
                 }
 

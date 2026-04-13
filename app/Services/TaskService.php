@@ -9,39 +9,33 @@ class TaskService
     /**
      * Handle the creation of a new task and log the activity.
      */
-    public function createTask(array $data, int $userId): Task
-    {
-        $highestOrder = Task::where('board_column_id', $data['board_column_id'])->max('order');
+public function createTask(array $data, int $userId): Task
+{
+    $highestOrder = Task::where('board_column_id', $data['board_column_id'])->max('order');
 
-        $newColumnId   = $data['board_column_id'] ?? $task->board_column_id;
-        $newColumn     = \App\Models\BoardColumn::find($newColumnId);
-        $movingToDone  = $newColumn && $newColumn->title === 'Done' && $oldColumnId != $newColumnId;
-        $movingOutDone = $newColumn && $newColumn->title !== 'Done' && $oldColumnId != $newColumnId;
+    $task = Task::create([
+        'title'           => $data['title'],
+        'description'     => $data['description'] ?? null,
+        'assigned_to'     => $data['assigned_to'] ?: null,
+        'priority'        => $data['priority'],
+        'due_date'        => $data['due_date'] ?? null,
+        'start_date'      => $data['start_date'] ?? null,
+        'board_column_id' => $data['board_column_id'],
+        'order'           => ($highestOrder ?? 0) + 1,
+        'is_completed'    => false,
+        'completed_at'    => null,
+    ]);
 
-        $task->update([
-            'title'           => $data['title'],
-            'description'     => $data['description'] ?? null,
-            'assigned_to'     => $data['assigned_to'] ?: null,
-            'priority'        => $data['priority'],
-            'due_date'        => $data['due_date'] ?? null,
-            'start_date'      => $data['start_date'] ?? null,
-            'board_column_id' => $newColumnId,
-            'is_completed'    => array_key_exists('is_completed', $data) ? (bool) $data['is_completed'] : $task->is_completed,
-            'completed_at'    => $movingToDone  ? now()
-                            : ($movingOutDone ? null
-                            : $task->completed_at),
-        ]);
+    $task->activities()->create([
+        'user_id'     => $userId,
+        'action'      => 'created',
+        'description' => $task->assigned_to && $task->assigned_to !== $userId
+            ? 'assigned you this task'
+            : 'created this task',
+    ]);
 
-        $task->activities()->create([
-            'user_id'     => $userId,
-            'action'      => 'created',
-            'description' => $task->assigned_to && $task->assigned_to !== $userId
-                ? 'assigned you this task'
-                : 'created this task',
-        ]);
-
-        return $task;
-    }
+    return $task;
+}
 
     /**
      * Handle updating a task, syncing collaborators, and logging changes.
