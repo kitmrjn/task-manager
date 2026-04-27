@@ -62,12 +62,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ── Memos ──────────────────────────────────────────────────────────
+   // ── Memos ──────────────────────────────────────────────────────────
+    Route::get('/memos/audience-options', [App\Http\Controllers\MemoController::class, 'audienceOptions'])->name('memos.audience');
     Route::get('/memos', [App\Http\Controllers\MemoController::class, 'index'])->name('memos.index');
     Route::post('/memos', [App\Http\Controllers\MemoController::class, 'store'])->name('memos.store');
     Route::patch('/memos/{memo}/read', [App\Http\Controllers\MemoController::class, 'markRead'])->name('memos.read');
     Route::delete('/memos/{memo}', [App\Http\Controllers\MemoController::class, 'destroy'])->name('memos.destroy');
-    Route::get('/memos/audience-options', [App\Http\Controllers\MemoController::class, 'audienceOptions'])->name('memos.audience');
 
     // ── Columns ────────────────────────────────────────────────────────
     Route::post('/columns', [BoardController::class, 'storeColumn'])
@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::delete('/admin/users/{user}/valid-ids', [UserController::class, 'deleteValidId'])
      ->name('admin.users.valid-ids.destroy');
+     
     // ── Admin Only User Management ─────────────────────────────────────
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');

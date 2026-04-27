@@ -1133,3 +1133,57 @@
     font-weight: 500;
     margin-left: auto;
 }
+
+/* ── Sidebar Calendar Dropdown Sub-items ── */
+.tf-nav-dropdown-menu {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .28s cubic-bezier(.4,0,.2,1), opacity .22s ease;
+    opacity: 0;
+}
+.tf-nav-dropdown.open .tf-nav-dropdown-menu {
+    max-height: 200px;
+    opacity: 1;
+}
+.tf-dropdown-chevron {
+    color: var(--sb-label);
+    flex-shrink: 0;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+}
+.tf-nav-dropdown.open .tf-dropdown-chevron {
+    transform: rotate(180deg);
+}
+.tf-nav-dropdown-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+.tf-nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .5rem 1rem .5rem 2.85rem;
+    margin: 1px .6rem;
+    border-radius: var(--sb-radius);
+    text-decoration: none;
+    color: var(--sb-text);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background .16s, color .16s;
+}
+.tf-nav-sub-item:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-hi);
+}
+.tf-nav-sub-item.active {
+    background: var(--sb-active);
+    color: var(--sb-text-hi);
+}
+.tf-sub-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform .2s;
+}
+.tf-nav-sub-item.active .tf-sub-dot { transform: scale(1.35); }
+.tf-nav-sub-item:hover .tf-sub-dot  { transform: scale(1.2);  }

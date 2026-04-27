@@ -16,7 +16,6 @@
                 </svg>
             </div>
         @endif
-        
         <span class="tf-logo-text">{{ $siteSettings['app_name'] ?? 'ProductivityDaily' }}</span>
     </a>
 </div>
@@ -67,7 +66,7 @@
                 @endif
             </a>
 
-            {{-- MODERN EMAIL LINK --}}
+            {{-- EMAIL --}}
             <a href="{{ Route::has('email.index') ? route('email.index') : '#' }}"
                class="tf-nav-item {{ request()->routeIs('email.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
@@ -77,23 +76,66 @@
                     </svg>
                 </span>
                 <span class="tf-nav-text">Email</span>
-                
-                {{-- Invisible until populated by JS to prevent UI hanging --}}
                 <span class="tf-badge" id="email-unread-badge" style="background-color: #ef4444; color: #ffffff; display: none;">0</span>
             </a>
 
+            {{-- ============================================================
+                 CALENDAR DROPDOWN
+            ============================================================ --}}
             @if(auth()->user()->can_access('can_view_calendar'))
-            <a href="{{ Route::has('calendar.index') ? route('calendar.index') : '#' }}"
-               class="tf-nav-item {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
-                <span class="tf-nav-icon">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            <div class="tf-nav-dropdown {{ request()->routeIs('calendar.*') ? 'open' : '' }}" id="calDropdown">
+
+                {{-- Main Calendar row (clickable toggle) --}}
+                <div class="tf-nav-item tf-nav-dropdown-toggle {{ request()->routeIs('calendar.*') ? 'active' : '' }}"
+                     onclick="toggleCalDropdown()">
+                    <span class="tf-nav-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8"  y1="2" x2="8"  y2="6"/>
+                            <line x1="3"  y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </span>
+                    <span class="tf-nav-text">Calendar</span>
+                    <svg class="tf-dropdown-chevron" width="13" height="13" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
                     </svg>
-                </span>
-                <span class="tf-nav-text">Calendar</span>
-            </a>
+                </div>
+
+                {{-- Sub-items --}}
+                <div class="tf-nav-dropdown-menu">
+
+                    <a href="{{ route('calendar.index') }}?cal=general"
+                    class="tf-nav-sub-item {{ request()->routeIs('calendar.*') && request()->get('cal') === 'general' ? 'active' : '' }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7;flex-shrink:0;">
+                            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        General
+                    </a>
+
+                    <a href="{{ route('calendar.index') }}?cal=personal"
+                    class="tf-nav-sub-item {{ request()->routeIs('calendar.*') && request()->get('cal') === 'personal' ? 'active' : '' }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7;flex-shrink:0;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Personal
+                    </a>
+
+                    <a href="{{ route('calendar.index') }}?cal=team"
+                    class="tf-nav-sub-item {{ request()->routeIs('calendar.*') && request()->get('cal') === 'team' ? 'active' : '' }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.7;flex-shrink:0;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        Team
+                    </a>
+
+                </div>
+            </div>
             @endif
+            {{-- ============================================================
+                 END CALENDAR DROPDOWN
+            ============================================================ --}}
 
             @if(auth()->user()->can_access('can_view_analytics'))
             <a href="{{ Route::has('analytics.index') ? route('analytics.index') : '#' }}"
@@ -139,7 +181,6 @@
         <div class="tf-nav-section">
             <p class="tf-nav-label">General</p>
 
-            {{-- ADMIN EXCLUSIVE TABS --}}
             @if(auth()->user()->isAtLeastAdmin())
             <a href="{{ route('admin.users.index') }}"
                class="tf-nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
@@ -167,9 +208,8 @@
             </a>
             @endif
 
-            {{-- UNIVERSAL TABS (Everyone Needs Settings to change Passwords) --}}
             <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}"
-            class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+               class="tf-nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="tf-nav-icon">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
@@ -179,19 +219,20 @@
                 <span class="tf-nav-text">Settings</span>
             </a>
 
-            <a href="{{ route('help.index') }}" 
-                class="tf-nav-item {{ request()->routeIs('help.index') ? 'active' : '' }}">
-                    <span class="tf-nav-icon">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                    </span>
-                    <span class="tf-nav-text">Help</span>
-             </a>
+            <a href="{{ route('help.index') }}"
+               class="tf-nav-item {{ request()->routeIs('help.index') ? 'active' : '' }}">
+                <span class="tf-nav-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </span>
+                <span class="tf-nav-text">Help</span>
+            </a>
 
         </div>
     </nav>
+
     <p style="color:var(--sb-label);font-size:11px;padding:1rem;font-weight:600;">
         V1.0
     </p>
@@ -220,7 +261,6 @@
     --sb-accent:   #4f83ff;
     --sb-radius:   9px;
 }
-
 .tf-sidebar {
     position: fixed; top: 0; left: 0; bottom: 0;
     width: var(--sb-w);
@@ -308,6 +348,62 @@
     from { opacity: 0; transform: translateX(-8px); }
     to   { opacity: 1; transform: translateX(0); }
 }
+
+/* ============================================================
+   CALENDAR DROPDOWN
+============================================================ */
+.tf-nav-dropdown-menu {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .28s cubic-bezier(.4,0,.2,1), opacity .22s ease;
+    opacity: 0;
+}
+.tf-nav-dropdown.open .tf-nav-dropdown-menu {
+    max-height: 200px;
+    opacity: 1;
+}
+.tf-dropdown-chevron {
+    color: var(--sb-label);
+    flex-shrink: 0;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+}
+.tf-nav-dropdown.open .tf-dropdown-chevron {
+    transform: rotate(180deg);
+}
+.tf-nav-dropdown-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+.tf-nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .5rem 1rem .5rem 2.85rem;
+    margin: 1px .6rem;
+    border-radius: var(--sb-radius);
+    text-decoration: none;
+    color: var(--sb-text);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background .16s, color .16s;
+}
+.tf-nav-sub-item:hover {
+    background: var(--sb-hover);
+    color: var(--sb-text-hi);
+}
+.tf-nav-sub-item.active {
+    background: var(--sb-active);
+    color: var(--sb-text-hi);
+}
+.tf-sub-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform .2s;
+}
+.tf-nav-sub-item.active .tf-sub-dot { transform: scale(1.35); }
+.tf-nav-sub-item:hover  .tf-sub-dot { transform: scale(1.2);  }
 </style>
 
 <script>
@@ -316,7 +412,12 @@ function tfToggle() {
     document.getElementById('tfOverlay').classList.toggle('open');
 }
 
-// MODERN UX: Asynchronously fetch unread email count so it never blocks page loading!
+/* ── Calendar dropdown toggle ── */
+function toggleCalDropdown() {
+    document.getElementById('calDropdown').classList.toggle('open');
+}
+
+/* ── Email unread badge ── */
 document.addEventListener('DOMContentLoaded', function() {
     fetch('{{ route("email.unread") }}', {
         headers: { 'Accept': 'application/json' }

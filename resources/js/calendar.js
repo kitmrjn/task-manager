@@ -2,6 +2,10 @@
  * calendar.js  →  resources/js/calendar.js
  */
 
+// ── MODULE-LEVEL: must be outside DOMContentLoaded so the ?cal= block
+//    at the bottom and any inline onclick handlers can reach it ──────
+const activeSubCals = { personal: true, team: true, general: true };
+
 document.addEventListener('DOMContentLoaded', () => {
 
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -12,44 +16,45 @@ document.addEventListener('DOMContentLoaded', () => {
     window.cur                = new Date();
     let selectedEventColor    = 'blue';
     let selectedEventType     = 'meeting';
-    let selectedCalType       = 'personal';   // ← NEW
+    let selectedCalType       = 'personal';
     let currentViewEventId    = null;
     let currentViewEventDate  = null;
     let currentView           = 'month';
 
-    // Which sub-calendars are toggled ON
-    const activeSubCals = { personal: true, team: true, general: true }; // ← NEW
-
     /* ============================================================
        SUB-CALENDAR TOGGLE
     ============================================================ */
-window.toggleSubCal = function(type, btn) {
-    activeSubCals[type] = !activeSubCals[type];
-    btn.classList.toggle('active', activeSubCals[type]);
-    updateActiveIndicator();
-    renderCal();
-};
+    window.toggleSubCal = function(type, btn) {
+        activeSubCals[type] = !activeSubCals[type];
+        btn.classList.toggle('active', activeSubCals[type]);
+        updateActiveIndicator();
+        renderCal();
+    };
 
-function updateActiveIndicator() {
-    const dot   = document.getElementById('calActiveDot');
-    const label = document.getElementById('calActiveLabel');
-    if (!dot || !label) return;
+    function updateActiveIndicator() {
+        const dot   = document.getElementById('calActiveDot');
+        const label = document.getElementById('calActiveLabel');
+        if (!dot || !label) return;
 
-    const active = Object.entries(activeSubCals).filter(([, v]) => v).map(([k]) => k);
-    const colors = { personal: '#7c3aed', team: '#1a8a5a', general: '#2d52c4' };
-    const names  = { personal: 'Personal', team: 'Team', general: 'General' };
+        const colors = { personal: '#7c3aed', team: '#1a8a5a', general: '#2d52c4' };
+        const names  = { personal: 'Personal Calendar', team: 'Team Calendar', general: 'General Calendar' };
 
-    if (active.length === 3 || active.length === 0) {
-        dot.style.background = 'var(--soft)';
-        label.textContent = active.length === 0 ? 'No calendars shown' : 'All Calendars';
-    } else if (active.length === 1) {
-        dot.style.background = colors[active[0]];
-        label.textContent = names[active[0]] + ' Calendar';
-    } else {
-        dot.style.background = colors[active[0]];
-        label.textContent = active.map(k => names[k]).join(' & ');
+        const active = Object.entries(activeSubCals).filter(([, v]) => v).map(([k]) => k);
+
+        if (active.length === 0) {
+            dot.style.background = 'var(--soft)';
+            label.textContent = 'No calendars shown';
+        } else if (active.length === 1) {
+            dot.style.background = colors[active[0]];
+            label.textContent = names[active[0]];
+        } else if (active.length === 2) {
+            dot.style.background = colors[active[0]];
+            label.textContent = active.map(k => names[k].replace(' Calendar', '')).join(' & ') + ' Calendars';
+        } else {
+            dot.style.background = 'var(--soft)';
+            label.textContent = 'Personal · Team · General';
+        }
     }
-}
 
     /* ============================================================
        CALENDAR TYPE PICKER (in Add Event modal)
@@ -64,7 +69,7 @@ function updateActiveIndicator() {
        FILTER HELPER — should we show this event?
     ============================================================ */
     function shouldShowEvent(ev) {
-        if (ev.type === 'holiday') return true; // always show holidays
+        if (ev.type === 'holiday') return true;
         const calType = ev.calendar_type || 'general';
         return activeSubCals[calType] !== false;
     }
@@ -153,7 +158,6 @@ function updateActiveIndicator() {
         return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
 
-    // Get the left-border class for a sub-calendar type
     function calTypeClass(ev) {
         if (ev.type === 'holiday' || ev.holidayType) return '';
         return `cal-${ev.calendar_type || 'general'}`;
@@ -481,7 +485,6 @@ function updateActiveIndicator() {
             currentViewEventId   = item.id;
             currentViewEventDate = item.date;
             const isHoliday = item.etype === 'holiday' || !!item.holidayType;
-            // Only show delete if it's the creator or super admin (is_mine from server)
             deleteBtn.style.display = (isHoliday || !item.isMine) ? 'none' : 'flex';
 
             const typeLabel = item.holidayType
@@ -557,7 +560,6 @@ function updateActiveIndicator() {
         updateRecurrenceOptions();
         selectEventType('meeting');
         selectEventColor('blue');
-        // Reset calendar type to personal
         selectedCalType = 'personal';
         document.querySelectorAll('.cal-subcal-pick-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.type === 'personal');
@@ -606,7 +608,7 @@ function updateActiveIndicator() {
                 title, date, time: time || null, description: desc || null,
                 type: selectedEventType, color: selectedEventColor,
                 recurrence, recurrence_until: until || null,
-                calendar_type: selectedCalType,   // ← NEW
+                calendar_type: selectedCalType,
             })
         })
         .then(r => r.json())
@@ -658,7 +660,7 @@ function updateActiveIndicator() {
                         time:          null,
                         description:   h.name + (h.country === 'US' ? ' (US Federal Holiday)' : ''),
                         country:       h.country,
-                        calendar_type: null, // holidays bypass sub-cal filtering
+                        calendar_type: null,
                     });
                 });
             } catch (e) {
@@ -678,6 +680,30 @@ function updateActiveIndicator() {
     loadHolidays();
 
 }); // end DOMContentLoaded
+
+
+/* ============================================================
+   ?cal= URL PARAM — wrapped in DOMContentLoaded so the DOM
+   and activeSubCals helpers are ready
+============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+    const calParam = new URLSearchParams(window.location.search).get('cal');
+    if (calParam && activeSubCals.hasOwnProperty(calParam)) {
+        Object.keys(activeSubCals).forEach(k => activeSubCals[k] = false);
+        activeSubCals[calParam] = true;
+        document.querySelectorAll('.cal-subcal-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.cal === calParam);
+        });
+        // updateActiveIndicator is defined inside the first DOMContentLoaded,
+        // so we inline the dot update here instead
+        const dot = document.getElementById('calActiveDot');
+        if (dot) {
+            const colors = { personal: '#7c3aed', team: '#1a8a5a', general: '#2d52c4' };
+            dot.style.background = colors[calParam] || 'var(--soft)';
+        }
+    }
+});
+
 
 /* ============================================================
    TOPNAV DROPDOWNS
@@ -746,6 +772,7 @@ function updateActiveIndicator() {
     }
 })();
 
+
 /* ================================================================
    CALENDAR AUTO-SYNC
 ================================================================ */
@@ -793,21 +820,18 @@ function startCalendarSync() {
     }, 10000);
 }
 
-/**
- * memo.js — Memo sidebar tab functionality
- * Include this after calendar.js in calendar.blade.php:
- * @vite('resources/js/memo.js')
- */
 
+/* ================================================================
+   MEMO FUNCTIONALITY
+================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
 
     const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
-    let memoAudienceType   = 'all';
-    let selectedUserId     = null;
-    let allUsers           = [];
-    let allCampaigns       = [];
-    const isManager        = window.IS_MANAGER ?? false;
+    let memoAudienceType = 'all';
+    let selectedUserId   = null;
+    let allUsers         = [];
+    let allCampaigns     = [];
 
     /* ============================================================
        SIDEBAR TAB SWITCHING
@@ -909,29 +933,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = document.getElementById(`memo-item-${memoId}`);
             if (item) {
                 item.classList.add('is-read');
-                // Replace the button with "Read" label
-                const actionsDiv = item.querySelector('.memo-item-actions');
-                if (actionsDiv) {
-                    const readSpan = document.createElement('span');
-                    readSpan.style.cssText = 'font-size:11px;color:var(--soft);font-weight:600;display:flex;align-items:center;gap:.3rem;';
-                    readSpan.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Read`;
-                    btn.replaceWith(readSpan);
-                }
-                // Remove unread dot
+                const readSpan = document.createElement('span');
+                readSpan.style.cssText = 'font-size:11px;color:var(--soft);font-weight:600;display:flex;align-items:center;gap:.3rem;';
+                readSpan.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Read`;
+                btn.replaceWith(readSpan);
                 const dot = item.querySelector('.memo-unread-dot');
                 if (dot) dot.remove();
             }
 
-            // Update badge count
             const badge = document.getElementById('memoUnreadBadge');
             if (badge) {
-                const current = parseInt(badge.textContent) || 0;
-                const newCount = current - 1;
-                if (newCount <= 0) {
-                    badge.style.display = 'none';
-                } else {
-                    badge.textContent = newCount;
-                }
+                const newCount = (parseInt(badge.textContent) || 0) - 1;
+                if (newCount <= 0) { badge.style.display = 'none'; }
+                else { badge.textContent = newCount; }
             }
         } catch (e) {
             btn.disabled = false;
@@ -966,7 +980,6 @@ document.addEventListener('DOMContentLoaded', () => {
        CREATE MEMO MODAL
     ============================================================ */
     window.openMemoModal = async function() {
-        // Reset form
         document.getElementById('memo-title').value   = '';
         document.getElementById('memo-content').value = '';
         selectedUserId   = null;
@@ -975,7 +988,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('memo-campaign-wrap').style.display = 'none';
         document.getElementById('memo-user-wrap').style.display     = 'none';
 
-        // Load audience options if not loaded yet
         if (!allCampaigns.length) {
             try {
                 const res  = await fetch('/memos/audience-options', { headers: { 'Accept': 'application/json' } });
@@ -983,7 +995,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 allCampaigns = data.campaigns || [];
                 allUsers     = data.users     || [];
 
-                // Populate campaign select
                 const sel = document.getElementById('memo-campaign-id');
                 sel.innerHTML = '<option value="">Select campaign…</option>';
                 allCampaigns.forEach(c => {
@@ -1025,7 +1036,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Group by campaign
         const campaignMap = {};
         filtered.forEach(u => {
             const campName = allCampaigns.find(c => c.id === u.campaign_id)?.name || 'No Campaign';
@@ -1104,7 +1114,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // Close memo modal on backdrop click
     const memoModal = document.getElementById('memoModal');
     if (memoModal) {
         memoModal.addEventListener('click', e => {
@@ -1112,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load unread count on page load to show badge even before tab is opened
+    // Load unread badge on page load
     (async function initMemoBadge() {
         try {
             const res   = await fetch('/memos', { headers: { 'Accept': 'application/json' } });
@@ -1121,4 +1130,4 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {}
     })();
 
-});
+}); // end memo DOMContentLoaded

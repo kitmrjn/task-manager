@@ -65,6 +65,7 @@
     <script>
         window.CAL_TASKS  = {!! json_encode($tasksByDate  ?? []) !!};
         window.CAL_EVENTS = {!! json_encode($eventsByDate ?? []) !!};
+        window.IS_MANAGER = {{ auth()->user()->isAtLeastManager() ? 'true' : 'false' }};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite('resources/js/calendar.js')
@@ -73,43 +74,10 @@
 <div class="cal-page">
 
 <div class="cal-page-header">
-    <div class="cal-page-header-row">
-        <div>
-            <h1 class="cal-page-title">Calendar</h1>
-            <p class="cal-page-sub">Stay on top of your schedule and deadlines.</p>
-            {{-- Active calendar indicator --}}
-            <div class="cal-active-indicator" id="calActiveIndicator">
-                <span class="cal-active-indicator-dot" id="calActiveDot"></span>
-                <span id="calActiveLabel">All Calendars</span>
-            </div>
-        </div>
-
-        <div class="cal-subcal-bar">
-            <span class="cal-subcal-label">My Calendars</span>
-            <div class="cal-subcal-toggles">
-                <button class="cal-subcal-btn active" data-cal="personal" onclick="toggleSubCal('personal', this)">
-                    <span class="cal-subcal-dot" style="background:#7c3aed;"></span>
-                    Personal
-                    <span class="cal-subcal-check" style="background:#7c3aed;">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    </span>
-                </button>
-                <button class="cal-subcal-btn active" data-cal="team" onclick="toggleSubCal('team', this)">
-                    <span class="cal-subcal-dot" style="background:#1a8a5a;"></span>
-                    Team
-                    <span class="cal-subcal-check" style="background:#1a8a5a;">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    </span>
-                </button>
-                <button class="cal-subcal-btn active" data-cal="general" onclick="toggleSubCal('general', this)">
-                    <span class="cal-subcal-dot" style="background:#2d52c4;"></span>
-                    General
-                    <span class="cal-subcal-check" style="background:#2d52c4;">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    </span>
-                </button>
-            </div>
-        </div>
+    <h1 class="cal-page-title">Calendar</h1>
+    <p class="cal-page-sub">Stay on top of your schedule and deadlines.</p>
+    <div class="cal-active-indicator" id="calActiveIndicator">
+        <span class="cal-active-indicator-dot" id="calActiveDot"></span>
     </div>
 </div>
 
