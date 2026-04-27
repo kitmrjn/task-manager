@@ -67,116 +67,149 @@
     @push('scripts')
 <script>
 const ID_TYPES = {
-    sss_card:         'SSS Card',
-    philhealth_card:  'PhilHealth Card',
-    tin_card:         'TIN Card',
-    pagibig_card:     'Pag-IBIG Card',
-    passport:         'Passport',
-    drivers_license:  "Driver's License",
+    sss_card:        'SSS ID',
+    philhealth_card: 'PhilHealth ID',
+    tin_card:        'TIN ID',
+    pagibig_card:    'Pag-IBIG ID',
+    passport:        'Passport ID',
+    drivers_license: "Driver's License",
 };
 
-// Track which types are already attached (for edit modal)
-function getAttachedTypes() {
-    const existing = document.querySelectorAll('#edit-existing-ids input[name="id_type"]');
-    return [...existing].map(i => i.value);
+window.formatIdType = function(type) {
+    return ID_TYPES[type] || type;
+};
+
+function getUsedTypes(prefix) {
+    // Types already saved on the user (edit modal only)
+    const attached = prefix === 'edit'
+        ? [...document.querySelectorAll('#edit-existing-ids input[name="id_type"]')].map(i => i.value)
+        : [];
+    // Types selected in the current new slots
+    const slotTypes = [...document.querySelectorAll(`#${prefix}-id-slots .id-slot`)]
+        .map(s => s.querySelector('select')?.value)
+        .filter(Boolean);
+    return [...new Set([...attached, ...slotTypes])];
 }
 
-function getUsedSlotTypes(prefix) {
-    const selects = document.querySelectorAll(`#${prefix}-id-slots select`);
-    return [...selects].map(s => s.value).filter(Boolean);
+function buildOptions(prefix, selectedType = '') {
+    const used = getUsedTypes(prefix);
+    let html = '<option value="">Select ID type…</option>';
+    for (const [val, label] of Object.entries(ID_TYPES)) {
+        // Include the currently-selected type of this slot even if "used"
+        if (!used.includes(val) || val === selectedType) {
+            html += `<option value="${val}" ${val === selectedType ? 'selected' : ''}>${label}</option>`;
+        }
+    }
+    return html;
 }
 
-function buildIdTypeOptions(prefix, excludeTypes = [], selectedType = '') {
-    return Object.entries(ID_TYPES).map(([val, label]) => {
-        if (excludeTypes.includes(val) && val !== selectedType) return '';
-        return `<option value="${val}" ${val === selectedType ? 'selected' : ''}>${label}</option>`;
-    }).join('');
+function refreshAllDropdowns(prefix) {
+    document.querySelectorAll(`#${prefix}-id-slots .id-slot`).forEach(slot => {
+        const select  = slot.querySelector('select');
+        const current = select.value;
+        select.innerHTML = buildOptions(prefix, current);
+        select.value = current;
+    });
 }
 
-function addIdSlot(prefix) {
+function onTypeSelected(selectEl, prefix) {
+    const slot     = selectEl.closest('.id-slot');
+    const fileWrap = slot.querySelector('.file-wrap');
+    const val      = selectEl.value;
+
+    if (val) {
+        fileWrap.style.display = 'flex';
+        fileWrap.querySelector('input[type="file"]').name = `valid_id_${val}`;
+    } else {
+        fileWrap.style.display = 'none';
+        const fi = fileWrap.querySelector('input[type="file"]');
+        fi.name  = '_pending_id_file';
+        fi.value = '';
+    }
+
+    refreshAllDropdowns(prefix);
+    maybeAddNextSlot(prefix);
+}
+
+function onFileAttached(fileInput, prefix) {
+    if (fileInput.files.length > 0) {
+        maybeAddNextSlot(prefix);
+    }
+}
+
+function maybeAddNextSlot(prefix) {
     const container = document.getElementById(`${prefix}-id-slots`);
-    const attached  = prefix === 'edit' ? getAttachedTypes() : [];
-    const used      = getUsedSlotTypes(prefix);
-    const excluded  = [...attached, ...used];
+    const slots     = [...container.querySelectorAll('.id-slot')];
+    const usedCount = getUsedTypes(prefix).length;
+    const totalTypes = Object.keys(ID_TYPES).length;
 
-    // Check if all types are already used
-    const remaining = Object.keys(ID_TYPES).filter(t => !excluded.includes(t));
-    if (!remaining.length) {
-        alert('All ID types have already been attached.');
+    if (usedCount >= totalTypes) return; // all types used, no more slots needed
+
+    if (slots.length === 0) {
+        addIdSlot(prefix);
         return;
     }
 
+    // Only add a new slot if the LAST slot has both a type selected AND a file attached
+    const lastSlot   = slots[slots.length - 1];
+    const lastSelect = lastSlot.querySelector('select');
+    const lastFile   = lastSlot.querySelector('input[type="file"]');
+
+    if (lastSelect?.value && lastFile?.files?.length > 0) {
+        addIdSlot(prefix);
+    }
+}
+
+function addIdSlot(prefix) {
+    const container  = document.getElementById(`${prefix}-id-slots`);
+    const usedCount  = getUsedTypes(prefix).length;
+    const totalTypes = Object.keys(ID_TYPES).length;
+    if (usedCount >= totalTypes) return;
+
     const slotId = `slot-${prefix}-${Date.now()}`;
     const div    = document.createElement('div');
-    div.id       = slotId;
-    div.style.cssText = 'display:flex;align-items:center;gap:.5rem;background:#f8fafc;border:1px solid var(--c-border);border-radius:6px;padding:.5rem .75rem;';
+    div.className = 'id-slot';
+    div.id        = slotId;
+    div.style.cssText = 'display:flex;flex-direction:column;gap:.4rem;';
+
     div.innerHTML = `
-        <select onchange="refreshSlotOptions('${prefix}')"
-                style="border:1px solid var(--c-border);border-radius:6px;padding:.35rem .6rem;font-size:13px;font-family:inherit;flex:0 0 180px;">
-            <option value="">Select ID type…</option>
-            ${buildIdTypeOptions(prefix, excluded)}
-        </select>
-        <input type="file" name="_pending_id_file" accept="image/jpg,image/jpeg,image/png"
-               style="flex:1;font-size:13px;" />
-        <button type="button" onclick="removeIdSlot('${slotId}', '${prefix}')"
-                style="color:var(--c-red);background:none;border:none;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+            <select onchange="onTypeSelected(this, '${prefix}')"
+                    style="flex:1;border:1px solid var(--c-border);border-radius:6px;padding:.4rem .6rem;font-size:13px;font-family:inherit;background:#fff;">
+                ${buildOptions(prefix)}
+            </select>
+            <button type="button" onclick="removeIdSlot('${slotId}', '${prefix}')"
+                    style="color:var(--c-soft);background:none;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0 .25rem;">&times;</button>
+        </div>
+        <div class="file-wrap" style="display:none;align-items:center;gap:.5rem;padding:.4rem .75rem;background:#f8fafc;border:1px solid var(--c-border);border-radius:6px;">
+            <svg width="13" height="13" fill="none" stroke="var(--c-soft)" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            <input type="file" name="_pending_id_file" accept="image/jpg,image/jpeg,image/png"
+                   onchange="onFileAttached(this, '${prefix}')"
+                   style="flex:1;font-size:13px;" />
+        </div>
     `;
+
     container.appendChild(div);
 }
 
 function removeIdSlot(slotId, prefix) {
     document.getElementById(slotId)?.remove();
-    refreshSlotOptions(prefix);
+    refreshAllDropdowns(prefix);
+    maybeAddNextSlot(prefix);
 }
 
-// Refresh all slot dropdowns so selected types in one slot are excluded from others
-function refreshSlotOptions(prefix) {
-    const container = document.getElementById(`${prefix}-id-slots`);
-    const slots     = container.querySelectorAll('div[id^="slot-"]');
-    const attached  = prefix === 'edit' ? getAttachedTypes() : [];
-
-    slots.forEach(slot => {
-        const select  = slot.querySelector('select');
-        const current = select.value;
-        const used    = [...container.querySelectorAll('select')]
-                          .filter(s => s !== select)
-                          .map(s => s.value)
-                          .filter(Boolean);
-        const excluded = [...attached, ...used];
-
-        select.innerHTML = `<option value="">Select ID type…</option>${buildIdTypeOptions(prefix, excluded, current)}`;
-        select.value = current;
-    });
-
-    // Wire up the correct file input name based on selected type
-    wirePendingInputs(prefix);
-}
-
-function wirePendingInputs(prefix) {
-    const container = document.getElementById(`${prefix}-id-slots`);
-    container.querySelectorAll('div[id^="slot-"]').forEach(slot => {
-        const select = slot.querySelector('select');
-        const input  = slot.querySelector('input[type="file"]');
-        if (select.value) {
-            input.name = `valid_id_${select.value}`;
-        } else {
-            input.name = '_pending_id_file';
-        }
-    });
-}
-
-// Wire names on select change too
-document.addEventListener('change', e => {
-    if (e.target.matches('#create-id-slots select, #edit-id-slots select')) {
-        const prefix = e.target.closest('[id$="-id-slots"]').id.includes('create') ? 'create' : 'edit';
-        refreshSlotOptions(prefix);
+// Initialise first slot when each modal opens
+document.addEventListener('open-modal', e => {
+    if (e.detail === 'create-user-modal') {
+        document.getElementById('create-id-slots').innerHTML = '';
+        addIdSlot('create');
+    }
+    if (e.detail === 'edit-user-modal') {
+        document.getElementById('edit-id-slots').innerHTML = '';
+        // Small delay so Alpine can render existing IDs first (they affect used-type list)
+        setTimeout(() => addIdSlot('edit'), 120);
     }
 });
-
-// formatIdType used in Alpine template
-window.formatIdType = function(type) {
-    return ID_TYPES[type] || type;
-};
 </script>
 @endpush
 
@@ -246,7 +279,7 @@ window.formatIdType = function(type) {
                             <th>Role</th>
                             <th>Assignment</th>
                             <th>Status</th>
-                            <td style="text-align: right; overflow: visible; position: relative;">
+                            <td style="text-align: right; overflow: visible; position: relative;"></td>
                         </tr>
                     </thead>
                     <tbody x-data="{ userToEdit: null }">
@@ -255,7 +288,7 @@ window.formatIdType = function(type) {
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                                         <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
-                                            {{ substr($user->name, 0, 2) }}
+                                            {{ strtoupper(substr($user->name, 0, 2)) }}
                                         </div>
                                         <div>
                                             <div style="font-weight: 600; color: var(--c-navy); font-size: 14px;">{{ $user->name }}</div>
@@ -327,7 +360,7 @@ window.formatIdType = function(type) {
         </div>
     </div>
 
- {{-- ============================================================
+{{-- ============================================================
      CREATE USER MODAL
 ============================================================ --}}
 <x-modal name="create-user-modal" focusable>
@@ -336,79 +369,71 @@ window.formatIdType = function(type) {
         <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family:'Epilogue',sans-serif;">Add New User</h2>
 
         {{-- Basic Info --}}
-        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="col-span-2">
-                <x-input-label value="Full Name" />
-                <x-text-input name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
+        <div class="mb-4">
+            <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <x-input-label value="Full Name" />
+                    <x-text-input name="name" type="text" class="mt-1 block w-full" required />
+                </div>
+                <div class="col-span-2">
+                    <x-input-label value="Email Address" />
+                    <x-text-input name="email" type="email" class="mt-1 block w-full" required />
+                </div>
+                <div>
+                    <x-input-label value="Phone" />
+                    <x-text-input name="phone" type="text" class="mt-1 block w-full" placeholder="+63 9xx xxx xxxx" />
+                </div>
+                <div>
+                    <x-input-label value="City" />
+                    <x-text-input name="city" type="text" class="mt-1 block w-full" />
+                </div>
+                <div class="col-span-2">
+                    <x-input-label value="Address" />
+                    <x-text-input name="address" type="text" class="mt-1 block w-full" />
+                </div>
+                <div class="col-span-2">
+                    <x-input-label value="Country" />
+                    <select name="country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                        <option value="Philippines" selected>Philippines</option>
+                        <option value="United States">United States</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
             </div>
-            <div class="col-span-2">
-                <x-input-label value="Email Address" /><x-text-input name="email" type="email" class="mt-1 block w-full" required />
-            </div>
-            <div>
-                <x-input-label value="Phone" /><x-text-input name="phone" type="text" class="mt-1 block w-full" placeholder="+63 9xx xxx xxxx" />
-            </div>
-            <div>
-                <x-input-label value="City" /><x-text-input name="city" type="text" class="mt-1 block w-full" />
-            </div>
-            <div class="col-span-2">
-                <x-input-label value="Address" /><x-text-input name="address" type="text" class="mt-1 block w-full" />
-            </div>
-            <div>
-                <x-input-label value="Country" />
-                <select name="country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                    <option value="Philippines" selected>Philippines</option>
-                    <option value="United States">United States</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div>
-                <x-input-label value="Profile Photo" />
-                <input type="file" name="photo" accept="image/jpg,image/jpeg,image/png" class="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-slate-100 file:text-sm file:font-medium" />
-            </div>
-        </div></div>
+        </div>
 
         {{-- Role & Assignment --}}
-        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
-        <div class="grid grid-cols-1 gap-4">
-            <div>
-                <x-input-label value="Role" />
-                <select name="role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
-                    @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
-                </select>
+        <div class="mb-4">
+            <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <x-input-label value="Role" />
+                    <select name="role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
+                        @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
+                    </select>
+                </div>
+                <div>
+                    <x-input-label value="Campaign" />
+                    <select name="campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                        <option value="">-- None --</option>
+                        @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
+                    </select>
+                </div>
+                <div>
+                    <x-input-label value="Team Leader" />
+                    <select name="team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                        <option value="">-- None --</option>
+                        @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
+                    </select>
+                </div>
             </div>
-            <div>
-                <x-input-label value="Campaign (Optional)" />
-                <select name="campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                    <option value="">-- None --</option>
-                    @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
-                </select>
-            </div>
-            <div>
-                <x-input-label value="Team Leader (Optional)" />
-                <select name="team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                    <option value="">-- None --</option>
-                    @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
-                </select>
-            </div>
-        </div></div>
-
-        {{-- Government Numbers --}}
-        <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Government Numbers</div>
-        <div class="grid grid-cols-2 gap-4">
-            <div><x-input-label value="SSS Number" /><x-text-input name="sss_number" type="text" class="mt-1 block w-full" placeholder="xx-xxxxxxx-x" /></div>
-            <div><x-input-label value="PhilHealth Number" /><x-text-input name="philhealth_number" type="text" class="mt-1 block w-full" placeholder="xx-xxxxxxxxx-x" /></div>
-            <div><x-input-label value="TIN Number" /><x-text-input name="tin_number" type="text" class="mt-1 block w-full" placeholder="xxx-xxx-xxx" /></div>
-            <div><x-input-label value="Pag-IBIG Number" /><x-text-input name="pag_ibig_number" type="text" class="mt-1 block w-full" placeholder="xxxx-xxxx-xxxx" /></div>
-        </div></div>
+        </div>
 
         {{-- Valid ID Attachments --}}
         <div class="mb-4">
             <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Valid ID Attachments</div>
-            <div id="create-id-slots" style="display:flex;flex-direction:column;gap:.75rem;"></div>
-            <button type="button" onclick="addIdSlot('create')" style="margin-top:.5rem;font-size:13px;color:var(--c-blue);background:none;border:1px dashed var(--c-blue);border-radius:6px;padding:.4rem 1rem;cursor:pointer;width:100%;">
-                + Attach an ID
-            </button>
+            <div id="create-id-slots" style="display:flex;flex-direction:column;gap:.5rem;"></div>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -428,82 +453,84 @@ window.formatIdType = function(type) {
             <h2 class="text-lg font-medium text-gray-900 mb-4" style="font-family:'Epilogue',sans-serif;">Edit User Profile</h2>
 
             {{-- Basic Info --}}
-            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
-            <div class="grid grid-cols-2 gap-4">
-                <<div class="col-span-2">
-                    <x-input-label value="Full Name" />
-                    <x-text-input name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
+            <div class="mb-4">
+                <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Basic Information</div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <x-input-label value="Full Name" />
+                        <x-text-input name="name" type="text" x-model="user.name" class="mt-1 block w-full" required />
+                    </div>
+                    <div class="col-span-2">
+                        <x-input-label value="Email" />
+                        <x-text-input name="email" type="email" x-model="user.email" class="mt-1 block w-full" required />
+                    </div>
+                    <div>
+                        <x-input-label value="Phone" />
+                        <x-text-input name="phone" type="text" x-model="user.phone" class="mt-1 block w-full" />
+                    </div>
+                    <div>
+                        <x-input-label value="City" />
+                        <x-text-input name="city" type="text" x-model="user.city" class="mt-1 block w-full" />
+                    </div>
+                    <div class="col-span-2">
+                        <x-input-label value="Address" />
+                        <x-text-input name="address" type="text" x-model="user.address" class="mt-1 block w-full" />
+                    </div>
+                    <div class="col-span-2">
+                        <x-input-label value="Country" />
+                        <select name="country" x-model="user.country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                            <option value="Philippines">Philippines</option>
+                            <option value="United States">United States</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-span-2"><x-input-label value="Email" /><x-text-input name="email" type="email" x-model="user.email" class="mt-1 block w-full" required /></div>
-                <div><x-input-label value="Phone" /><x-text-input name="phone" type="text" x-model="user.phone" class="mt-1 block w-full" /></div>
-                <div><x-input-label value="City" /><x-text-input name="city" type="text" x-model="user.city" class="mt-1 block w-full" /></div>
-                <div class="col-span-2"><x-input-label value="Address" /><x-text-input name="address" type="text" x-model="user.address" class="mt-1 block w-full" /></div>
-                <div>
-                    <x-input-label value="Country" />
-                    <select name="country" x-model="user.country" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                        <option value="Philippines">Philippines</option>
-                        <option value="United States">United States</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div>
-                    <x-input-label value="Profile Photo" />
-                    <input type="file" name="photo" accept="image/jpg,image/jpeg,image/png" class="mt-1 block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-slate-100 file:text-sm file:font-medium" />
-                    <template x-if="user.photo">
-                        <img :src="`/storage/${user.photo}`" style="margin-top:.5rem;height:48px;width:48px;object-fit:cover;border-radius:50%;border:2px solid var(--c-border);" />
-                    </template>
-                </div>
-            </div></div>
+            </div>
 
             {{-- Role & Assignment --}}
-            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
-            <div class="grid grid-cols-1 gap-4">
-                <div>
-                    <x-input-label value="Role" />
-                    <select name="role" x-model="user.role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
-                        @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
-                    </select>
+            <div class="mb-4">
+                <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Role & Assignment</div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <x-input-label value="Role" />
+                        <select name="role" x-model="user.role" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full" required>
+                            @if(isset($roles)) @foreach($roles as $r) <option value="{{ $r->slug }}">{{ $r->name }}</option> @endforeach @endif
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label value="Campaign (Optional)" />
+                        <select name="campaign_id" x-model="user.campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                            <option value="">-- None --</option>
+                            @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label value="Team Leader (Optional)" />
+                        <select name="team_leader_id" x-model="user.team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                            <option value="">-- None --</option>
+                            @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <x-input-label value="Campaign (Optional)" />
-                    <select name="campaign_id" x-model="user.campaign_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                        <option value="">-- None --</option>
-                        @foreach($campaigns as $camp) <option value="{{ $camp->id }}">{{ $camp->name }}</option> @endforeach
-                    </select>
-                </div>
-                <div>
-                    <x-input-label value="Team Leader (Optional)" />
-                    <select name="team_leader_id" x-model="user.team_leader_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
-                        <option value="">-- None --</option>
-                        @foreach($teamLeaders as $leader) <option value="{{ $leader->id }}">{{ $leader->name }}</option> @endforeach
-                    </select>
-                </div>
-            </div></div>
-
-            {{-- Government Numbers --}}
-            <div class="mb-4"><div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Government Numbers</div>
-            <div class="grid grid-cols-2 gap-4">
-                <div><x-input-label value="SSS Number" /><x-text-input name="sss_number" type="text" x-model="user.sss_number" class="mt-1 block w-full" /></div>
-                <div><x-input-label value="PhilHealth Number" /><x-text-input name="philhealth_number" type="text" x-model="user.philhealth_number" class="mt-1 block w-full" /></div>
-                <div><x-input-label value="TIN Number" /><x-text-input name="tin_number" type="text" x-model="user.tin_number" class="mt-1 block w-full" /></div>
-                <div><x-input-label value="Pag-IBIG Number" /><x-text-input name="pag_ibig_number" type="text" x-model="user.pag_ibig_number" class="mt-1 block w-full" /></div>
-            </div></div>
+            </div>
 
             {{-- Valid ID Attachments --}}
             <div class="mb-4">
                 <div class="section-eyebrow" style="font-size:11px;font-weight:700;color:var(--c-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">Valid ID Attachments</div>
 
-                {{-- Existing IDs --}}
+                {{-- Existing IDs (already saved) --}}
                 <div id="edit-existing-ids" style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem;">
                     <template x-if="user.valid_ids && user.valid_ids.length">
                         <template x-for="vid in user.valid_ids" :key="vid.id">
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:#f8fafc;border:1px solid var(--c-border);border-radius:6px;font-size:13px;">
                                 <div style="display:flex;align-items:center;gap:.5rem;">
                                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                                    {{-- Hidden input so getUsedTypes() can detect attached types --}}
+                                    <input type="hidden" name="id_type" :value="vid.id_type">
                                     <span x-text="formatIdType(vid.id_type)" style="font-weight:600;color:var(--c-navy);"></span>
                                     <span x-text="vid.original_filename" style="color:var(--c-soft);"></span>
                                 </div>
-                                <div style="display:flex;gap:.5rem;">
+                                <div style="display:flex;gap:.5rem;align-items:center;">
                                     <a :href="`/storage/${vid.file_path}`" target="_blank" style="font-size:12px;color:var(--c-blue);text-decoration:none;font-weight:600;">View</a>
                                     <form method="POST" :action="`/admin/users/${user.id}/valid-ids`" style="display:inline;">
                                         @csrf @method('DELETE')
@@ -516,10 +543,8 @@ window.formatIdType = function(type) {
                     </template>
                 </div>
 
-                <div id="edit-id-slots" style="display:flex;flex-direction:column;gap:.75rem;"></div>
-                <button type="button" onclick="addIdSlot('edit')" style="margin-top:.5rem;font-size:13px;color:var(--c-blue);background:none;border:1px dashed var(--c-blue);border-radius:6px;padding:.4rem 1rem;cursor:pointer;width:100%;">
-                    + Attach another ID
-                </button>
+                {{-- New ID slots --}}
+                <div id="edit-id-slots" style="display:flex;flex-direction:column;gap:.5rem;"></div>
             </div>
 
             <div class="mt-6 flex justify-end gap-3">
@@ -529,4 +554,5 @@ window.formatIdType = function(type) {
         </form>
     </div>
 </x-modal>
+
 </x-app-layout>
