@@ -2,93 +2,93 @@
     @section('title', 'EOD Reports')
 
     <x-slot name="header">
-        <div class="tk-topnav" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <div class="flex items-center gap-6 pl-2 md:pl-6">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight m-0" style="font-family: 'Epilogue', sans-serif;">
-                    {{ __('EOD & Time Logs') }}
-                </h2>
-            </div>
-            
-            <div class="tk-topnav-right" style="display: flex; align-items: center; gap: .65rem; padding-right: 1.5rem;">
-                <div class="tk-dropdown-wrap" style="position: relative;">
-                    <div class="tk-nav-profile" id="profile-btn" role="button" tabindex="0" style="display: flex; align-items: center; gap: .65rem; cursor: pointer; padding: .4rem .75rem; border-radius: 10px; border: 1.5px solid transparent;">
-                        <div class="tk-nav-avatar" style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #3b63d8, #1b2b5e); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;">
-                            {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                        </div>
-                        <div class="tk-nav-userinfo" style="display: flex; flex-direction: column;">
-                            <span class="tk-nav-name" style="font-size: 14px; font-weight: 700; color: #1a1e2e; line-height: 1.25;">{{ Auth::user()->name }}</span>
-                        </div>
-                        <svg id="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #8b94b3;"><polyline points="6 9 12 15 18 9"/></svg>
-                    </div>
+        <div class="tk-topnav">
+            <div class="tk-topnav-right">
 
-                    <div id="profile-dropdown" class="tk-dropdown tk-profile-dropdown" style="width:268px; position: absolute; right: 0; top: calc(100% + 10px); background: #fff; border: 1px solid #e2e5eb; border-radius: 14px; box-shadow: 0 12px 32px rgba(27,43,94,0.14); z-index: 999; opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s; transform: translateY(-10px) scale(.96);">
-                        <div class="tk-dropdown-header tk-profile-header" style="padding: 1rem 1.25rem; border-bottom: 1px solid #e8eaf0; display: flex; align-items: center; gap: .9rem;">
-                            <div class="tk-profile-avatar-lg" style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b63d8, #1b2b5e); color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">
-                                {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                            </div>
+                {{-- Notifications --}}
+                <div class="tk-dropdown-wrap">
+                    <button class="tk-nav-icon-btn" id="notif-btn" title="Notifications">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </button>
+                    <div id="notif-dropdown" class="tk-dropdown" style="width:340px;">
+                        <div class="tk-dropdown-header">
+                            <span class="tk-dropdown-title">Notifications</span>
+                            <span id="notif-count" class="tk-badge-pill"></span>
+                        </div>
+                        <div class="tk-dropdown-body" id="notif-list">
+                            <div style="padding:1.2rem;text-align:center;font-size:13.5px;color:var(--soft);">Loading…</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tk-nav-divider"></div>
+
+                {{-- User profile --}}
+                <div class="tk-dropdown-wrap" style="flex-shrink:0;">
+                    <div class="tk-nav-profile" id="profile-btn">
+                        <div class="tk-nav-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
+                        <div class="tk-nav-userinfo">
+                            <span class="tk-nav-name">{{ Auth::user()->name }}</span>
+                            <span class="tk-nav-email">{{ Auth::user()->email }}</span>
+                        </div>
+                        <svg id="profile-chevron" class="tk-nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                    <div id="profile-dropdown" class="tk-dropdown tk-profile-dropdown">
+                        <div class="tk-dropdown-header">
+                            <div class="tk-profile-avatar-lg">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
                             <div style="flex:1;min-width:0;">
-                                <div style="font-size:14px;font-weight:700;color:#1a1e2e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Auth::user()->name }}</div>
-                                <div style="font-size: 12.5px; color: #8b94b3; margin-top: 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ Auth::user()->email }}</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ Auth::user()->name }}</div>
+                                <div class="tk-profile-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ Auth::user()->email }}</div>
                             </div>
                         </div>
-                        <div class="tk-dropdown-body" style="padding:.3rem 0;">
-                            <a href="{{ route('settings.index') }}" style="display: flex; align-items: center; gap: .7rem; padding: .75rem 1.25rem; font-size: 14px; font-weight: 600; color: #6b7491; text-decoration: none;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <div style="padding:.3rem 0;">
+                            <a href="{{ route('settings.index') }}" class="tk-profile-item">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 My Profile & Settings
                             </a>
-                            <div style="height: 1px; background: #e8eaf0; margin: .3rem 0;"></div>
+                            <div class="tk-profile-divider"></div>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" style="display: flex; align-items: center; gap: .7rem; padding: .75rem 1.25rem; font-size: 14px; font-weight: 600; color: #c0354a; background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    Sign Out
+                                <button type="submit" class="tk-profile-item tk-profile-item--danger">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                    Log Out
                                 </button>
                             </form>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </x-slot>
 
-    @push('styles') @vite('resources/css/dashboard.css') @endpush
-    @push('scripts') 
-        @vite('resources/js/dashboard.js') 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const btn = document.getElementById('profile-btn');
-                const drop = document.getElementById('profile-dropdown');
-                if(btn && drop) {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        if(drop.style.opacity == '0') {
-                            drop.style.opacity = '1';
-                            drop.style.transform = 'translateY(0) scale(1)';
-                            drop.style.pointerEvents = 'auto';
-                        } else {
-                            drop.style.opacity = '0';
-                            drop.style.transform = 'translateY(-10px) scale(.96)';
-                            drop.style.pointerEvents = 'none';
-                        }
-                    });
-                    document.addEventListener('click', function() {
-                        drop.style.opacity = '0';
-                        drop.style.transform = 'translateY(-10px) scale(.96)';
-                        drop.style.pointerEvents = 'none';
-                    });
-                    drop.addEventListener('click', e => e.stopPropagation());
-                }
-            });
-        </script>
-    @endpush
+    @push('styles') @vite(['resources/css/dashboard.css', 'resources/css/tasks.css']) @endpush
 
-    <div class="py-10" style="font-family: 'Epilogue', sans-serif;">
+    <div class="py-10" style="font-family: 'Geist', sans-serif;">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
-            <div class="section-eyebrow mb-6">Attendance & Reporting</div>
+            {{-- Page heading --}}
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1rem;">
+                <div>
+                    <h1 style="font-size:26px; font-weight:800; color:#0f172a; margin:0 0 .25rem; font-family:'Geist',sans-serif;">EOD & Time Logs</h1>
+                    <p style="font-size:13.5px; color:#94a3b8; margin:0;">Track attendance, hours worked, and end-of-day reports</p>
+                </div>
+                <form method="GET" action="{{ route('eod.export') }}">
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="campaign" value="{{ request('campaign') }}">
+                    <input type="hidden" name="leader" value="{{ request('leader') }}">
+                    <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                    <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                    <button type="submit" style="background:#10b981; color:white; border:none; border-radius:8px; padding:.55rem 1.25rem; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.5rem; font-family:'Geist',sans-serif;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export Excel
+                    </button>
+                </form>
+            </div>
 
-            <div class="card" style="padding: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; align-items: flex-end;">
-                
+            <div class="card" style="padding: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end;">
                 <form method="GET" action="{{ route('eod.index') }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; flex: 1;">
                     <div style="flex: 1; min-width: 180px;">
                         <label style="font-size: 12px; font-weight: 600; color: var(--c-soft); margin-bottom: 0.25rem; display: block;">Employee</label>
@@ -127,19 +127,6 @@
                         <a href="{{ route('eod.index') }}" style="background: #f1f5f9; color: var(--c-navy); border: 1px solid var(--c-border); border-radius: 6px; padding: 0.5rem 1rem; font-size: 13px; font-weight: 600; text-decoration: none;">Reset</a>
                     </div>
                 </form>
-
-                <form method="GET" action="{{ route('eod.export') }}">
-                    <input type="hidden" name="search" value="{{ request('search') }}">
-                    <input type="hidden" name="campaign" value="{{ request('campaign') }}">
-                    <input type="hidden" name="leader" value="{{ request('leader') }}">
-                    <input type="hidden" name="start_date" value="{{ request('start_date') }}">
-                    <input type="hidden" name="end_date" value="{{ request('end_date') }}">
-                    
-                    <button type="submit" style="background: #10b981; color: white; border: none; border-radius: 6px; padding: 0.5rem 1.25rem; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Export Excel
-                    </button>
-                </form>
             </div>
 
             <div class="card" style="overflow: visible;">
@@ -158,22 +145,18 @@
                         @forelse($logs as $log)
                             <tr class="task-row">
                                 <td style="font-weight: 600; color: var(--c-navy); font-size: 13px;">{{ $log->log_date->format('M j, Y') }}</td>
-                                
                                 <td>
                                     <div style="font-weight: 600; color: var(--c-navy); font-size: 13px;">{{ $log->user->name }}</div>
                                     <div style="font-size: 11px; color: var(--c-soft);">{{ ucwords(str_replace('_', ' ', $log->user->role)) }}</div>
                                 </td>
-
                                 <td>
                                     <div style="font-weight: 500; font-size: 13px;">{{ $log->user->campaign->name ?? 'Unassigned' }}</div>
                                     <div style="font-size: 11px; color: var(--c-soft);">LDR: {{ $log->user->teamLeader->name ?? 'None' }}</div>
                                 </td>
-
                                 <td>
                                     <div style="font-size: 13px; color: var(--c-navy);">In: <strong>{{ $log->time_in ? $log->time_in->format('h:i A') : '--' }}</strong></div>
                                     <div style="font-size: 13px; color: var(--c-soft);">Out: <strong>{{ $log->time_out ? $log->time_out->format('h:i A') : '--' }}</strong></div>
                                 </td>
-
                                 <td>
                                     @if($log->status === 'Complete')
                                         <span class="pill" style="background:#dcfce7; color:#166534; border: 1px solid #86efac; margin-bottom: 4px;">Complete</span>
@@ -184,7 +167,6 @@
                                     @endif
                                     <div style="font-size: 12px; color: var(--c-navy); font-weight: 600; margin-top: 4px;">{{ $log->total_hours }} Hours</div>
                                 </td>
-
                                 <td style="max-width: 250px;">
                                     <div style="font-size: 12px; color: var(--c-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $log->eod_notes }}">
                                         {{ $log->eod_notes ?? 'No notes submitted.' }}
@@ -196,7 +178,7 @@
                         @endforelse
                     </tbody>
                 </table>
-                
+
                 @if($logs->hasPages())
                     <div style="padding: 1rem; border-top: 1px solid var(--c-border-2);">{{ $logs->links() }}</div>
                 @endif
@@ -204,4 +186,7 @@
 
         </div>
     </div>
+
+    @push('scripts') @vite('resources/js/tasks.js') @endpush
+
 </x-app-layout>

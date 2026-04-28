@@ -3,6 +3,8 @@
 <x-slot name="header">
     <div class="tk-topnav">
 
+    <x-shift-pill />
+    
         <div class="tk-topnav-right">
 
             <div class="tk-dropdown-wrap">

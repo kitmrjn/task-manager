@@ -144,6 +144,7 @@ class DashboardController extends Controller
     {
         $type = $request->query('type', 'total');
         $user = auth()->user();
+        $user->loadMissing('campaign');
 
         $query = \App\Models\Task::with(['column', 'assignee']);
 
