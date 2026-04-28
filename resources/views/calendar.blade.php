@@ -2,6 +2,7 @@
     @section('title', 'Calendar')
 <x-slot name="header">
     <div class="tk-topnav">
+        <x-shift-pill />
         <div class="tk-topnav-right">
             {{-- Notifications --}}
             <div class="tk-dropdown-wrap">

@@ -155,5 +155,43 @@ if (searchInput) {
     });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Find all dropdown wrappers on the page
+    const dropdownWraps = document.querySelectorAll('.tk-dropdown-wrap');
 
+    dropdownWraps.forEach(wrap => {
+        const btn = wrap.querySelector('button'); // The icon or profile avatar
+        const dropdown = wrap.querySelector('.tk-dropdown'); // The actual menu
+
+        if (btn && dropdown) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent this click from instantly closing it
+                
+                const isOpen = dropdown.classList.contains('open');
+
+                // 1. Close ALL other dropdowns first (so they don't overlap)
+                document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
+                
+                // 2. Close the Shift Pill popover if it's open
+                document.getElementById('shiftPopover')?.classList.remove('open');
+                document.getElementById('shiftChevron')?.classList.remove('open');
+
+                // 3. Toggle the one you just clicked
+                if (!isOpen) {
+                    dropdown.classList.add('open');
+                }
+            });
+        }
+    });
+
+    // Close all dropdowns when clicking anywhere else on the screen
+    document.addEventListener('click', (e) => {
+        // If the click wasn't inside a dropdown wrap or the shift pill wrap
+        if (!e.target.closest('.tk-dropdown-wrap') && !e.target.closest('#shiftPillWrap')) {
+            document.querySelectorAll('.tk-dropdown').forEach(d => d.classList.remove('open'));
+            document.getElementById('shiftPopover')?.classList.remove('open');
+            document.getElementById('shiftChevron')?.classList.remove('open');
+        }
+    });
+});
 });
