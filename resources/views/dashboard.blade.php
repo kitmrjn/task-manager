@@ -70,11 +70,19 @@
                         </div>
                     </div>
                     <div class="tk-dropdown-body" style="padding:.4rem 0;">
-                        {{-- FIXED: Settings is universal for all roles --}}
                         <a href="{{ route('settings.index') }}" class="tk-profile-item">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             My Profile & Settings
                         </a>
+                        
+                        {{-- RBAC Check for Team Logs --}}
+                        @if(Auth::user()->isAtLeastManager())
+                            <a href="{{ route('team-logs.index') }}" class="tk-profile-item">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                Team Time Logs
+                            </a>
+                        @endif
+
                         <div class="tk-profile-divider"></div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -120,43 +128,122 @@
         </div>
     </div>
 
-    {{-- ── TIME TRACKING (EOD) WIDGET ── --}}
-    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--c-navy);">
+    {{-- ── ADVANCED TIME TRACKING (EOD) WIDGET ── --}}
+    @php
+        $activeBreak = $todaysLog ? $todaysLog->breaks()->whereNull('end_time')->first() : null;
+        $totalBreakSecs = $todaysLog ? $todaysLog->breaks()->whereNotNull('end_time')->sum('duration_minutes') * 60 : 0;
+        
+        $stateColor = 'var(--c-navy)';
+        $statusText = 'Not Started';
+        
+        if($todaysLog && !$todaysLog->time_out && !$activeBreak) { $stateColor = '#16a34a'; $statusText = 'Active Shift'; }
+        if($activeBreak) { $stateColor = '#d97706'; $statusText = 'On Break'; }
+        if($todaysLog && $todaysLog->time_out) { $stateColor = '#dc2626'; $statusText = 'Timed Out'; }
+    @endphp
+
+    <div class="card" style="margin-bottom: 2rem; border-left: 4px solid {{ $stateColor }};"
+         x-data="{ 
+            timeIn: '{{ $todaysLog ? $todaysLog->time_in->toIso8601String() : '' }}',
+            activeBreakStart: '{{ $activeBreak ? $activeBreak->start_time->toIso8601String() : '' }}',
+            accumulatedBreakSecs: {{ $totalBreakSecs }},
+            liveTimer: '00:00:00',
+            init() {
+                if(!this.timeIn) return;
+                setInterval(() => {
+                    let now = new Date();
+                    let start = new Date(this.timeIn);
+                    let diffSecs = Math.floor((now - start) / 1000);
+                    diffSecs -= this.accumulatedBreakSecs;
+                    
+                    if(this.activeBreakStart) {
+                        let bStart = new Date(this.activeBreakStart);
+                        diffSecs -= Math.floor((now - bStart) / 1000);
+                    }
+                    
+                    if(diffSecs < 0) diffSecs = 0;
+                    let h = Math.floor(diffSecs / 3600).toString().padStart(2, '0');
+                    let m = Math.floor((diffSecs % 3600) / 60).toString().padStart(2, '0');
+                    let s = (diffSecs % 60).toString().padStart(2, '0');
+                    this.liveTimer = `${h}:${m}:${s}`;
+                }, 1000);
+            }
+         }">
+         
         <div style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <h3 style="font-weight: 600; font-size: 16px; color: var(--c-navy); margin: 0 0 0.25rem 0;">Daily Time Record</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <h3 style="font-weight: 600; font-size: 16px; color: var(--c-navy); margin:0;">Daily Time Record</h3>
+                    <span style="background: {{ $stateColor }}20; color: {{ $stateColor }}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                        {{ $statusText }}
+                    </span>
+                </div>
                 
                 @if(!$todaysLog)
                     <p style="margin: 0; font-size: 13px; color: var(--c-soft);">You have not clocked in for today's shift yet.</p>
                 @elseif(!$todaysLog->time_out)
                     <p style="margin: 0; font-size: 13px; color: var(--c-soft);">
-                        Clocked in at <strong>{{ $todaysLog->time_in->format('h:i A') }}</strong>. Don't forget to submit your EOD notes when you finish!
+                        Clocked in at <strong>{{ $todaysLog->time_in->format('h:i A') }}</strong>.
+                        @if($activeBreak)
+                            Taking a break since {{ $activeBreak->start_time->format('h:i A') }}.
+                        @else
+                            Current active hours: <strong x-text="liveTimer">--:--:--</strong>
+                        @endif
                     </p>
                 @else
                     <p style="margin: 0; font-size: 13px; color: #166534;">
                         Shift completed! Clocked in at {{ $todaysLog->time_in->format('h:i A') }} and out at {{ $todaysLog->time_out->format('h:i A') }}.
+                        Total hours: <strong>{{ $todaysLog->total_hours }}</strong> hrs.
                     </p>
                 @endif
             </div>
 
-            <div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
                 @if(!$todaysLog)
                     <form method="POST" action="{{ route('time-logs.in') }}">
                         @csrf
-                        <button type="submit" style="background: #16a34a; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <button type="submit" style="background: #16a34a; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
                             Time In
                         </button>
                     </form>
                 @elseif(!$todaysLog->time_out)
-                    <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'eod-modal')" style="background: var(--c-red); color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                        Time Out & Submit EOD
+                    
+                    @if(!$activeBreak)
+                        {{-- Start Break Dropdown --}}
+                        <div x-data="{ open: false }" style="position: relative;">
+                            <button @click="open = !open" style="background: #f59e0b; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                                Start Break ▼
+                            </button>
+                            <div x-show="open" @click.away="open = false" style="position: absolute; right: 0; top: 110%; background: #fff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 160px; z-index: 50; display: none;" :style="{ display: open ? 'block' : 'none' }">
+                                <form method="POST" action="{{ route('time-logs.break-start') }}">
+                                    @csrf
+                                    <input type="hidden" name="break_type" value="first">
+                                    <button type="submit" style="width: 100%; text-align: left; padding: 0.5rem 1rem; background: none; border: none; font-size: 13px; cursor: pointer; border-bottom: 1px solid #eee;">First Break (15m)</button>
+                                </form>
+                                <form method="POST" action="{{ route('time-logs.break-start') }}">
+                                    @csrf
+                                    <input type="hidden" name="break_type" value="lunch">
+                                    <button type="submit" style="width: 100%; text-align: left; padding: 0.5rem 1rem; background: none; border: none; font-size: 13px; cursor: pointer; border-bottom: 1px solid #eee;">Lunch (1h)</button>
+                                </form>
+                                <form method="POST" action="{{ route('time-logs.break-start') }}">
+                                    @csrf
+                                    <input type="hidden" name="break_type" value="last">
+                                    <button type="submit" style="width: 100%; text-align: left; padding: 0.5rem 1rem; background: none; border: none; font-size: 13px; cursor: pointer;">Last Break (15m)</button>
+                                </form>
+                            </div>
+                        </div>
+                    @else
+                        {{-- End Break Button --}}
+                        <form method="POST" action="{{ route('time-logs.break-end') }}">
+                            @csrf
+                            <button type="submit" style="background: #d97706; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                                End Break
+                            </button>
+                        </form>
+                    @endif
+
+                    <button x-data="" x-on:click.prevent="$dispatch('open-modal', 'eod-modal')" style="background: #dc2626; color: #fff; border: none; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                        Time Out
                     </button>
-                @else
-                    <span style="background: #dcfce7; color: #166534; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 13px; border: 1px solid #bbf7d0;">
-                        EOD Submitted
-                    </span>
                 @endif
             </div>
         </div>

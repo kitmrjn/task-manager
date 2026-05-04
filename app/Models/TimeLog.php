@@ -22,20 +22,31 @@ class TimeLog extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function breaks()
+    {
+        return $this->hasMany(BreakLog::class);
+    }
+
     // ── Dynamic Computed Properties ──
+
+    public function getTotalBreakMinutesAttribute()
+    {
+        return $this->breaks()->sum('duration_minutes');
+    }
 
     public function getTotalHoursAttribute()
     {
         if ($this->time_in && $this->time_out) {
-            // Calculates difference in hours, rounded to 2 decimal places
-            return round($this->time_in->floatDiffInHours($this->time_out), 2);
+            $grossMinutes = $this->time_in->diffInMinutes($this->time_out);
+            $netMinutes = max(0, $grossMinutes - $this->total_break_minutes);
+            return round($netMinutes / 60, 2);
         }
         return 0;
     }
 
     public function getStatusAttribute()
     {
-        if (!$this->time_out) return 'Incomplete';
+        if (!$this->time_out) return 'Active';
         if ($this->total_hours < 8) return 'Partial';
         return 'Complete';
     }

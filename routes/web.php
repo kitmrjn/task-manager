@@ -27,9 +27,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/eod-reports', [App\Http\Controllers\EodReportController::class, 'index'])->name('eod.index');
     Route::get('/eod-reports/export', [App\Http\Controllers\EodReportController::class, 'export'])->name('eod.export');
     
-    // ── Time Tracking (EOD) ────────────────────────────────────────────
+    // ── Time Tracking & Breaks ─────────────────────────────────────────
     Route::post('/time-in', [App\Http\Controllers\TimeLogController::class, 'timeIn'])->name('time-logs.in');
     Route::post('/time-out', [App\Http\Controllers\TimeLogController::class, 'timeOut'])->name('time-logs.out');
+    Route::post('/time-logs/break/start', [App\Http\Controllers\TimeLogController::class, 'startBreak'])->name('time-logs.break-start');
+    Route::post('/time-logs/break/end', [App\Http\Controllers\TimeLogController::class, 'endBreak'])->name('time-logs.break-end');
+
+    // ── Team Logs (RBAC: Leaders/Admins) ───────────────────────────────
+    Route::get('/team-logs', [App\Http\Controllers\TeamLogController::class, 'index'])->name('team-logs.index');
+    Route::get('/team-logs/export', [App\Http\Controllers\TeamLogController::class, 'export'])->name('team-logs.export');
 
     // ── Dashboard ──────────────────────────────────────────────────────
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,12 +53,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/email/{uid}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
 
     // ── Task Actions ───────────────────────────────────────────────────
-    Route::post('/tasks', [TaskController::class, 'store'])
-        ->middleware('permission:can_create_tasks');
+    Route::post('/tasks', [TaskController::class, 'store'])->middleware('permission:can_create_tasks');
     Route::patch('/tasks/{task}/move', [TaskController::class, 'move']);
     Route::put('/tasks/{task}', [TaskController::class, 'update']);
-    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
-        ->middleware('permission:can_delete_tasks');
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->middleware('permission:can_delete_tasks');
     Route::get('/tasks/{task}/detail', [TaskController::class, 'detail'])->name('tasks.detail');
 
     // ── Profile ────────────────────────────────────────────────────────
@@ -61,12 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ── Columns ────────────────────────────────────────────────────────
-    Route::post('/columns', [BoardController::class, 'storeColumn'])
-        ->middleware('permission:can_create_tasks')
-        ->name('columns.store');
-    Route::delete('/columns/{column}', [BoardController::class, 'destroyColumn'])
-        ->middleware('permission:can_delete_tasks')
-        ->name('columns.destroy');
+    Route::post('/columns', [BoardController::class, 'storeColumn'])->middleware('permission:can_create_tasks')->name('columns.store');
+    Route::delete('/columns/{column}', [BoardController::class, 'destroyColumn'])->middleware('permission:can_delete_tasks')->name('columns.destroy');
     Route::patch('/columns/{column}/move', [BoardController::class, 'moveColumn'])->name('columns.move');
     Route::put('/columns/{column}', [BoardController::class, 'updateColumn'])->name('columns.update');
 
@@ -98,15 +98,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
 
     // ── Pages ──────────────────────────────────────────────────────────
-    Route::get('/calendar', [CalendarController::class, 'index'])
-        ->middleware('permission:can_view_calendar')
-        ->name('calendar.index');
-    Route::get('/analytics', [AnalyticsController::class, 'index'])
-        ->middleware('permission:can_view_analytics')
-        ->name('analytics.index');
-    Route::get('/team', [TeamController::class, 'index'])
-        ->middleware('permission:can_view_team')
-        ->name('team.index');
+    Route::get('/calendar', [CalendarController::class, 'index'])->middleware('permission:can_view_calendar')->name('calendar.index');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->middleware('permission:can_view_analytics')->name('analytics.index');
+    Route::get('/team', [TeamController::class, 'index'])->middleware('permission:can_view_team')->name('team.index');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
 
@@ -138,8 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/attachments/{attachment}', [TaskAttachmentController::class, 'destroy']);
 
     //── Verification Email ──────────────────────────────────────────────
-    Route::get('verify-email', \App\Http\Controllers\Auth\EmailVerificationPromptController::class)
-        ->name('verification.notice');
+    Route::get('verify-email', \App\Http\Controllers\Auth\EmailVerificationPromptController::class)->name('verification.notice');
 
     // ── Notifications ──────────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
