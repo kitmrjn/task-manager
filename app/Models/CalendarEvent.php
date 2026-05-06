@@ -10,15 +10,16 @@ class CalendarEvent extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title', 
-        'date', 
-        'time', 
-        'type', 
-        'color', 
-        'description', 
+        'title',
+        'date',
+        'time',
+        'type',
+        'color',
+        'description',
         'user_id',
-        'recurrence',       // Add this line
-        'recurrence_until'  // Add this line
+        'calendar_type',
+        'recurrence',
+        'recurrence_until',
     ];
 
     public function user()

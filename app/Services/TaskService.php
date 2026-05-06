@@ -9,33 +9,33 @@ class TaskService
     /**
      * Handle the creation of a new task and log the activity.
      */
-    public function createTask(array $data, int $userId): Task
-    {
-        $highestOrder = Task::where('board_column_id', $data['board_column_id'])->max('order');
+public function createTask(array $data, int $userId): Task
+{
+    $highestOrder = Task::where('board_column_id', $data['board_column_id'])->max('order');
 
-        $task = Task::create([
-            'board_column_id' => $data['board_column_id'],
-            'title'           => $data['title'],
-            'description'     => $data['description'] ?? null,
-            'assigned_to'     => $data['assigned_to'] ?? null,
-            'creator_id'      => $userId,
-            'priority'        => $data['priority'],
-            'due_date'        => $data['due_date'] ?? null,
-            'start_date'      => $data['start_date'] ?? null,
-            'order'           => ($highestOrder ?? 0) + 1,
-            'is_completed'    => false,
-        ]);
+    $task = Task::create([
+        'title'           => $data['title'],
+        'description'     => $data['description'] ?? null,
+        'assigned_to'     => $data['assigned_to'] ?: null,
+        'priority'        => $data['priority'],
+        'due_date'        => $data['due_date'] ?? null,
+        'start_date'      => $data['start_date'] ?? null,
+        'board_column_id' => $data['board_column_id'],
+        'order'           => ($highestOrder ?? 0) + 1,
+        'is_completed'    => false,
+        'completed_at'    => null,
+    ]);
 
-        $task->activities()->create([
-            'user_id'     => $userId,
-            'action'      => 'created',
-            'description' => $task->assigned_to && $task->assigned_to !== $userId
-                ? 'assigned you this task'
-                : 'created this task',
-        ]);
+    $task->activities()->create([
+        'user_id'     => $userId,
+        'action'      => 'created',
+        'description' => $task->assigned_to && $task->assigned_to !== $userId
+            ? 'assigned you this task'
+            : 'created this task',
+    ]);
 
-        return $task;
-    }
+    return $task;
+}
 
     /**
      * Handle updating a task, syncing collaborators, and logging changes.
@@ -114,10 +114,15 @@ class TaskService
      */
     public function toggleCompletion(Task $task, int $userId): Task
     {
-        $task->update(['is_completed' => !$task->is_completed]);
-        
-        $status = $task->is_completed ? 'completed' : 'reopened';
-        
+        $isNowComplete = !$task->is_completed;
+
+        $task->update([
+            'is_completed' => $isNowComplete,
+            'completed_at' => $isNowComplete ? now() : null,
+        ]);
+
+        $status = $isNowComplete ? 'completed' : 'reopened';
+
         $task->activities()->create([
             'user_id'     => $userId,
             'action'      => $status,

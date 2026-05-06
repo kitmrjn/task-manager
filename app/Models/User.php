@@ -26,6 +26,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_smtp_port',
         'email_username',
         'email_password',
+        'phone', 
+        'city', 
+        'address', 
+        'country', 
+        'photo',
+        'sss_number', 'philhealth_number', 'tin_number', 'pag_ibig_number',
     ];
 
     protected $hidden = [
@@ -46,6 +52,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     // ── Existing Relationships ───────────────────────────────────────
 
+    public function validIds()
+    {
+        return $this->hasMany(UserValidId::class);
+    }
     public function tasks()
     {
         return $this->hasMany(Task::class, 'assigned_to');

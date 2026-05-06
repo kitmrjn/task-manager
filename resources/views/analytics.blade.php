@@ -115,47 +115,6 @@
 .tk-profile-item--danger       { color: var(--red); }
 .tk-profile-item--danger:hover { background: var(--red-lt); color: var(--red); }
 .tk-profile-divider            { height: 1px; background: var(--border); margin: .3rem 0; }
-/* --- Dropdown Logic --- */
-.tk-dropdown-wrap {
-    position: relative; /* Crucial: parent for absolute child */
-    display: inline-block;
-}
-
-
-
-/* Specific size for profile dropdown if needed */
-.tk-profile-dropdown {
-    width: 240px;
-}
-
-/* Show class to be toggled by JS */
-.tk-dropdown.show {
-    display: flex;
-}
-
-@keyframes dropdownIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- Profile Item Styles --- */
-.tk-profile-item {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    padding: .75rem 1rem;
-    color: var(--text);
-    text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 600;
-    transition: background 0.15s;
-    border: none;
-    background: transparent;
-    width: 100%;
-    cursor: pointer;
-    text-align: left;
-}
-
 .tk-profile-item:hover {
     background: var(--bg);
 }

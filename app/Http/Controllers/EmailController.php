@@ -80,11 +80,47 @@ class EmailController extends Controller
     private function getExactFolderPath($client, $targetName)
     {
         try {
+            // Normalize targetName for common folders (e.g., 'Trash' or 'Archive')
+            $normalizedTargetName = strtolower($targetName);
+
+            // Try to find common folder names directly first
+            $possibleFolderNames = [
+                $targetName, // Exact match
+                ucfirst($normalizedTargetName), // Capitalized (e.g., 'Trash')
+                strtoupper($normalizedTargetName), // Uppercase (e.g., 'TRASH')
+                $normalizedTargetName, // Lowercase (e.g., 'trash')
+                'INBOX.' . $targetName,
+                'INBOX.' . ucfirst($normalizedTargetName),
+                'INBOX.' . $normalizedTargetName,
+            ];
+
+            foreach ($possibleFolderNames as $folderName) {
+                try {
+                    $folder = $client->getFolder($folderName);
+                    return $folder->path;
+                } catch (\Exception $e) {
+                    // Folder not found, try next possible name
+                }
+            }
+
+            // Fallback: iterate through all folders if direct attempts fail
             $folders = $client->getFolders(false);
             foreach ($folders as $folder) {
-                if (stripos($folder->path, $targetName) !== false) return $folder->path;
+                // Check if the folder name (case-insensitive) matches the target
+                if (strtolower($folder->name) === $normalizedTargetName) {
+                    return $folder->path;
+                }
+                // Also check if the path contains the target name as a fallback,
+                // but this is less precise and might match unintended folders.
+                if (stripos($folder->path, $targetName) !== false) {
+                    return $folder->path;
+                }
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            // Log or handle exception if fetching folders fails
+        }
+
+        // If still not found, return a default path (e.g., 'INBOX.Trash')
         return 'INBOX.' . $targetName;
     }
 
@@ -126,17 +162,8 @@ class EmailController extends Controller
         if ($filter === 'unread') $query->unseen();
         else $query->all();
 
-        // 4. Paginate the query. 
-        $rawMessages = $query->setFetchBody(false)->limit(30, $page)->get();
-
-        // Explicitly sort the collection descending by date so the absolute newest is always at index 0
-        $messages = $rawMessages->filter(function($msg) {
-            return !$msg->hasFlag('Deleted') && !$msg->hasFlag('\Deleted') && !$msg->hasFlag('DELETED');
-        })
-        ->sortByDesc(function($msg) {
-            return $msg->getDate();
-        })
-        ->take(15);
+        // 4. Use server-side sorting and only fetch what is needed (15 instead of 30)
+        $messages = $query->setFetchBody(false)->setFetchOrderDesc()->limit(15, $page)->get();
 
         $selectedMessage = null;
         $emailBody = '';
@@ -158,18 +185,29 @@ class EmailController extends Controller
                             $cid = trim($attachment->content_id, '<>');
                         }
                         if ($cid) {
-                            $base64 = base64_encode($attachment->content);
-                            $mime = $attachment->mime ?? 'image/png';
-                            $dataUri = "data:{$mime};base64,{$base64}";
-                            $emailBody = str_replace("cid:$cid", $dataUri, $emailBody);
+                            // Generate a URL for the embedded attachment
+                            $attachmentUrl = route('email.embedded-attachment', [
+                                'folder' => $currentFolder, // Use the actual folder name
+                                'uid' => $selectedMessage->getUid(),
+                                'filename' => base64_encode($attachment->name), // Base64 encode filename for URL safety
+                            ]);
+                            $emailBody = str_replace("cid:$cid", $attachmentUrl, $emailBody);
                         }
                     }
                 }
             }
         }
 
-        try { $inboxUnreadCount = $client->getFolder('INBOX')->query()->unseen()->count(); } 
-        catch (\Exception $e) { $inboxUnreadCount = 0; }
+        // Optimize unread count: only hit the server if we aren't already looking at the Inbox
+        try {
+            if (strtoupper($currentFolder) === 'INBOX') {
+                $inboxUnreadCount = $messages->filter(fn($m) => !$m->hasFlag('Seen'))->count();
+            } else {
+                $inboxUnreadCount = $client->getFolder('INBOX')->query()->unseen()->count();
+            }
+        } catch (\Exception $e) {
+            $inboxUnreadCount = 0;
+        }
 
         return view('email.index', compact('messages', 'selectedMessage', 'filter', 'currentFolder', 'inboxUnreadCount', 'emailBody', 'search', 'page'));
     }
@@ -312,5 +350,33 @@ class EmailController extends Controller
             }
         }
         abort(404, 'Attachment not found.');
+    }
+
+    /**
+     * Serves embedded attachments (e.g., images referenced by cid:) via a dedicated route.
+     */
+    public function downloadEmbeddedAttachment($folder, $uid, $filename)
+    {
+        try {
+            $client = $this->getImapClient();
+        } catch (\Exception $e) {
+            abort(403, 'Email settings not configured.');
+        }
+        
+        $imapFolder = $this->getRealFolderName($client, $folder);
+        $message = $imapFolder->query()->getMessageByUid($uid);
+        
+        if ($message) {
+            $attachments = $message->getAttachments();
+            foreach ($attachments as $attachment) {
+                // Compare decoded filename from URL with attachment's original name
+                if ($attachment->name === base64_decode($filename)) {
+                    return response($attachment->content)
+                        ->header('Content-Type', $attachment->mime)
+                        ->header('Content-Disposition', 'inline; filename="' . $attachment->name . '"'); // Use 'inline' for embedded
+                }
+            }
+        }
+        abort(404, 'Embedded attachment not found.');
     }
 }

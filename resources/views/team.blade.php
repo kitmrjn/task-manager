@@ -92,193 +92,10 @@
         </div>
     </div>
 </x-slot>
+@push('styles')
+    @vite('resources/css/ui-components.css')
+@endpush
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Epilogue:wght@300;400;500;600&display=swap');
-
-/* Topnav sits outside .db-page so scope it explicitly */
-.tk-topnav, .tk-topnav *, .tk-topnav *::before, .tk-topnav *::after {
-    box-sizing: border-box;
-    font-family: var(--font);
-}
-/* ================================================================
-   TOPNAV
-================================================================ */
-.tk-topnav {
-    display: flex; align-items: center; gap: 1rem;
-    padding: 0 2rem; height: 66px;
-    background: var(--c-white); border-bottom: 1px solid var(--c-rule);
-}
-
-.tk-topnav-search {
-    display: flex; align-items: center; gap: .6rem;
-    background: var(--c-bg); border: 1.5px solid var(--c-border);
-    border-radius: 10px; padding: .6rem 1rem;
-    width: 320px; flex-shrink: 0;
-    transition: border-color .18s, box-shadow .18s, background .18s;
-}
-.tk-topnav-search:focus-within {
-    border-color: var(--c-blue);
-    box-shadow: 0 0 0 3px rgba(45,82,196,.1);
-    background: var(--c-white);
-}
-.tk-topnav-search svg               { color: var(--c-soft); flex-shrink: 0; }
-.tk-topnav-search input             { border: none; background: transparent; outline: none; font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--c-text); flex: 1; min-width: 0; }
-.tk-topnav-search input::placeholder{ color: var(--c-soft); font-weight: 400; }
-.tk-topnav-kbd   { font-size: 11px; font-weight: 600; color: var(--c-soft); background: var(--c-white); border: 1px solid var(--c-border); border-radius: 5px; padding: 2px 7px; flex-shrink: 0; }
-.tk-topnav-right { display: flex; align-items: center; gap: .65rem; margin-left: auto; }
-
-.tk-topnav-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    border: 1.5px solid var(--c-border); background: var(--c-white);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--c-muted); position: relative;
-    transition: background .15s, border-color .15s, color .15s, transform .15s;
-}
-.tk-topnav-icon:hover { background: var(--c-bg); border-color: var(--c-border-2); color: var(--c-navy); transform: translateY(-1px); }
-
-.tk-notif-badge {
-    position: absolute; top: 4px; right: 4px;
-    width: 17px; height: 17px; border-radius: 50%;
-    background: var(--c-red); border: 2px solid var(--c-white);
-    color: #fff; font-size: 9px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center;
-}
-
-.tk-topnav-divider { width: 1px; height: 28px; background: var(--c-rule); flex-shrink: 0; margin: 0 .25rem; }
-
-.tk-topnav-user {
-    display: flex; align-items: center; gap: .65rem;
-    cursor: pointer; padding: .45rem .75rem;
-    border-radius: 10px; border: 1.5px solid transparent;
-    background: transparent; font-family: var(--font);
-    transition: background .18s, border-color .18s, transform .15s;
-}
-.tk-topnav-user:hover,
-.tk-topnav-user.active { background: var(--c-bg); border-color: var(--c-border); transform: translateY(-1px); }
-
-.tk-topnav-avatar   { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--c-blue-md), var(--c-navy)); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(45,82,196,.32); }
-.tk-topnav-userinfo { text-align: left; }
-.tk-topnav-username { display: block; font-size: 14px; font-weight: 700; color: var(--c-text); line-height: 1.25; }
-.tk-topnav-email    { display: block; font-size: 11.5px; color: var(--c-soft); font-weight: 500; }
-.tk-chevron         { color: var(--c-soft); flex-shrink: 0; transition: transform .25s cubic-bezier(.16,1,.3,1); }
-.tk-chevron.open    { transform: rotate(180deg); }
-
-/* ================================================================
-   DROPDOWNS (notifications + profile)
-================================================================ */
-.tk-dropdown-wrap { position: relative; }
-
-.tk-dropdown {
-    position: absolute; right: 0; top: calc(100% + 10px);
-    background: var(--c-white); border: 1px solid var(--c-border);
-    border-radius: 14px; box-shadow: var(--shadow-lg);
-    z-index: 999; overflow: hidden;
-    opacity: 0; transform: translateY(-10px) scale(.96);
-    pointer-events: none;
-    transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1);
-    transform-origin: top right;
-}
-.tk-dropdown.open     { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-#notif-dropdown       { width: 340px; }
-.tk-profile-dropdown  { width: 268px; }
-
-.tk-dropdown-header   { padding: 1rem 1.25rem; border-bottom: 1px solid var(--c-rule); display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.tk-dropdown-title    { font-size: 15px; font-weight: 800; color: var(--c-text); }
-.tk-badge-pill        { font-size: 11.5px; font-weight: 700; background: var(--c-blue-lt); color: var(--c-blue); padding: 2px 10px; border-radius: 99px; }
-.tk-dropdown-body     { max-height: 360px; overflow-y: auto; }
-
-.tk-notif-item            { display: flex; gap: .85rem; align-items: flex-start; padding: .95rem 1.25rem; border-bottom: 1px solid var(--c-rule); transition: background .15s; }
-.tk-notif-item:last-child { border-bottom: none; }
-.tk-notif-item:hover      { background: var(--c-surface); }
-.tk-notif-icon            { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ni-blue                  { background: var(--c-blue-lt);  color: var(--c-blue); }
-.ni-amber                 { background: var(--c-amber-lt); color: var(--c-amber); }
-.ni-red                   { background: var(--c-red-lt);   color: var(--c-red); }
-.tk-notif-content         { flex: 1; min-width: 0; }
-.tk-notif-text            { font-size: 13.5px; color: var(--c-muted); line-height: 1.5; font-weight: 500; }
-.tk-notif-text strong     { color: var(--c-text); font-weight: 700; }
-.tk-notif-time            { font-size: 12px; color: var(--c-soft); font-weight: 600; margin-top: 3px; }
-
-.tk-profile-header    { gap: .9rem; align-items: center; }
-.tk-profile-avatar-lg { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--c-blue-md), var(--c-navy)); color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(45,82,196,.3); }
-.tk-profile-meta      { font-size: 12.5px; color: var(--c-soft); font-weight: 500; margin-top: 2px; }
-
-.tk-profile-item {
-    display: flex; align-items: center; gap: .7rem;
-    padding: .75rem 1.25rem; font-size: 14px; font-weight: 600;
-    color: var(--c-muted); text-decoration: none;
-    cursor: pointer; border: none; background: none;
-    width: 100%; font-family: var(--font);
-    transition: background .14s, color .14s; text-align: left;
-}
-.tk-profile-item:hover         { background: var(--c-surface); color: var(--c-text); }
-.tk-profile-item--danger       { color: var(--c-red); }
-.tk-profile-item--danger:hover { background: var(--c-red-lt); color: var(--c-red); }
-.tk-profile-divider            { height: 1px; background: var(--c-rule); margin: .3rem 0; }
-
-.st-topnav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2rem; height: 66px; gap: 1rem;
-    background: var(--white); border-bottom: 1px solid var(--border);
-}
-.st-topnav-left { display: flex; flex-direction: column; justify-content: center; }
-.st-topnav-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); line-height: 1; margin-bottom: 2px; }
-.st-topnav-heading { font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -.02em; line-height: 1; }
-.st-topnav-right { display: flex; align-items: center; gap: .5rem; }
-.tk-dropdown-wrap { position: relative; }
-.tk-dropdown {
-    position: absolute; right: 0; top: calc(100% + 10px);
-    background: var(--c-white); border: 1px solid var(--c-border);
-    border-radius: 14px; box-shadow: var(--shadow-lg);
-    z-index: 999; overflow: hidden;
-    opacity: 0; transform: translateY(-10px) scale(.96);
-    pointer-events: none;
-    transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1);
-    transform-origin: top right;
-}
-.tk-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.tk-profile-dropdown { width: 268px; }
-.tk-dropdown-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--c-rule); display: flex; align-items: center; gap: .75rem; }
-.tk-dropdown-title  { font-size: 15px; font-weight: 700; color: var(--c-text); }
-.tk-badge-pill      { font-size: 11.5px; font-weight: 700; background: var(--c-blue-lt); color: var(--c-blue); padding: 2px 10px; border-radius: 99px; }
-.tk-dropdown-body   { max-height: 360px; overflow-y: auto; }
-.tk-notif-item      { display: flex; gap: .85rem; align-items: flex-start; padding: .95rem 1.25rem; border-bottom: 1px solid var(--c-border); transition: background .15s; }
-.tk-notif-item:last-child { border-bottom: none; }
-.tk-notif-item:hover { background: var(--c-surface); }
-.tk-notif-icon      { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--c-blue-lt); color: var(--c-blue); }
-.tk-notif-content   { flex: 1; min-width: 0; }
-.tk-notif-text      { font-size: 13.5px; color: var(--c-muted); line-height: 1.5; font-weight: 500; }
-.tk-notif-text strong { color: var(--c-text); font-weight: 700; }
-.tk-notif-time      { font-size: 12px; color: var(--c-soft); font-weight: 600; margin-top: 3px; }
-.tk-profile-avatar-lg { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b63d8, #1b2b5e); color: #fff; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tk-nav-icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--c-border); background: var(--c-white); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--c-muted); transition: background .15s, transform .15s; }
-.tk-nav-icon-btn:hover { background: var(--c-bg); transform: translateY(-1px); }
-.tk-nav-profile { display: flex; align-items: center; gap: .65rem; cursor: pointer; padding: .4rem .75rem; border-radius: 10px; border: 1.5px solid transparent; transition: background .18s, border-color .18s; }
-.tk-nav-profile:hover { background: var(--c-bg); border-color: var(--c-border); }
-.tk-nav-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #3b63d8, #1b2b5e); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tk-nav-userinfo { display: flex; flex-direction: column; }
-.tk-nav-name  { font-size: 14px; font-weight: 700; color: var(--c-text); line-height: 1.25; }
-.tk-nav-email { font-size: 12px; color: var(--c-soft); font-weight: 500; }
-.tk-nav-chevron { color: var(--c-soft); flex-shrink: 0; transition: transform .22s; }
-.tk-profile-item { display: flex; align-items: center; gap: .7rem; padding: .75rem 1.25rem; font-size: 14px; font-weight: 600; color: var(--c-muted); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; font-family: 'Epilogue', sans-serif; transition: background .14s, color .14s; text-align: left; }
-.tk-profile-item:hover { background: var(--c-surface); color: var(--c-text); }
-.tk-profile-item--danger { color: var(--c-red); }
-.tk-profile-item--danger:hover { background: var(--c-red-lt); color: var(--c-red); }
-
-:root{
-    --c-bg:#f4f5f7;--c-white:#fff;--c-surface:#fafbfc;--c-border:#e2e5eb;--c-border-2:#d0d4dd;
-    --c-text:#1a1e2e;--c-muted:#6b7491;--c-soft:#9ba3be;
-    --c-navy:#1b2b5e;--c-blue:#2d52c4;--c-blue-lt:#ebeffa;
-    --c-teal:#0e9f8e;--c-teal-lt:#e6f7f5;
-    --c-amber:#c47c0e;--c-amber-lt:#fef5e6;
-    --c-red:#c0354a;--c-red-lt:#fdeef1;
-    --c-green:#1a8a5a;--c-green-lt:#e8f6f0;
-    --c-purple:#7c3aed;--c-purple-lt:#f5f3ff;
-    --c-rule:#e8eaf0;--radius:12px;
-    --shadow-sm:0 1px 4px rgba(27,43,94,0.07),0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:0 4px 16px rgba(27,43,94,0.10);
-    --shadow-lg:0 12px 32px rgba(27,43,94,0.14);
-}
 body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-serif;}
 .db-header-inner{display:flex;justify-content:space-between;align-items:center;}
 .db-header-left{display:flex;align-items:center;gap:.9rem;}
@@ -308,7 +125,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-sum-icon.blue{background:var(--c-blue-lt);}
 .tm-sum-icon.teal{background:var(--c-teal-lt);}
 .tm-sum-icon.amber{background:var(--c-amber-lt);}
-.tm-sum-val{font-family:'Playfair Display',serif;font-size:2.1rem;font-weight:700;color:var(--c-navy);line-height:1;}
+.tm-sum-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:2.1rem;font-weight:700;color:var(--c-navy);line-height:1;}
 .tm-sum-label{font-size:12px;color:var(--c-soft);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-top:.3rem;}
 
 /* ── Toolbar ── */
@@ -387,7 +204,7 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .tm-card-action-btn{
     width:100%;padding:.55rem .8rem;border-radius:8px;
     border:1.5px solid #c4b5fd;background:var(--c-purple-lt);
-    font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;
     color:var(--c-purple);cursor:pointer;transition:all .15s;
     display:flex;align-items:center;justify-content:center;gap:.45rem;
 }
@@ -444,16 +261,6 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
 .av-4{background:#c0354a;}.av-5{background:#6d52c4;}.av-6{background:#1a8a5a;}
 .av-7{background:#db2777;}.av-8{background:#0d9488;}
 
-.st-topnav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2rem; height: 66px; gap: 1rem;
-    background: var(--white); border-bottom: 1px solid var(--border);
-}
-.st-topnav-left { display: flex; flex-direction: column; justify-content: center; }
-.st-topnav-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); line-height: 1; margin-bottom: 2px; }
-.st-topnav-heading { font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -.02em; line-height: 1; }
-.st-topnav-right { display: flex; align-items: center; gap: .5rem; }
-
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 </style>
 
@@ -463,21 +270,21 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
     {{-- Summary --}}
     <div class="tm-summary">
         <div class="tm-sum-card">
-            <div class="tm-sum-icon blue">👥</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d52c4" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $teamCount }}</div>
                 <div class="tm-sum-label">Team Members</div>
             </div>
         </div>
         <div class="tm-sum-card">
-            <div class="tm-sum-icon teal">🟢</div>
+             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0e9f8e" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $activeCount }}</div>
                 <div class="tm-sum-label">Active Today</div>
             </div>
         </div>
         <div class="tm-sum-card">
-            <div class="tm-sum-icon amber">📋</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c47c0e" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
             <div>
                 <div class="tm-sum-val">{{ $openTasks }}</div>
                 <div class="tm-sum-label">Open Tasks</div>
@@ -527,7 +334,9 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                     data-name="{{ $member->name }}"
                     data-email="{{ $member->email }}"
                     data-role="{{ $member->role ?? 'team_member' }}"
-                    title="Edit member">✏️</button>
+                    title="Edit member">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+</button>
                 @endif
             </div>{{-- end .tm-card-top --}}
 
@@ -556,7 +365,8 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
                     {{ $perms->can_edit_tasks     ? 'true' : 'false' }}, 
                     {{ $perms->can_add_column     ? 'true' : 'false' }}
                 )">
-                    🔐 Manage Permissions
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Manage Permissions
                 </button>
             </div>
             @endif
@@ -601,7 +411,8 @@ body{background:var(--c-bg);color:var(--c-text);font-family:'Epilogue',sans-seri
             <span class="tm-save-msg" id="saveMsg">✔ Saved!</span>
             <button class="tm-btn" onclick="deleteMember()" 
                 style="background:var(--c-red-lt);color:var(--c-red);border:1.5px solid var(--c-red);margin-right:auto;">
-                🗑️ Delete
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                Delete
             </button>
             <button class="tm-btn ghost" onclick="closeEdit()">Cancel</button>
             <button class="tm-btn primary" onclick="saveEdit()">Save Changes</button>
@@ -912,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF }
                 });
                 const data = await res.json();
+                notifsLoaded = true;
                 const count = document.getElementById('notif-count');
                 if (count) count.textContent = data.length ? data.length + ' new' : '';
                 if (!data.length) {

@@ -107,6 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 async function loadNotifications() {
+    // If already loaded, don't show "Loading..." again
+    if (document.querySelector('#notif-dropdown .tk-notif-item')) return;
+    
     const list  = document.querySelector('#notif-dropdown .tk-dropdown-body');
     const count = document.querySelector('#notif-dropdown .tk-badge-pill');
     if (!list) return;
@@ -154,6 +157,5 @@ if (searchInput) {
         });
     });
 }
-
 
 });

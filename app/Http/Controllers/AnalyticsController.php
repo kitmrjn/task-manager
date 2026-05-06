@@ -32,8 +32,8 @@ class AnalyticsController extends Controller
 
         // ── Completed tasks in range ───────────────────────────
         $completedTasks = Task::whereHas('column', fn($q) => $q->where('title', 'Done'))
-            ->whereBetween('updated_at', [$from, $to])
-            ->get();
+        ->whereBetween('completed_at', [$from, $to])
+        ->get();
         $completed = $completedTasks->count();
 
         // ── Overdue ────────────────────────────────────────────
@@ -45,15 +45,15 @@ class AnalyticsController extends Controller
         // ── On-time rate ───────────────────────────────────────
         $completedWithDue = $completedTasks->filter(fn($t) => $t->due_date);
         $onTime = $completedWithDue->filter(
-            fn($t) => Carbon::parse($t->updated_at)->lte(Carbon::parse($t->due_date)->endOfDay())
+            fn($t) => Carbon::parse($t->completed_at)->lte(Carbon::parse($t->due_date)->endOfDay())
         )->count();
         $onTimeRate = $completedWithDue->count() > 0
             ? round(($onTime / $completedWithDue->count()) * 100)
             : 0;
 
         // ── Avg completion days ────────────────────────────────
-        $avgDays = $completedTasks->filter(fn($t) => $t->created_at && $t->updated_at)
-            ->avg(fn($t) => Carbon::parse($t->created_at)->diffInDays(Carbon::parse($t->updated_at)));
+        $avgDays = $completedTasks->filter(fn($t) => $t->created_at && $t->completed_at)
+            ->avg(fn($t) => Carbon::parse($t->created_at)->diffInDays(Carbon::parse($t->completed_at)));
         $avgDays = $avgDays ? round($avgDays) : 0;
 
         // ── Active members ─────────────────────────────────────
@@ -81,8 +81,8 @@ class AnalyticsController extends Controller
 
         // ── Chart data (day-by-day in range) ───────────────────
         $last30Raw = Task::whereHas('column', fn($q) => $q->where('title', 'Done'))
-            ->whereBetween('updated_at', [$from, $to])
-            ->selectRaw('DATE(updated_at) as date, COUNT(*) as count')
+            ->whereBetween('completed_at', [$from, $to])
+            ->selectRaw('DATE(completed_at) as date, COUNT(*) as count')
             ->groupBy('date')
             ->orderBy('date')
             ->get();

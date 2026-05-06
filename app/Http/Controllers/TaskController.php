@@ -131,11 +131,23 @@ class TaskController extends Controller
         if (!auth()->user()->can_access('can_edit_tasks')) {
             return response()->json(['success' => false], 403);
         }
-        
+
         $request->validate(['board_column_id' => 'required|exists:board_columns,id']);
-        
-        $task->update(['board_column_id' => $request->board_column_id]);
-        
+
+        $column = BoardColumn::find($request->board_column_id);
+
+        $data = ['board_column_id' => $request->board_column_id];
+
+        if ($column && $column->title === 'Done') {
+            $data['completed_at'] = $task->completed_at ?? now();
+            $data['is_completed'] = true;
+        } else {
+            $data['completed_at'] = null;
+            $data['is_completed'] = false;
+        }
+
+        $task->update($data);
+
         return response()->json(['success' => true]);
     }
 

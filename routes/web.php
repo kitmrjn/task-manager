@@ -12,6 +12,7 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskAttachmentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NoteController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -59,10 +60,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->middleware('permission:can_delete_tasks');
     Route::get('/tasks/{task}/detail', [TaskController::class, 'detail'])->name('tasks.detail');
 
+    Route::get('/dashboard/tasks', [App\Http\Controllers\DashboardController::class, 'getTasks']);
+    
     // ── Profile ────────────────────────────────────────────────────────
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+   // ── Memos ──────────────────────────────────────────────────────────
+    Route::get('/memos/audience-options', [App\Http\Controllers\MemoController::class, 'audienceOptions'])->name('memos.audience');
+    Route::get('/memos', [App\Http\Controllers\MemoController::class, 'index'])->name('memos.index');
+    Route::post('/memos', [App\Http\Controllers\MemoController::class, 'store'])->name('memos.store');
+    Route::patch('/memos/{memo}/read', [App\Http\Controllers\MemoController::class, 'markRead'])->name('memos.read');
+    Route::delete('/memos/{memo}', [App\Http\Controllers\MemoController::class, 'destroy'])->name('memos.destroy');
 
     // ── Columns ────────────────────────────────────────────────────────
     Route::post('/columns', [BoardController::class, 'storeColumn'])->middleware('permission:can_create_tasks')->name('columns.store');
@@ -78,21 +88,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ── Members ────────────────────────────────────────────────────────
     Route::post('/tasks/{task}/members/toggle', [BoardController::class, 'toggleMember']);
 
-    // ── Admin Only User Management ─────────────────────────────────────
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
-        Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
+    Route::delete('/admin/users/{user}/valid-ids', [UserController::class, 'deleteValidId'])
+     ->name('admin.users.valid-ids.destroy');
+     
+// ── Admin Only User Management ─────────────────────────────────────
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
 
-        Route::get('/system-data', [App\Http\Controllers\Admin\SystemDataController::class, 'index'])->name('system-data.index');
-        Route::post('/system-data/campaigns', [App\Http\Controllers\Admin\SystemDataController::class, 'storeCampaign'])->name('campaigns.store');
-        Route::delete('/system-data/campaigns/{campaign}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyCampaign'])->name('campaigns.destroy');
-        Route::post('/system-data/roles', [App\Http\Controllers\Admin\SystemDataController::class, 'storeRole'])->name('roles.store');
-        Route::delete('/system-data/roles/{role}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyRole'])->name('roles.destroy');
-        
-        Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
-        Route::patch('/users/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('users.toggle-status');
-        Route::post('/users/{user}/resend-invite', [App\Http\Controllers\Admin\UserController::class, 'resendInvite'])->name('users.resend-invite');
-    });
+    Route::get('/system-data', [App\Http\Controllers\Admin\SystemDataController::class, 'index'])->name('system-data.index');
+    Route::post('/system-data/campaigns', [App\Http\Controllers\Admin\SystemDataController::class, 'storeCampaign'])->name('campaigns.store');
+    Route::put('/system-data/campaigns/{campaign}/schedule', [App\Http\Controllers\Admin\SystemDataController::class, 'updateSchedule'])->name('campaigns.schedule');
+    Route::delete('/system-data/campaigns/{campaign}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyCampaign'])->name('campaigns.destroy');
+
+    Route::post('/system-data/roles', [App\Http\Controllers\Admin\SystemDataController::class, 'storeRole'])->name('roles.store');
+    Route::delete('/system-data/roles/{role}', [App\Http\Controllers\Admin\SystemDataController::class, 'destroyRole'])->name('roles.destroy');
+
+    Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+    Route::patch('/users/{user}/toggle-status', [App\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::post('/users/{user}/resend-invite', [App\Http\Controllers\Admin\UserController::class, 'resendInvite'])->name('users.resend-invite');
+});
+
+// ── Notepad ───────────────────────────────────────────────
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notes',           [NoteController::class, 'index'])->name('notes.index');
+    Route::post('/notes',          [NoteController::class, 'store'])->name('notes.store');
+    Route::put('/notes/{note}',    [NoteController::class, 'update'])->name('notes.update');
+    Route::delete('/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
+});
+Route::patch('/notes/{note}/pin',     [NoteController::class, 'togglePin'])->name('notes.pin');
+Route::patch('/notes/{note}/archive', [NoteController::class, 'toggleArchive'])->name('notes.archive');
+Route::post('/notes/{note}/attachments',              [NoteController::class, 'uploadAttachment'])->name('notes.attachments.store');
+Route::delete('/notes/{note}/attachments/{attachment}',[NoteController::class, 'deleteAttachment'])->name('notes.attachments.destroy');
 
     // ── Mark as Complete ───────────────────────────────────────────────
     Route::patch('/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete']);
